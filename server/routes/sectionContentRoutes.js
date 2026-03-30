@@ -16,68 +16,11 @@ import {
 
 const router = express.Router();
 
-/**
- * GET /api/section-content/section/:sectionId/latest
- * Get the latest/current content for a section
- * This is what the frontend should render
- * 
- * Example: GET /api/section-content/section/abc-123/latest
- * Returns: Latest content version with all data
- * 
- * Used by: Frontend website rendering
- */
+
 router.get('/section/:sectionId/latest', getLatestContentBySectionId);
-
-/**
- * GET /api/section-content/section/:sectionId/history
- * Get version history timeline for a section
- * Shows all versions with creation dates
- * 
- * Example: GET /api/section-content/section/abc-123/history
- * Returns: [ { version: 3, created_at }, { version: 2, ... } ]
- * 
- * Used by: Dashboard version history view
- */
 router.get('/section/:sectionId/history', getVersionHistory);
-
-/**
- * GET /api/section-content/section/:sectionId
- * Get all content versions for a section
- * Shows complete version history with content
- * 
- * Example: GET /api/section-content/section/abc-123
- * Returns: Array of all content versions (latest first)
- * 
- * Used by: Dashboard version management
- */
 router.get('/section/:sectionId', getContentBySectionId);
-
-/**
- * GET /api/section-content/search
- * Search content by a specific JSON field value
- * 
- * Query params:
- * - sectionId: UUID of section to search in (required)
- * - field: JSON field path like "title" (required)
- * - value: Value to search for (required)
- * 
- * Example: GET /api/section-content/search?sectionId=abc&field=title&value=glow
- * Returns: All content versions with title containing "glow"
- * 
- * Used by: Dashboard search/filter functionality
- */
 router.get('/search', searchContentByField);
-
-/**
- * GET /api/section-content/:id
- * Get a specific content entry by ID
- * Shows a single version of content
- * 
- * Example: GET /api/section-content/uuid-123
- * Returns: Single content version object
- * 
- * Used by: Dashboard viewing specific version
- */
 router.get('/:id', getContentById);
 
 /**
