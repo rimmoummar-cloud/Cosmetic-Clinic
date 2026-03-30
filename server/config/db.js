@@ -32,9 +32,10 @@ const { Pool } = pkg;
 // تأكدي إنو process.env.DATABASE_URL موجودة وما فيها مسافات
 const db = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false // مهم مع Neon / AWS
-  }
+  // ssl: {
+  //   rejectUnauthorized: false // مهم مع Neon / AWS
+  // }
+  ssl: false
 });
 
 export default db;

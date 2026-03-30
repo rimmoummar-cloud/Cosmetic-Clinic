@@ -1,48 +1,18 @@
-/**
- * =====================================================
- * PAGES CONTROLLER
- * =====================================================
- * 
- * This file contains all API endpoint handlers for pages.
- * Each function receives HTTP requests and returns JSON responses.
- * 
- * The controller layer:
- * 1. Receives HTTP requests from the frontend
- * 2. Calls model functions to get/update database data
- * 3. Returns JSON responses to the frontend
- * 4. Handles errors and validation
- * 
- * These endpoints are used by:
- * - Dashboard: To manage pages (create, edit, delete)
- * - Frontend: To fetch page data for rendering
- * =====================================================
- */
+
 
 import * as PageModel from '../models/pages.js';
 
-/**
- * API Endpoint: GET /api/pages
- * Get all pages (admin dashboard)
- * Returns all pages including inactive ones
- * 
- * Frontend usage: Dashboard page list view
- */
+
+
 export const getAllPages = async (req, res) => {
   try {
     const pages = await PageModel.getAllPages();
-    res.json({
-      success: true,
-      data: pages,
-      message: 'All pages retrieved successfully'
-    });
+    res.json(pages);
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      message: 'Error retrieving pages'
-    });
+    res.status(500).json({ error: error.message });
   }
 };
+
 
 /**
  * API Endpoint: GET /api/pages/active

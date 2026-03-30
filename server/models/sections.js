@@ -1,26 +1,3 @@
-/**
- * =====================================================
- * SECTIONS MODEL
- * =====================================================
- * 
- * This file contains all database queries for the SECTIONS table.
- * 
- * A "Section" is a part of a Page (like Hero, Benefits, Testimonials, etc.)
- * Sections are the building blocks that make up a page.
- * 
- * Each section has:
- * - id: Unique identifier (UUID)
- * - page_id: Foreign key linking to the parent page
- * - name: Section type/name (e.g., "hero", "services_preview")
- * - slug: URL-friendly version (used for CSS or targeting)
- * - section_order: Number determining display order on page (1, 2, 3...)
- * - is_active: Boolean to show/hide this section
- * - created_at & updated_at: Timestamps
- * 
- * Hierarchy: Page → Sections → Section Content
- * A page "Home" might have sections: [Hero (order 1), Services (order 2), Testimonials (order 3)]
- * =====================================================
- */
 
 import db from '../config/db.js';
 

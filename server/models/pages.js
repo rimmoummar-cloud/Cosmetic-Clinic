@@ -1,5 +1,5 @@
 
-
+import express from 'express';
 import db from '../config/db.js';
 
 /**
@@ -11,6 +11,9 @@ export const getAllPages = async () => {
   const res = await db.query('SELECT * FROM pages ORDER BY created_at DESC');
   return res.rows;
 };
+
+
+
 
 /**
  * GET ACTIVE PAGES ONLY
