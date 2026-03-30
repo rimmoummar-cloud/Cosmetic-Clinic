@@ -1,17 +1,4 @@
-/**
- * =====================================================
- * SECTION CONTENT ROUTES
- * =====================================================
- * 
- * This file maps URL endpoints to section content controller functions.
- * Section content is the actual data stored in JSON format.
- * 
- * Features:
- * - Version control: Each update creates new version
- * - Content search: Find content by field values
- * - Revert functionality: Restore to previous versions
- * =====================================================
- */
+
 
 import express from 'express';
 import {
