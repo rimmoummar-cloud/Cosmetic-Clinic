@@ -44,9 +44,30 @@ const pagesData = [
         },
       },
       {
+        name: 'benefits',
+        slug: 'benefits',
+        order: 3,
+        content: {
+          eyebrow: 'Why Choose Us',
+          title: 'Your Beauty, Our Priority',
+          description:
+            'At Shiny Skin, we combine expertise with luxury to deliver exceptional results. Every treatment is personalized to your unique needs.',
+          items: [
+            'Licensed & Certified Professionals',
+            'Premium Quality Products',
+            'Personalized Treatment Plans',
+            'Relaxing Atmosphere',
+            'Latest Technology & Techniques',
+            'Aftercare Support',
+          ],
+          image:
+            'https://images.unsplash.com/photo-1731514693674-a32211b63996?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+        },
+      },
+      {
         name: 'testimonials',
         slug: 'testimonials',
-        order: 3,
+        order: 4,
         content: {
           title: 'What our clients say',
           subtitle: 'Real stories, real results',
@@ -69,7 +90,7 @@ const pagesData = [
       {
         name: 'cta',
         slug: 'cta',
-        order: 4,
+        order: 5,
         content: {
           title: 'Ready for your glow-up?',
           description: 'Schedule a consultation and design your personalized treatment plan.',
@@ -204,10 +225,33 @@ const pagesData = [
   },
 ];
 
+const findPageIdBySlug = async (client, slug) => {
+  const res = await client.query('SELECT id FROM pages WHERE slug = $1 LIMIT 1', [slug]);
+  return res.rows[0]?.id;
+};
+
+const findSectionIdBySlug = async (client, pageId, slug) => {
+  const res = await client.query(
+    'SELECT id FROM sections WHERE page_id = $1 AND slug = $2 LIMIT 1',
+    [pageId, slug]
+  );
+  return res.rows[0]?.id;
+};
+
+const hasSectionContent = async (client, sectionId) => {
+  const res = await client.query('SELECT 1 FROM section_content WHERE section_id = $1 LIMIT 1', [
+    sectionId,
+  ]);
+  return Boolean(res.rows[0]);
+};
+
 // Insert a page and return its UUID (explicit for clarity & reproducibility)
 const insertPage = async (client, page) => {
+  const { slug, name, description } = page;
+  const existingId = await findPageIdBySlug(client, slug);
+  if (existingId) return existingId;
+
   const id = randomUUID();
-  const { name, slug, description } = page;
   await client.query(
     `INSERT INTO pages (id, name, slug, description, is_active)
      VALUES ($1, $2, $3, $4, TRUE)`,
@@ -218,8 +262,11 @@ const insertPage = async (client, page) => {
 
 // Insert a section tied to a page (is_active defaulted to TRUE)
 const insertSection = async (client, pageId, section) => {
-  const id = randomUUID();
   const { name, slug, order } = section;
+  const existingId = await findSectionIdBySlug(client, pageId, slug);
+  if (existingId) return existingId;
+
+  const id = randomUUID();
   await client.query(
     `INSERT INTO sections (id, page_id, name, slug, section_order, is_active)
      VALUES ($1, $2, $3, $4, $5, TRUE)`,
@@ -230,6 +277,9 @@ const insertSection = async (client, pageId, section) => {
 
 // Insert initial content for a section (version 1)
 const insertSectionContent = async (client, sectionId, content) => {
+  const alreadyHasContent = await hasSectionContent(client, sectionId);
+  if (alreadyHasContent) return;
+
   const id = randomUUID();
   await client.query(
     `INSERT INTO section_content (id, section_id, content, version)
