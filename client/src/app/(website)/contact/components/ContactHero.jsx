@@ -3,7 +3,11 @@ import { motion } from "framer-motion";
 import { SectionHeader } from "../../../components/sectionHeader";
 import { FloatingElement } from "../../../components/AnimatedElements";
 
-export default function ContactHero() {
+export default function ContactHero({ data = {} }) {
+  const label = data?.label || data?.eyebrow || "";
+  const title = data?.title || data?.heading || "";
+  const description = data?.description || data?.summary || "";
+
   return (
     <section className="relative py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#FFD700]/20 via-[#E8DDD0]/30 to-[#E8C7C3]/20 overflow-hidden">
       <FloatingElement delay={0} duration={6}>
@@ -20,9 +24,9 @@ export default function ContactHero() {
         className="max-w-7xl mx-auto text-center relative z-10"
       >
         <SectionHeader
-          label="Contact Us"
-          title="Get in Touch"
-          description="Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible."
+          label={label}
+          title={title}
+          description={description}
         />
       </motion.div>
     </section>

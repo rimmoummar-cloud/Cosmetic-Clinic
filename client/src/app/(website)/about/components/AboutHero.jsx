@@ -3,7 +3,20 @@ import { motion } from "framer-motion";
 import { SectionHeader } from "../../../components/sectionHeader";
 import { FloatingElement } from "../../../components/AnimatedElements";
 
-export default function AboutHero() {
+export default function AboutHero({ data = {} }) {
+
+  const label =
+    data?.label ||
+    data?.eyebrow ||
+    data?.tagline ||
+    "";
+  const title =
+    data?.title ||
+    data?.heading ||
+    data?.headline ||
+    "";
+  const description = data?.subtitle ;
+
   return (
     <section className="relative py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#FFD700]/20 via-[#E8DDD0]/30 to-[#E8C7C3]/20 overflow-hidden">
       <FloatingElement delay={0} duration={6}>
@@ -16,9 +29,9 @@ export default function AboutHero() {
         className="max-w-7xl mx-auto text-center relative z-10"
       >
         <SectionHeader
-          label="About Us"
-          title="Your Beauty Sanctuary"
-          description="Discover the story behind Shiny Skin and our commitment to helping you achieve your beauty goals"
+          label={label}
+          title={title}
+          description={description}
         />
       </motion.div>
     </section>

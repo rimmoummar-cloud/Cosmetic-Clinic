@@ -6,7 +6,7 @@ const API_BASE =
   "http://localhost:5000";
 
 async function fetchJson(url) {
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, {    next: { revalidate: 60 } });
   if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.statusText}`);
   return res.json();
 }

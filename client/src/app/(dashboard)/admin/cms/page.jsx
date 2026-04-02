@@ -340,31 +340,68 @@ export default function CmsDashboard() {
   //   }
   // };
 
+
+
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   if (!selectedSection) return;
-  setSaving(true);
-  try {
-    console.log("Section ID:", content.data.id);
-    console.log("Sending content:", content.data.content);
 
+  setSaving(true);
+
+  try {
     const res = await fetch(
       `http://localhost:5000/api/section-content/${content.data.id}`,
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(content.data.content), // فقط المحتوى
+        body: JSON.stringify(content.data.content),
       }
     );
 
     if (!res.ok) throw new Error("Failed to update content");
+
     showToast("success", "Section content updated");
+
+    // 🔥 هذا السطر هو الحل
+    await openSection(selectedSection);
+
   } catch (err) {
     showToast("error", err.message);
   } finally {
     setSaving(false);
   }
 };
+
+
+
+
+
+// const handleSubmit = async (e) => {
+//   e.preventDefault();
+//   if (!selectedSection) return;
+//   setSaving(true);
+//   try {
+//     console.log("Section ID:", content.data.id);
+//     console.log("Sending content:", content.data.content);
+
+//     const res = await fetch(
+//       `http://localhost:5000/api/section-content/${content.data.id}`,
+//       {
+//         method: "PUT",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(content.data.content), // فقط المحتوى
+//       }
+//     );
+
+//     if (!res.ok) throw new Error("Failed to update content");
+//     showToast("success", "Section content updated");
+//   } catch (err) {
+//     showToast("error", err.message);
+//   } finally {
+//     setSaving(false);
+//   }
+// };
 
 
 

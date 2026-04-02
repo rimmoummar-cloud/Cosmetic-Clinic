@@ -3,7 +3,24 @@ import { motion } from "framer-motion";
 import { ImageFallBack } from "../../../components/EmageFullBack";
 import { FloatingElement } from "../../../components/AnimatedElements";
 
-export default function AboutStory() {
+export default function AboutStory({ data = {} }) {
+
+  const title = data?.title || data?.heading || "";
+  const paragraphs = Array.isArray(data?.paragraphs)
+    ? data.paragraphs
+    : typeof data?.body === "string"
+      ? [data.body]
+      : typeof data?.description === "string"
+        ? [data.description]
+        : [];
+  const image =
+    data?.image ||
+    data?.image_url ||
+    data?.imageUrl ||
+    data?.media ||
+    "";
+  const imageAlt = data?.imageAlt || data?.title || "";
+
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
@@ -13,23 +30,21 @@ export default function AboutStory() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <h2 
-              className="text-5xl mb-6 text-[#2C2C2C]"
-              style={{ fontFamily: 'var(--font-serif)' }}
-            >
-              Our Story
-            </h2>
-            <div className="space-y-4 text-lg text-[#6B6B6B] leading-relaxed">
-              <p>
-                Founded in 2018, Shiny Skin Aesthetic & Beauty Clinic was born from a passion for helping people feel confident and beautiful in their own skin.
-              </p>
-              <p>
-                We believe that everyone deserves access to premium beauty treatments in a luxurious, welcoming environment. Our team of licensed professionals combines years of experience with the latest techniques to deliver exceptional results.
-              </p>
-              <p>
-                Today, we're proud to be one of the most trusted beauty clinics, serving hundreds of satisfied clients who trust us with their beauty needs.
-              </p>
-            </div>
+            {title && (
+              <h2
+                className="text-5xl mb-6 text-[#2C2C2C]"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                {title}
+              </h2>
+            )}
+            {paragraphs.length > 0 && (
+              <div className="space-y-4 text-lg text-[#6B6B6B] leading-relaxed">
+                {paragraphs.map((paragraph, idx) => (
+                  <p key={idx}>{paragraph}</p>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           <motion.div
@@ -39,11 +54,13 @@ export default function AboutStory() {
             className="relative"
           >
             <div className="rounded-3xl overflow-hidden shadow-2xl shadow-[#D4AF7A]/20">
-              <ImageFallBack
-                src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800"
-                alt="Clinic interior"
-                className="w-full h-[500px] object-cover"
-              />
+              {image && (
+                <ImageFallBack
+                  src={image}
+                  alt={imageAlt}
+                  className="w-full h-[500px] object-cover"
+                />
+              )}
             </div>
             
             <FloatingElement delay={1} duration={4}>

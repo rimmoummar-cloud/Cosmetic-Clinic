@@ -6,13 +6,21 @@ import { toast } from "sonner";
 import { GlowingButton } from "../../../components/GlowingButtom";
 import { FloatingElement } from "../../../components/AnimatedElements";
 
-export default function ContactForm() {
+export default function ContactForm({ data = {} }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
     message: "",
   });
+
+  const title = data?.title || data?.heading || "";
+  const description = data?.description || data?.summary || "";
+  const buttonText = data?.buttonText || data?.ctaText || data?.cta || "";
+  const successMessage = data?.successMessage || data?.success || "";
+  const errorMessage = data?.errorMessage || data?.validationMessage || "";
+  const placeholders = data?.placeholders || {};
+  const labels = data?.labels || {};
 
   const handleChange = (e) => {
     setFormData({
@@ -25,12 +33,11 @@ export default function ContactForm() {
     e.preventDefault();
 
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      toast.error("Please fill in all fields");
+      if (errorMessage) toast.error(errorMessage);
       return;
     }
 
-    console.log("Contact form submitted:", formData);
-    toast.success("Thank you! We'll get back to you within 24 hours.");
+    if (successMessage) toast.success(successMessage);
 
     setFormData({
       name: "",
@@ -54,15 +61,19 @@ export default function ContactForm() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#FFD700]/40 to-transparent rounded-full blur-2xl" />
             </FloatingElement>
             
-            <h2
-              className="text-3xl text-[#2C2C2C] relative z-10"
-              style={{ fontFamily: 'var(--font-serif)' }}
-            >
-              Send Us a Message
-            </h2>
-            <p className="text-[#6B6B6B] mt-2 relative z-10">
-              Fill out the form below and we'll get back to you shortly
-            </p>
+            {title && (
+              <h2
+                className="text-3xl text-[#2C2C2C] relative z-10"
+                style={{ fontFamily: 'var(--font-serif)' }}
+              >
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p className="text-[#6B6B6B] mt-2 relative z-10">
+                {description}
+              </p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
@@ -72,9 +83,11 @@ export default function ContactForm() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <label htmlFor="name" className="block text-[#2C2C2C] mb-2 font-medium">
-                  Your Name *
-                </label>
+                {labels.name && (
+                  <label htmlFor="name" className="block text-[#2C2C2C] mb-2 font-medium">
+                    {labels.name}
+                  </label>
+                )}
                 <motion.input
                   whileFocus={{ scale: 1.02 }}
                   type="text"
@@ -84,7 +97,7 @@ export default function ContactForm() {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#F5F1ED] border border-[#D4AF7A]/20 focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] transition-all shadow-sm hover:shadow-md"
-                  placeholder="Enter your name"
+                  placeholder={placeholders.name || ""}
                 />
               </motion.div>
 
@@ -93,9 +106,11 @@ export default function ContactForm() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <label htmlFor="email" className="block text-[#2C2C2C] mb-2 font-medium">
-                  Your Email *
-                </label>
+                {labels.email && (
+                  <label htmlFor="email" className="block text-[#2C2C2C] mb-2 font-medium">
+                    {labels.email}
+                  </label>
+                )}
                 <motion.input
                   whileFocus={{ scale: 1.02 }}
                   type="email"
@@ -105,7 +120,7 @@ export default function ContactForm() {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#F5F1ED] border border-[#D4AF7A]/20 focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] transition-all shadow-sm hover:shadow-md"
-                  placeholder="your@email.com"
+                  placeholder={placeholders.email || ""}
                 />
               </motion.div>
             </div>
@@ -115,42 +130,46 @@ export default function ContactForm() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <label htmlFor="subject" className="block text-[#2C2C2C] mb-2 font-medium">
-                Subject *
-              </label>
+              {labels.subject && (
+                <label htmlFor="subject" className="block text-[#2C2C2C] mb-2 font-medium">
+                  {labels.subject}
+                </label>
+              )}
               <motion.input
                 whileFocus={{ scale: 1.02 }}
                 type="text"
-                id="subject"
-                name="subject"
-                value={formData.subject}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#F5F1ED] border border-[#D4AF7A]/20 focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] transition-all shadow-sm hover:shadow-md"
-                placeholder="What is this regarding?"
-              />
-            </motion.div>
+                  id="subject"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#F5F1ED] border border-[#D4AF7A]/20 focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] transition-all shadow-sm hover:shadow-md"
+                  placeholder={placeholders.subject || ""}
+                />
+              </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              <label htmlFor="message" className="block text-[#2C2C2C] mb-2 font-medium">
-                Your Message *
-              </label>
+              {labels.message && (
+                <label htmlFor="message" className="block text-[#2C2C2C] mb-2 font-medium">
+                  {labels.message}
+                </label>
+              )}
               <motion.textarea
                 whileFocus={{ scale: 1.02 }}
-                id="message"
-                name="message"
-                value={formData.message}
-                onChange={handleChange}
-                required
-                rows={6}
-                className="w-full px-4 py-3 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#F5F1ED] border border-[#D4AF7A]/20 focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] transition-all resize-none shadow-sm hover:shadow-md"
-                placeholder="Tell us how we can help you..."
-              />
-            </motion.div>
+                  id="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                  rows={6}
+                  className="w-full px-4 py-3 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#F5F1ED] border border-[#D4AF7A]/20 focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] transition-all resize-none shadow-sm hover:shadow-md"
+                  placeholder={placeholders.message || ""}
+                />
+              </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -158,10 +177,12 @@ export default function ContactForm() {
               viewport={{ once: true }}
               className="pt-4"
             >
-              <GlowingButton type="submit" variant="primary" className="w-full">
-                <Send className="w-5 h-5 inline mr-2" />
-                Send Message
-              </GlowingButton>
+              {buttonText && (
+                <GlowingButton type="submit" variant="primary" className="w-full">
+                  <Send className="w-5 h-5 inline mr-2" />
+                  {buttonText}
+                </GlowingButton>
+              )}
             </motion.div>
           </form>
         </motion.div>
