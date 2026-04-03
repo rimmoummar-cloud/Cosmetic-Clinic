@@ -13,7 +13,7 @@ async function fetchJson(url) {
 
 async function getAboutPageData() {
   // 1) fetch pages
-  const pagesResponse = await fetchJson(`${API_BASE}/api/pages/active`);
+  const pagesResponse = await fetchJson(`http://localhost:5000/api/pages/active`);
   const pages = Array.isArray(pagesResponse)
     ? pagesResponse
     : pagesResponse.data || [];
@@ -30,7 +30,7 @@ async function getAboutPageData() {
 
   // 3) fetch sections for about page
   const sectionsResponse = await fetchJson(
-    `${API_BASE}/api/sections/page/${pageId}/active`
+    `http://localhost:5000/api/sections/page/${pageId}/active`
   );
   const sectionsRaw = Array.isArray(sectionsResponse)
     ? sectionsResponse
@@ -45,7 +45,7 @@ async function getAboutPageData() {
     sections.map(async (section) => {
       const sectionId = section.id || section._id;
       const contentResponse = await fetchJson(
-        `${API_BASE}/api/section-content/section/${sectionId}/latest`
+        `http://localhost:5000/api/section-content/section/${sectionId}/latest`
       );
       const contentEntry = contentResponse?.data ?? contentResponse;
       return {
