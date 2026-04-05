@@ -56,7 +56,7 @@ export default function BookingSection({ data }) {
             whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(212, 175, 122, 0.6)" }}
             whileTap={{ scale: 0.95 }}
          onClick={() => setOpenBooking(true)}
-           className="px-4 sm:px-6 py-2 sm:py-3 w-auto max-w-fit bg-gradient-to-r from-[#FFD700] via-[#D4AF7A] to-[#C9A66B] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
+           className="px-4 sm:px-6 py-2 sm:py-3 w-auto max-w-fit bg-gradient-to-r from-[#D4AF7A] via-[#D4AF7A] to-[#D4AF7A] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
           >
             <span className="relative z-10">{buttonText}</span>
             <motion.div

@@ -61,7 +61,7 @@ useEffect(() => {
     <motion.header 
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-     className={`sticky top-0 z-50 transition-all duration-300 ${
+     className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
   isScrolled
     ? "bg-white/80 backdrop-blur-xl border-b border-[#D4AF7A]/20 shadow-lg shadow-[#D4AF7A]/5"
     : "bg-transparent"
@@ -89,7 +89,7 @@ useEffect(() => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8 ml-auto">
             {navigation.map((item) => (
               <Link
                 key={item.path}
@@ -119,13 +119,13 @@ useEffect(() => {
 
           {/* CTA Button */}
           
-          <div className="hidden md:block">
+          <div className="hidden md:block ml-6">
             {/* <Link to="/booking"> */}
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(212, 175, 122, 0.6)" }}
                 whileTap={{ scale: 0.95 }}
              onClick={() => setOpenBooking(true)}
-                className="px-6 py-3 bg-gradient-to-r from-[#FFD700] via-[#D4AF7A] to-[#C9A66B] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
+                className="px-6 py-3 bg-gradient-to-r from-[#D4AF7A] via-[#D4AF7A] to-[#D4AF7A] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
               >
                 <span className="relative z-10">Book Now</span>
                 <motion.div
@@ -202,7 +202,7 @@ useEffect(() => {
                 onClick={() =>{ setMobileMenuOpen(false);
                        setOpenBooking(true)
                     }}
-                className="px-6 py-3 bg-gradient-to-r from-[#FFD700] via-[#D4AF7A] to-[#C9A66B] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
+                className="px-6 py-3 bg-gradient-to-r from-[#D4AF7A] via-[#D4AF7A] to-[#D4AF7A] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
               >
                 <span className="relative z-10">Book Now</span>
                 <motion.div

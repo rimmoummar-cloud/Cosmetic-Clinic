@@ -6,7 +6,7 @@ import { GlowingButton } from "../../../components/GlowingButtom";
 import { FloatingElement } from "../../../components/AnimatedElements";
 
 export default function Hero({ onBookingClick, data }) {
-  console.log("HERO COMPONENT DATA:", data);
+
   // const badgeText = data?.badge || data?.label || data?.eyebrow;
   // const title = data?.title || data?.heading || "";
   // const highlight = data?.highlight || data?.accent || data?.emphasis || "";
@@ -53,10 +53,13 @@ const buttonTextBooking = data?.buttonTextBooking;
 
 
   return (
-    <section className="relative h-[700px] md:h-[800px] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen h-[700px] md:h-[800px] flex items-center justify-center overflow-hidden pt-0 mt-0">
       {/* Animated background gradient */}
       <motion.div 
-        className="absolute inset-0 bg-gradient-to-r from-[#FAF8F5] via-[#FAF8F5]/90 to-transparent z-10"
+        className="absolute inset-0 z-10"
+        style={{
+          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 239, 230, 0.85) 50%, rgba(255, 255, 255, 0.7) 100%)"
+        }}
         animate={{
           backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
         }}
@@ -70,7 +73,7 @@ const buttonTextBooking = data?.buttonTextBooking;
       <ImageFallBack
         src={backgroundImage}
         alt={title || "Hero background"}
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover object-center"
       />
       
       {/* Floating decorative elements */}
@@ -106,7 +109,7 @@ const buttonTextBooking = data?.buttonTextBooking;
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-6xl md:text-8xl mb-6 text-[#2C2C2C] leading-tight"
+            className="text-5xl italic md:text-8xl mb-6 text-[#2C2C2C] leading-tight"
             style={{ fontFamily: 'var(--font-serif)' }}
           >
             {title}
@@ -124,7 +127,7 @@ const buttonTextBooking = data?.buttonTextBooking;
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-xl md:text-2xl text-[#6B6B6B] mb-10 leading-relaxed"
+            className="text-xl md:text-1xl text-[#6B6B6B] mb-10 leading-relaxed"
           >
             {description}
           </motion.p>
@@ -135,20 +138,21 @@ const buttonTextBooking = data?.buttonTextBooking;
             transition={{ delay: 0.5 }}
             className="flex flex-col sm:flex-row gap-4"
           >
-            {primaryCta && (
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(212, 175, 122, 0.6)" }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onBookingClick(true)}
-                className="px-4 sm:px-6 py-2 sm:py-3 w-auto max-w-fit bg-gradient-to-r from-[#FFD700] via-[#D4AF7A] to-[#C9A66B] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
-              >
-                <span className="relative z-10">{buttonTextBooking}</span>
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-[#C9A66B] to-[#FFD700] opacity-0 group-hover:opacity-100 transition-opacity"
-                  initial={false}
-                />
-              </motion.button>
-            )}
+         {primaryCta && (
+  <motion.button
+    whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(212, 175, 122, 0.6)" }}
+    whileTap={{ scale: 0.95 }}
+    onClick={() => onBookingClick(true)}
+    className="px-4 sm:px-6 py-2 sm:py-3 w-auto max-w-fit bg-gradient-to-r from-[#D4AF7A] via-[#D4AF7A] to-[#D4AF7A] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
+  >
+    <span className="relative z-10">{buttonTextBooking}</span>
+
+    <motion.div
+      className="absolute inset-0 bg-gradient-to-r from-[#D4AF7A] via-[#D4AF7A] to-[#D4AF7A] opacity-0 group-hover:opacity-100 transition-opacity"
+      initial={false}
+    />
+  </motion.button>
+)}
 
            {primaryCta && (
   <Link href={primaryLink || "#"}>
