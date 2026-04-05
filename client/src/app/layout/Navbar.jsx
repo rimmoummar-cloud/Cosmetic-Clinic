@@ -1,6 +1,6 @@
 "use client"
 // src/components/Navbar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles, Menu, X } from "lucide-react";
@@ -36,6 +36,20 @@ const isActive = (path) => {
   return path === "/" ? location === "/" : location.startsWith(path);
 };
 
+
+const [isScrolled, setIsScrolled] = useState(false);
+
+useEffect(() => {
+  const handleScroll = () => {
+    setIsScrolled(window.scrollY > 50);
+  };
+
+  window.addEventListener("scroll", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
+}, []);
   
   return (
     <>
@@ -47,8 +61,11 @@ const isActive = (path) => {
     <motion.header 
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#D4AF7A]/20 shadow-lg shadow-[#D4AF7A]/5"
-    >
+     className={`sticky top-0 z-50 transition-all duration-300 ${
+  isScrolled
+    ? "bg-white/80 backdrop-blur-xl border-b border-[#D4AF7A]/20 shadow-lg shadow-[#D4AF7A]/5"
+    : "bg-transparent"
+}`}  >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
@@ -210,4 +227,3 @@ const isActive = (path) => {
     </>
   );
 }
-  
