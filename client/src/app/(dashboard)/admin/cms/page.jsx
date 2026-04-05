@@ -94,6 +94,10 @@ function FieldRenderer({
   onRemoveItem,
 }) {
   const hasLabel = Boolean(label);
+  const fieldKey = path[path.length - 1] || label || "";
+  const isImageField =
+    typeof value === "string" &&
+    /(image|img|photo|picture|background|banner|logo)/i.test(fieldKey);
 
   if (Array.isArray(value)) {
     return (
@@ -185,6 +189,42 @@ function FieldRenderer({
             className="h-4 w-4 accent-primary"
           />
           <span className="text-sm text-gray-600">Active</span>
+        </div>
+      ) : isImageField ? (
+        <div className="space-y-3">
+          {value ? (
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+              <img
+                src={value}
+                alt={fieldKey}
+                className="h-40 w-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">
+              No image selected
+            </div>
+          )}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const objectUrl = URL.createObjectURL(file);
+                onChange(path, objectUrl);
+              }}
+              className="w-full cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none transition file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:border-primary"
+            />
+            <input
+              type="text"
+              value={value ?? ""}
+              onChange={(e) => onChange(path, e.target.value)}
+              placeholder="Or paste image URL"
+              className="w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none transition focus:border-primary"
+            />
+          </div>
         </div>
       ) : isLong ? (
         <textarea

@@ -6,49 +6,23 @@ import { GlowingButton } from "../../../components/GlowingButtom";
 import { FloatingElement } from "../../../components/AnimatedElements";
 
 export default function Hero({ onBookingClick, data }) {
+const badgeText = data?.content?.badge;
 
-  // const badgeText = data?.badge || data?.label || data?.eyebrow;
-  // const title = data?.title || data?.heading || "";
-  // const highlight = data?.highlight || data?.accent || data?.emphasis || "";
-  // const description = data?.description || data?.subtitle || "";
-  // const primaryCta =
-  //   data?.primaryCta ||
-  //   data?.primary_button ||
-  //   data?.primaryButtonText ||
-  //   data?.ctaPrimary;
-  // const secondaryCta =
-  //   data?.secondaryCta ||
-  //   data?.secondary_button ||
-  //   data?.secondaryButtonText ||
-  //   data?.ctaSecondary;
-  // const secondaryLink = data?.secondaryLink || data?.secondaryHref || "/services";
-  // const backgroundImage =
-  //   data?.image ||
-  //   data?.backgroundImage ||
-  //   data?.heroImage ||
-  //   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+const title = data?.content?.title;
 
+const highlight = data?.content?.highlight;
 
-const badgeText = data?.badge;
+const description = data?.content?.description;
 
-const title = data?.title;
+const subtitle = data?.content?.subtitle;
 
-const highlight = data?.highlight;
+const primaryCta = data?.content?.buttonText;
 
-const description = data?.description;
+const primaryLink  = data?.content?.buttonLink;
 
-const subtitle = data?.subtitle;
+const backgroundImage = data?.content?.image; 
 
-const primaryCta = data?.buttonText;
-
-const primaryLink  = data?.buttonLink;
-
-const backgroundImage = data?.image;
-
-const buttonTextBooking = data?.buttonTextBooking;
-
-
-
+const buttonTextBooking = data?.content?.buttonTextBooking;
 
 
 
@@ -60,6 +34,7 @@ const buttonTextBooking = data?.buttonTextBooking;
         style={{
           background: "linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 239, 230, 0.85) 50%, rgba(255, 255, 255, 0.7) 100%)"
         }}
+  
         animate={{
           backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
         }}
@@ -105,6 +80,26 @@ const buttonTextBooking = data?.buttonTextBooking;
             )}
           </motion.div>
           
+
+   <motion.h1 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+           className="text-xl md:text-1xl text-[#D4AF7A] mb-10 leading-relaxed"
+            style={{ fontFamily: 'var(--font-serif)' }}
+          >
+            {subtitle}
+            {highlight && (
+              <>
+                <br />
+                <span className="bg-gradient-to-r from-[#FFD700] via-[#D4AF7A] to-[#C9A66B] bg-clip-text text-transparent">
+                  {highlight}
+                </span>
+              </>
+            )}
+          </motion.h1>
+
+
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
