@@ -152,13 +152,21 @@ useEffect(() => {
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="md:hidden overflow-hidden border-t border-[#D4AF7A]/10"
+              className="md:hidden fixed inset-0 h-screen w-full bg-white z-50 flex flex-col"
             >
-              <div className="flex flex-col gap-2 py-4">
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#D4AF7A]/10 text-[#2C2C2C]"
+                aria-label="Close menu"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="flex flex-col items-center justify-center text-center space-y-6 h-full w-full px-6">
                 {navigation.map((item, index) => (
                   <motion.div
                     key={item.path}
@@ -169,7 +177,7 @@ useEffect(() => {
                     <Link
                       href={item.path}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`block py-3 px-4 rounded-xl transition-all ${
+                      className={`block w-full py-3 px-4 rounded-xl transition-all ${
                         isActive(item.path)
                           ? "bg-gradient-to-r from-[#FFD700]/20 to-[#D4AF7A]/20 text-[#D4AF7A] shadow-md"
                           : "text-[#2C2C2C] hover:bg-[#D4AF7A]/10"
@@ -202,7 +210,7 @@ useEffect(() => {
                 onClick={() =>{ setMobileMenuOpen(false);
                        setOpenBooking(true)
                     }}
-                className="px-6 py-3 bg-gradient-to-r from-[#D4AF7A] via-[#D4AF7A] to-[#D4AF7A] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group"
+                className="px-6 py-3 bg-gradient-to-r from-[#D4AF7A] via-[#D4AF7A] to-[#D4AF7A] text-white rounded-full font-medium shadow-lg shadow-[#D4AF7A]/40 hover:shadow-xl relative overflow-hidden group w-full max-w-xs mx-auto"
               >
                 <span className="relative z-10">Book Now</span>
                 <motion.div

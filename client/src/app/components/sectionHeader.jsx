@@ -76,6 +76,7 @@ export function SectionHeader({ label, title, description }) {
 
       className="
         text-center
+          mt-24
         mb-16
         w-full
         px-4
