@@ -16,7 +16,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "plugins": [
       {
         "name": "next"
@@ -29,8 +29,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "**/*.ts",
-    "**/*.tsx"
-, "src/app/(dashboard)/admin/messages/page.jsx"  ],
+    "**/*.tsx",
+    "src/app/(dashboard)/admin/messages/page.jsx"
+  ],
   "exclude": [
     "node_modules"
   ]

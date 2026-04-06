@@ -14,7 +14,7 @@ const highlight = data?.content?.highlight;
 
 const description = data?.content?.description;
 
-const subtitle = data?.content?.subtitle;
+// const subtitle = data?.content?.subtitle;
 
 const primaryCta = data?.content?.buttonText;
 
@@ -24,6 +24,7 @@ const backgroundImage = data?.content?.image;
 
 const buttonTextBooking = data?.content?.buttonTextBooking;
 
+const phone = data?.content?.phone;
 
 
   return (
@@ -32,7 +33,7 @@ const buttonTextBooking = data?.content?.buttonTextBooking;
       <motion.div 
         className="absolute inset-0 z-10"
         style={{
-          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 239, 230, 0.85) 50%, rgba(255, 255, 255, 0.7) 100%)"
+          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 239, 230, 0.85) 40%, rgba(255, 255, 255, 0.4) 100%)"
         }}
   
         animate={{
@@ -100,7 +101,7 @@ const buttonTextBooking = data?.content?.buttonTextBooking;
           </motion.h1> */}
 
 
-
+{/* 
   <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -124,7 +125,7 @@ const buttonTextBooking = data?.content?.buttonTextBooking;
           <span className="text-sm uppercase tracking-wider bg-gradient-to-r from-[#D4AF7A] to-[#C9A66B] bg-clip-text text-transparent font-medium">
             {subtitle}
           </span>
-        </motion.div>
+        </motion.div> */}
 
 
 
@@ -157,6 +158,16 @@ const buttonTextBooking = data?.content?.buttonTextBooking;
             {description}
           </motion.p>
           
+  <motion.p 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="md:text-1xl text-[#6B6B6B] mb-10 leading-relaxed"
+          >
+            {phone}
+          </motion.p>
+          
+
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -176,6 +187,17 @@ const buttonTextBooking = data?.content?.buttonTextBooking;
       className="absolute inset-0 bg-gradient-to-r from-[#D4AF7A] via-[#D4AF7A] to-[#D4AF7A] opacity-0 group-hover:opacity-100 transition-opacity"
       initial={false}
     />
+       <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0"
+        animate={{
+          x: ["-200%", "200%"],
+        }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+      />
   </motion.button>
 )}
 
