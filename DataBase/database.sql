@@ -42,17 +42,42 @@ CREATE INDEX idx_customers_email ON customers(email);
 -- ==========================
 -- جدول الحجز Bookings
 -- ==========================
+-- CREATE TABLE bookings (
+--     id SERIAL PRIMARY KEY,
+--     customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
+--     service_id INTEGER REFERENCES services(id) ON DELETE CASCADE,
+--     booking_date DATE NOT NULL,
+--     booking_time TIME NOT NULL,
+--     duration_minutes INTEGER NOT NULL, -- لتحديد مدة الخدمة على حسب service
+--     status TEXT DEFAULT 'pending', -- pending, confirmed, completed, cancelled, no_show
+--     notes TEXT,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
+
 CREATE TABLE bookings (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
-    service_id INTEGER REFERENCES services(id) ON DELETE CASCADE,
     booking_date DATE NOT NULL,
     booking_time TIME NOT NULL,
-    duration_minutes INTEGER NOT NULL, -- لتحديد مدة الخدمة على حسب service
+    duration_minutes INTEGER NOT NULL, -- مجموع مدة كل الخدمات
+    total_amount NUMERIC(10,2) DEFAULT 0, -- السعر الإجمالي لكل الحجز
     status TEXT DEFAULT 'pending', -- pending, confirmed, completed, cancelled, no_show
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE booking_services (
+    id SERIAL PRIMARY KEY,
+    booking_id INTEGER REFERENCES bookings(id) ON DELETE CASCADE,
+    service_id INTEGER REFERENCES services(id) ON DELETE CASCADE,
+    duration_minutes INTEGER NOT NULL, -- مدة كل خدمة على حدة
+    price NUMERIC(10,2) NOT NULL DEFAULT 0 -- سعر كل خدمة
+);
+
+
+
+
 
 -- index لتحسين البحث عن الوقت والتاريخ
 CREATE INDEX idx_bookings_date_time ON bookings(booking_date, booking_time);

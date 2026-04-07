@@ -1,5 +1,5 @@
 import express from "express";
-import { createBooking, getAvailableSlots } from "../controllers/bookingController.js";
+import { createBooking, getAvailableSlotsMulti ,getallbookingss } from "../controllers/bookingController.js";
 
 const router = express.Router();
 
@@ -7,6 +7,7 @@ const router = express.Router();
 router.post("/", createBooking);
 
 // get available time slots
-router.get("/available-slots", getAvailableSlots);
-
+// router.get("/available-slots", getAvailableSlots);
+router.get("/available-slots-multi", getAvailableSlotsMulti);
+router.get("/", getallbookingss);
 export default router;
