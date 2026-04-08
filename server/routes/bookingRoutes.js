@@ -10,4 +10,7 @@ router.post("/", createBooking);
 // router.get("/available-slots", getAvailableSlots);
 router.get("/available-slots-multi", getAvailableSlotsMulti);
 router.get("/", getallbookingss);
+
+
+
 export default router;

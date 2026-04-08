@@ -26,7 +26,6 @@ import {
   calculateEndTime,
   formatDateForDisplay,
   createBooking as createBookingAPI,
-  filterPastSlots,
 } from "./dataBooking";
 
 // const generateDates = () => {
@@ -40,71 +39,30 @@ import {
 //     };
 //   });
 // };
+createBookingAPI
+const generateDates = () => {
+  const today = new Date();
 
-const generateDates = (availableSlotsByDate = {}) => {
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const now = new Date();
-  const currentHour = now.getHours();
-  const workingHourEnd = 18; // 6 PM
 
   return Array.from({ length: 14 }).map((_, i) => {
-    const date = new Date(now);
-    date.setDate(now.getDate() + i);
-
-    const dateStr = date.toLocaleDateString("en-CA", { timeZone: userTimeZone });
-    const todayStr = now.toLocaleDateString("en-CA", { timeZone: userTimeZone });
-
-    // فلترة اليوم الحالي حسب الوقت
-    if (dateStr === todayStr && currentHour >= workingHourEnd) {
-      console.log(`[generateDates] Skipping today (${todayStr}) because it's past working hours (${currentHour}:00)`);
-      return null;
-    }
-
-    // فلترة الأيام التي لا يوجد فيها slots متبقية
-    if (availableSlotsByDate[dateStr]?.length === 0) {
-      console.log(`[generateDates] Skipping ${dateStr} because no available slots`);
-      return null;
-    }
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
 
     return {
-      label: date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: userTimeZone }),
-      value: dateStr,
+      label: date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        timeZone: userTimeZone,
+      }),
+
+      value: date.toLocaleDateString("en-CA", {
+        timeZone: userTimeZone,
+      }),
     };
-  }).filter(Boolean);
+  });
 };
-
-
-// const generateDates = () => {
-//   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-//   const now = new Date();
-//   const currentHour = now.getHours();
-//   const workingHourEnd = 18; // 6 PM
-
-//   return Array.from({ length: 14 }).map((_, i) => {
-//     const date = new Date(now);
-//     date.setDate(now.getDate() + i);
-
-//     const dateStr = date.toLocaleDateString("en-CA", { timeZone: userTimeZone });
-//     const todayStr = now.toLocaleDateString("en-CA", { timeZone: userTimeZone });
-
-//     // Skip today if it's past working hours (in user timezone)
-//     if (dateStr === todayStr && i === 0 && currentHour >= workingHourEnd) {
-//       console.log(`[generateDates] Skipping today (${todayStr}) because it's past working hours (current time: ${currentHour}:00)`);
-//       return null;
-//     }
-
-//     return {
-//       label: date.toLocaleDateString("en-US", {
-//         weekday: "short",
-//         month: "short",
-//         day: "numeric",
-//         timeZone: userTimeZone,
-//       }),
-
-//       value: dateStr,
-//     };
-//   }).filter(Boolean);
-// };
 
 
 
@@ -133,13 +91,8 @@ export function BookingForm({ isOpen, onClose }) {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
 
-  // const availableDates = useMemo(() => generateDates(), []);
-  const availableDates = useMemo(() => generateDates(
-  availableSlots.reduce((acc, slot) => {
-    acc[selectedDate] = availableSlots; // جمع slots حسب التاريخ
-    return acc;
-  }, {})
-), [availableSlots, selectedDate]);
+  const availableDates = useMemo(() => generateDates(), []);
+  
   // Calculate totals
   const totalPrice = selectedServices.reduce((sum, item) => sum + (item.price || 0), 0);
   const totalDuration = getServicesDuration(selectedServices);
@@ -207,12 +160,7 @@ export function BookingForm({ isOpen, onClose }) {
         setLoadingSlots(true);
         const serviceIds = selectedServices.map(s => s.id);
         const slots = await getAvailableSlots(serviceIds, selectedDate);
-        
-        // Filter past slots - this is now done inside getAvailableSlots,
-        // but we can also apply it here for consistency if needed
-        const filteredSlots = filterPastSlots(slots, selectedDate);
-        
-        setAvailableSlots(filteredSlots);
+        setAvailableSlots(slots);
         
         // Clear previously selected time as slots changed
         setSelectedTime("");

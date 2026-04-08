@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 import { timeToMinutes, minutesToTime } from "../utils/converttime.js";
+import { DateTime } from "luxon";
 // ==========================
 // Customer functions
 // ==========================
@@ -63,12 +64,13 @@ export const createBookingMulti = async (client = null, customer_id, serviceIds 
 
         servicesData.push({ serviceId, duration, price });
     }
-
+// const formattedDate = booking_date;
+const formattedDate = DateTime.fromISO(booking_date).toISODate();
     // 2️⃣ إنشاء الـ booking الرئيسي
     const bookingRes = await queryExecutor.query(
         `INSERT INTO bookings (customer_id, booking_date, booking_time, duration_minutes, total_amount)
          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [customer_id, booking_date, booking_time, totalDuration, totalAmount]
+        [customer_id, formattedDate, booking_time, totalDuration, totalAmount]
     );
 
     const booking = bookingRes.rows[0];
@@ -140,7 +142,7 @@ export const checkTimeConflictMulti = async (client = null, serviceIds = [], boo
 
     const bookingsRes = await client.query(
         "SELECT booking_time, duration_minutes FROM bookings WHERE booking_date=$1 FOR UPDATE",
-        [booking_date]
+        [DateTime.fromISO(booking_date).toISODate()]
     );
 
     const blockedSlots = [];
@@ -201,9 +203,28 @@ export const getBookingsByDate = async (client = null,booking_date) => {
      const queryExecutor = client || db;
   const res = await queryExecutor.query(
     "SELECT booking_time, duration_minutes FROM bookings WHERE booking_date=$1 AND status IN ('confirmed', 'pending')",
-    [booking_date]
+   [DateTime.fromISO(booking_date).toISODate()]
   );
   return res.rows;
 };
+// -------------------------------------------------------------------------
+// to swetch the booking that is time more than 24 hour pending to cancel
+// -------------------------------------------------------------------------
 
+// export const cancelExpiredPendingBookings = async () => {
+//   try {
+//     // الوقت الحالي UTC
+//     const nowUTC = DateTime.utc().toISO();
 
+//     const res = await db.query(`
+//       UPDATE bookings
+//       SET status = 'cancel'
+//       WHERE status = 'pending'
+//       AND created_at + interval '48 hours' <= $1
+//     `, [nowUTC]);
+
+//     return res.rowCount;
+//   } catch (error) {
+//     console.error("Cancel pending error:", error);
+//   }
+// };

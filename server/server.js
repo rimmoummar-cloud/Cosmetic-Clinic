@@ -1,3 +1,5 @@
+process.env.TZ = "UTC";
+// process.env.TZ = "Asia/Amman";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -39,4 +41,8 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port  ${PORT}`);
+ 
+  // console.log(new Date());
+  // console.log(new Date().toLocaleString());
+  // console.log(new Date().toISOString());
 });
