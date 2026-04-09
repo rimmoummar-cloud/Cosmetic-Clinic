@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { DateTime } from "luxon";
 import { GlowingButton } from "../../components/GlowingButtom";
 import {
   getCategories,
@@ -141,10 +142,14 @@ useEffect(() => {
   const fetchWorkingHours = async () => {
     try {
       setLoadingWorkingHours(true);
-      // const workingHours = await getWorkingHoursByDay(selectedDate);
       const workingHours = await getWorkingHoursByDay(selectedDate); // ✅
       if (workingHours?.end_time) {
-        setWorkingHourEnd(parseInt(workingHours.end_time.split(":")[0]));
+        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const endDt = DateTime.fromISO(
+          `${selectedDate}T${workingHours.end_time}`,
+          { zone: userTimeZone }
+        );
+        setWorkingHourEnd(endDt.hour);
       }
     } catch (error) {
       console.error("Failed to load working hours:", error);
@@ -294,25 +299,17 @@ useEffect(() => {
 
     setBookingLoading(true);
     try {
-      // await createBookingAPI({
-      //   name: userInfo.name,
-      //   email: userInfo.email,
-      //   phone: userInfo.phone,
-      //   serviceIds: selectedServices.map(s => s.id),
-      //   booking_date: selectedDate,
-      //   booking_time: selectedTime,
-      //   note: note
-      // });
+      const localDateTime = new Date(`${selectedDate}T${selectedTime}`);
+      const booking_datetime = localDateTime.toISOString();
 
-await createBookingAPI({
-  name: userInfo.name,
-  email: userInfo.email,
-  phone: userInfo.phone,
-  serviceIds: selectedServices.map(s => s.id),
-  booking_date: selectedDate,
-  booking_time: selectedTime,
-  note: note
-});
+      await createBookingAPI({
+        name: userInfo.name,
+        email: userInfo.email,
+        phone: userInfo.phone,
+        serviceIds: selectedServices.map((s) => s.id),
+        booking_datetime,
+        note: note
+      });
 
 
 

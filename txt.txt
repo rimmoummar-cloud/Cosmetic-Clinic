@@ -232,27 +232,18 @@ export function BookingForm({ isOpen, onClose }) {
 
     setBookingLoading(true);
     try {
-      // await createBookingAPI({
-      //   name: userInfo.name,
-      //   email: userInfo.email,
-      //   phone: userInfo.phone,
-      //   serviceIds: selectedServices.map(s => s.id),
-      //   booking_date: selectedDate,
-      //   booking_time: selectedTime,
-      //   note: note
-      // });
+      const localDateTime = new Date(`${selectedDate}T${selectedTime}`);
+      const booking_datetime = localDateTime.toISOString();
 
-await createBookingAPI({
-  name: userInfo.name,
-  email: userInfo.email,
-  phone: userInfo.phone,
-  serviceIds: selectedServices.map(s => s.id),
-  booking_date: selectedDate,
-  booking_time: selectedTime,
-  note: note,
-
-  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-});
+      await createBookingAPI({
+        name: userInfo.name,
+        email: userInfo.email,
+        phone: userInfo.phone,
+        serviceIds: selectedServices.map(s => s.id),
+        booking_datetime,
+        note: note,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
 
 
 

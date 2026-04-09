@@ -85,33 +85,6 @@ export function filterPastSlots(slots, selectedDate) {
 
 
 /**
- * Convert booking date and time from user's local timezone to UTC
- * @param {string} bookingDate - Date in YYYY-MM-DD format (in user timezone)
- * @param {string} bookingTime - Time in HH:MM format (in user timezone)
- * @returns {Object} { utcDate: string, utcTime: string } in UTC
- */
-export function convertToUTC(bookingDate, bookingTime) {
-  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  // Parse the date and time in user's timezone
-  const dateTimeStr = `${bookingDate}T${bookingTime}`;
-  const userDateTime = DateTime.fromISO(dateTimeStr, {
-    zone: userTimeZone,
-  });
-
-  // Convert to UTC
-  const utcDateTime = userDateTime.toUTC();
-
-  console.log(
-    `[convertToUTC] Converting booking: ${bookingDate} ${bookingTime} (${userTimeZone}) -> UTC: ${utcDateTime.toFormat("yyyy-MM-dd HH:mm")}`
-  );
-
-  return {
-    utcDate: utcDateTime.toFormat("yyyy-MM-dd"),
-    utcTime: utcDateTime.toFormat("HH:mm"),
-  };
-}
-
-/**
  * Get working hours for a specific day
  * @param {string} dayName - Day name in English ("Monday", "Tuesday", etc.)
  * @returns {Promise<Object>} Working hours { start_time: "HH:MM", end_time: "HH:MM" }
@@ -234,28 +207,6 @@ export async function getServices(categoryId) {
  * @param {string} bookingDate - Date in YYYY-MM-DD format
  * @returns {Promise<Array>} Array of available time slots in HH:MM format
  */
-// export async function getAvailableSlots(serviceIds, bookingDate) {
-//   try {
-//     // Convert array to comma-separated string
-//     const serviceIdsParam = Array.isArray(serviceIds) ? serviceIds.join(",") : serviceIds;
-    
-//     const response = await fetch(
-//       `${API_BASE_URL}/bookings/available-slots-multi?serviceIds=${serviceIdsParam}&booking_date=${bookingDate}`
-//     );
-    
-//     if (!response.ok) {
-//       throw new Error(`Failed to fetch available slots: ${response.statusText}`);
-//     }
-    
-//     const data = await response.json();
-//     return data.availableSlots || [];
-//   } catch (error) {
-//     console.error("Error fetching available slots:", error);
-//     throw error;
-//   }
-// }
-
-
 export async function getAvailableSlots(serviceIds, bookingDate) {
   try {
 
@@ -271,24 +222,23 @@ export async function getAvailableSlots(serviceIds, bookingDate) {
       ? serviceIds.join(",")
       : serviceIds;
 
-    // const url =
-    //   `${API_BASE_URL}/bookings/available-slots-multi` +
-    //   `?serviceIds=${encodeURIComponent(serviceIdsParam)}` +
-    //   `&booking_date=${encodeURIComponent(bookingDate)}`;
+    const userTimeZone =
+      Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-const userTimeZone =
-  Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const bookingDateTime = new Date(`${bookingDate}T12:00:00`);
+    const booking_datetime = bookingDateTime.toISOString();
 
-const url =
-  `${API_BASE_URL}/bookings/available-slots-multi` +
-  `?serviceIds=${encodeURIComponent(serviceIdsParam)}` +
-  `&booking_date=${encodeURIComponent(bookingDate)}` +
-  `&timeZone=${encodeURIComponent(userTimeZone)}`;
+    const url =
+      `${API_BASE_URL}/bookings/available-slots-multi` +
+      `?serviceIds=${encodeURIComponent(serviceIdsParam)}` +
+      `&booking_datetime=${encodeURIComponent(booking_datetime)}` +
+      `&timeZone=${encodeURIComponent(userTimeZone)}`;
 
     // IMPORTANT: timeZone param tells backend how to interpret "today" relative to user's timezone
     console.log("Fetching slots with:", {
       serviceIdsParam,
       bookingDate,
+      booking_datetime,
       userTimeZone
     });
 
@@ -512,23 +462,13 @@ export function getTimezoneOffset() {
  * @param {string} bookingData.email - Customer email
  * @param {string} bookingData.phone - Customer phone
  * @param {Array<number>} bookingData.serviceIds - Array of service IDs
- * @param {string} bookingData.booking_date - Date in YYYY-MM-DD format
- * @param {string} bookingData.booking_time - Time in HH:MM format
+ * @param {string} bookingData.booking_datetime - ISO string in UTC
  * @param {string} bookingData.note - Optional booking note
  * @returns {Promise<Object>} Created booking object
  */
 export async function createBooking(bookingData) {
   try {
-    // Convert user's local time to UTC before sending to backend
-    const { utcDate, utcTime } = convertToUTC(
-      bookingData.booking_date,
-      bookingData.booking_time
-    );
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-    console.log(
-      `[createBooking] Converting ${bookingData.booking_date} ${bookingData.booking_time} (${userTimeZone}) -> UTC: ${utcDate} ${utcTime}`
-    );
 
     const response = await fetch(`${API_BASE_URL}/bookings`, {
       method: "POST",
@@ -540,18 +480,28 @@ export async function createBooking(bookingData) {
         email: bookingData.email,
         phone: bookingData.phone,
         serviceIds: bookingData.serviceIds,
-        booking_date: utcDate,
-        booking_time: utcTime,
-        note: bookingData.note || "",
+        booking_datetime: bookingData.booking_datetime,
+        // note: bookingData.note || "",
         timeZone: userTimeZone
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `Booking failed: ${response.statusText}`);
-    }
+    // if (!response.ok) {
+    //   const errorData = await response.json();
+    //   throw new Error(errorData.message || `Booking failed: ${response.statusText}`);
+    // }
+if (!response.ok) {
+  let errorMessage = "Booking failed";
 
+  try {
+    const errorData = await response.json();
+    errorMessage = errorData.message || errorMessage;
+  } catch (err) {
+    errorMessage = `Server error: ${response.status}`;
+  }
+
+  throw new Error(errorMessage);
+}
     const data = await response.json();
     return data;
   } catch (error) {
@@ -573,6 +523,5 @@ export default {
   createBooking,
   getNowInBusinessTZ,
   filterPastSlots,
-  convertToUTC,
   getWorkingHoursByDay
 };

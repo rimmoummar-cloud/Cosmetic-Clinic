@@ -46,8 +46,7 @@ CREATE INDEX idx_customers_email ON customers(email);
 --     id SERIAL PRIMARY KEY,
 --     customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
 --     service_id INTEGER REFERENCES services(id) ON DELETE CASCADE,
---     booking_date DATE NOT NULL,
---     booking_time TIME NOT NULL,
+--     booking_datetime TIMESTAMPTZ NOT NULL,
 --     duration_minutes INTEGER NOT NULL, -- لتحديد مدة الخدمة على حسب service
 --     status TEXT DEFAULT 'pending', -- pending, confirmed, completed, cancelled, no_show
 --     notes TEXT,
@@ -57,8 +56,7 @@ CREATE INDEX idx_customers_email ON customers(email);
 CREATE TABLE bookings (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
-    booking_date DATE NOT NULL,
-    booking_time TIME NOT NULL,
+    booking_datetime TIMESTAMPTZ NOT NULL,
     duration_minutes INTEGER NOT NULL, -- مجموع مدة كل الخدمات
     total_amount NUMERIC(10,2) DEFAULT 0, -- السعر الإجمالي لكل الحجز
     status TEXT DEFAULT 'pending', -- pending, confirmed, completed, cancelled, no_show
@@ -80,7 +78,7 @@ CREATE TABLE booking_services (
 
 
 -- index لتحسين البحث عن الوقت والتاريخ
-CREATE INDEX idx_bookings_date_time ON bookings(booking_date, booking_time);
+CREATE INDEX idx_bookings_datetime ON bookings(booking_datetime);
 
 -- ==========================
 -- جدول Working Hours لكل يوم
