@@ -7,7 +7,6 @@
 import { DateTime } from "luxon";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-const BUSINESS_TIMEZONE = "America/Toronto";
 
 /**
  * Get the current time in the user's local timezone
@@ -113,6 +112,82 @@ export function convertToUTC(bookingDate, bookingTime) {
 }
 
 /**
+ * Get working hours for a specific day
+ * @param {string} dayName - Day name in English ("Monday", "Tuesday", etc.)
+ * @returns {Promise<Object>} Working hours { start_time: "HH:MM", end_time: "HH:MM" }
+ */
+
+// في dataBooking.js - استبدل الدالة كاملاً
+export const getWorkingHoursByDay = async (dateStr) => {
+  if (!dateStr) throw new Error("Date is required");
+
+  const dayNumber = new Date(dateStr + "T00:00:00").getDay();
+
+  const response = await fetch(`${API_BASE_URL}/workingHours/day/${dayNumber}`);
+  if (!response.ok) throw new Error("Failed to fetch working hours");
+
+  const data = await response.json();
+  return data || null;
+};
+// export async function getWorkingHoursForDay(dayName) {
+//   try {
+//     const daysMap = {
+//       Sunday: 0,
+//       Monday: 1,
+//       Tuesday: 2,
+//       Wednesday: 3,
+//       Thursday: 4,
+//       Friday: 5,
+//       Saturday: 6
+//     };
+
+//     const dayIndex = daysMap[dayName];
+
+//     const response = await fetch(`${API_BASE_URL}/workingHours/day/${dayIndex}`);
+//     if (!response.ok) {
+//       throw new Error(`Failed to fetch working hours: ${response.statusText}`);
+//     }
+
+//     const data = await response.json();
+//     return {
+//       start_time: data[0]?.start_time || "09:00",
+//       end_time: data[0]?.end_time || "18:00"
+//     };
+//   } catch (error) {
+//     console.error("Error fetching working hours:", error);
+//     return { start_time: "09:00", end_time: "18:00" };
+//   }
+// }
+// export async function getWorkingHoursForDay(dayName) {
+//   try {
+// const daysMap = {
+//   Sunday: 0,
+//   Monday: 1,
+//   Tuesday: 2,
+//   Wednesday: 3,
+//   Thursday: 4,
+//   Friday: 5,
+//   Saturday: 6
+// };
+
+// const dayIndex = daysMap[dayName];
+//     const response = await fetch(`${API_BASE_URL}/workingHours/day/${dayIndex}`);
+//     if (!response.ok) {
+//       throw new Error(`Failed to fetch working hours: ${response.statusText}`);
+//     }
+//     const data = await response.json();
+//     return {
+//       start_time: data.start_time || "09:00",
+//       end_time: data.end_time || "18:00"
+//     };
+//   } catch (error) {
+//     console.error("Error fetching working hours:", error);
+//     // Return default working hours if fetch fails
+//     return { start_time: "09:00", end_time: "18:00" };
+//   }
+// }
+
+/**
  * Get all categories from the backend
  * @returns {Promise<Array>} Array of categories with id, name, description, image_url
  */
@@ -210,11 +285,11 @@ const url =
   `&booking_date=${encodeURIComponent(bookingDate)}` +
   `&timeZone=${encodeURIComponent(userTimeZone)}`;
 
-
-
+    // IMPORTANT: timeZone param tells backend how to interpret "today" relative to user's timezone
     console.log("Fetching slots with:", {
       serviceIdsParam,
-      bookingDate
+      bookingDate,
+      userTimeZone
     });
 
     const response = await fetch(url);
@@ -344,15 +419,9 @@ export function validateBookingDuration(totalDuration, selectedTime, bookingServ
 
 export const formatTimeForDisplay = (time) => {
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  const date = new Date(`1970-01-01T${time}`);
-
-  return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: userTimeZone,
-  });
+  // Use Luxon to parse time without timezone shift
+  const dt = DateTime.fromFormat(time, "HH:mm", { zone: userTimeZone });
+  return dt.toFormat("h:mm a");
 };
 
 
@@ -450,14 +519,15 @@ export function getTimezoneOffset() {
  */
 export async function createBooking(bookingData) {
   try {
-    // Convert booking date and time to UTC before sending
+    // Convert user's local time to UTC before sending to backend
     const { utcDate, utcTime } = convertToUTC(
       bookingData.booking_date,
       bookingData.booking_time
     );
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     console.log(
-      `[createBooking] Converting booking: ${bookingData.booking_date} ${bookingData.booking_time} -> UTC: ${utcDate} ${utcTime}`
+      `[createBooking] Converting ${bookingData.booking_date} ${bookingData.booking_time} (${userTimeZone}) -> UTC: ${utcDate} ${utcTime}`
     );
 
     const response = await fetch(`${API_BASE_URL}/bookings`, {
@@ -473,7 +543,7 @@ export async function createBooking(bookingData) {
         booking_date: utcDate,
         booking_time: utcTime,
         note: bookingData.note || "",
-        timeZone: bookingData.timeZone
+        timeZone: userTimeZone
       })
     });
 
@@ -503,5 +573,6 @@ export default {
   createBooking,
   getNowInBusinessTZ,
   filterPastSlots,
-  convertToUTC
+  convertToUTC,
+  getWorkingHoursByDay
 };

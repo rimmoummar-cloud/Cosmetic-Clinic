@@ -140,7 +140,9 @@ export const checkTimeConflictMulti = async (client = null, serviceIds = [], boo
     const slotDuration = 15;
     const slotsNeeded = Math.ceil(totalMinutes / slotDuration);
 
-    const bookingsRes = await client.query(
+  const queryExecutor = client || db;
+
+const bookingsRes = await queryExecutor.query(
         "SELECT booking_time, duration_minutes FROM bookings WHERE booking_date=$1 FOR UPDATE",
         [DateTime.fromISO(booking_date).toISODate()]
     );

@@ -26,7 +26,7 @@ import {
   calculateEndTime,
   formatDateForDisplay,
   createBooking as createBookingAPI,
-  filterPastSlots,
+  getWorkingHoursByDay,
 } from "./dataBooking";
 
 // const generateDates = () => {
@@ -41,11 +41,10 @@ import {
 //   });
 // };
 
-const generateDates = (availableSlotsByDate = {}) => {
+const generateDates = (workingHourEnd = 18) => {
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const now = new Date();
   const currentHour = now.getHours();
-  const workingHourEnd = 18; // 6 PM
 
   return Array.from({ length: 14 }).map((_, i) => {
     const date = new Date(now);
@@ -54,15 +53,9 @@ const generateDates = (availableSlotsByDate = {}) => {
     const dateStr = date.toLocaleDateString("en-CA", { timeZone: userTimeZone });
     const todayStr = now.toLocaleDateString("en-CA", { timeZone: userTimeZone });
 
-    // فلترة اليوم الحالي حسب الوقت
+    // Skip today if past working hours
     if (dateStr === todayStr && currentHour >= workingHourEnd) {
-      console.log(`[generateDates] Skipping today (${todayStr}) because it's past working hours (${currentHour}:00)`);
-      return null;
-    }
-
-    // فلترة الأيام التي لا يوجد فيها slots متبقية
-    if (availableSlotsByDate[dateStr]?.length === 0) {
-      console.log(`[generateDates] Skipping ${dateStr} because no available slots`);
+      console.log(`[generateDates] Skipping today (${todayStr}) because it's past working hours (current: ${currentHour}:00, end: ${workingHourEnd}:00)`);
       return null;
     }
 
@@ -132,17 +125,36 @@ export function BookingForm({ isOpen, onClose }) {
   const [durationWarning, setDurationWarning] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [workingHourEnd, setWorkingHourEnd] = useState(18); // Default to 6 PM
+  const [loadingWorkingHours, setLoadingWorkingHours] = useState(false);
+  const [slotsByDate, setSlotsByDate] = useState({}); // Track available slots per date
 
-  // const availableDates = useMemo(() => generateDates(), []);
-  const availableDates = useMemo(() => generateDates(
-  availableSlots.reduce((acc, slot) => {
-    acc[selectedDate] = availableSlots; // جمع slots حسب التاريخ
-    return acc;
-  }, {})
-), [availableSlots, selectedDate]);
+  const availableDates = useMemo(() => generateDates(workingHourEnd), [workingHourEnd]);
   // Calculate totals
   const totalPrice = selectedServices.reduce((sum, item) => sum + (item.price || 0), 0);
   const totalDuration = getServicesDuration(selectedServices);
+
+  // Fetch working hours on component mount
+useEffect(() => {
+  if (!selectedDate) return; // ما ننادي إلا إذا فيه تاريخ
+
+  const fetchWorkingHours = async () => {
+    try {
+      setLoadingWorkingHours(true);
+      // const workingHours = await getWorkingHoursByDay(selectedDate);
+      const workingHours = await getWorkingHoursByDay(selectedDate); // ✅
+      if (workingHours?.end_time) {
+        setWorkingHourEnd(parseInt(workingHours.end_time.split(":")[0]));
+      }
+    } catch (error) {
+      console.error("Failed to load working hours:", error);
+    } finally {
+      setLoadingWorkingHours(false);
+    }
+  };
+
+  fetchWorkingHours();
+}, [selectedDate]);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -208,11 +220,9 @@ export function BookingForm({ isOpen, onClose }) {
         const serviceIds = selectedServices.map(s => s.id);
         const slots = await getAvailableSlots(serviceIds, selectedDate);
         
-        // Filter past slots - this is now done inside getAvailableSlots,
-        // but we can also apply it here for consistency if needed
-        const filteredSlots = filterPastSlots(slots, selectedDate);
-        
-        setAvailableSlots(filteredSlots);
+        // Track slots per date (filterPastSlots is already applied inside getAvailableSlots)
+        setSlotsByDate(prev => ({ ...prev, [selectedDate]: slots }));
+        setAvailableSlots(slots);
         
         // Clear previously selected time as slots changed
         setSelectedTime("");
@@ -301,9 +311,7 @@ await createBookingAPI({
   serviceIds: selectedServices.map(s => s.id),
   booking_date: selectedDate,
   booking_time: selectedTime,
-  note: note,
-
-  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  note: note
 });
 
 

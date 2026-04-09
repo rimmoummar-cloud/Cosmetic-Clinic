@@ -7,11 +7,12 @@ import db from './config/db.js';
 import bookingRoutes from "./routes/bookingRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import categoriesRoutes from "./routes/categoriesRoutes.js";
-import workingHoureRoutes from "./routes/workingHoureRoutes.js";
+import workingHoursRoutes from "./routes/workingHoureRoutes.js";
 import boxConectRoute from "./routes/boxConectRoute.js";
 import pageRoutes from "./routes/pageRoutes.js";
 import sectionRoutes from "./routes/sectionRoutes.js";
 import sectionContentRoutes from "./routes/sectionContentRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -22,7 +23,7 @@ app.use(express.json());
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/categorie", categoriesRoutes);
-app.use("/api/workingHoure", workingHoureRoutes);
+app.use("/api/workingHours", workingHoursRoutes);
 app.use("/api/boxConect", boxConectRoute);
 
 // ====== CMS ROUTES ======

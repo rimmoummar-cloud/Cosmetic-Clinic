@@ -3,6 +3,7 @@ import db from "../config/db.js"; // نحتاج db لعمل transaction
 import { timeToMinutes, minutesToTime } from "../utils/converttime.js";
 import { getWorkingHoursByDay } from "../models/workingHoure.js";
 import { DateTime } from "luxon";
+import { check } from "zod";
 // ==========================
 // Get All Bookings
 // ==========================
@@ -209,10 +210,12 @@ export async function getAvailableSlotsMulti(req, res) {
 //   .toLocaleDateString("en-US", { weekday: "long" });
 
 
-  const dayOfWeek = DateTime
+//   const dayOfWeek = DateTime
+//   .fromISO(booking_date)
+//   .toFormat("cccc");
+const dayOfWeek = DateTime
   .fromISO(booking_date)
-  .toFormat("cccc");
-
+  .weekday % 7;
         const workingHours = await getWorkingHoursByDay(null, dayOfWeek);
 
         if (!workingHours) {

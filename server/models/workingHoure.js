@@ -3,14 +3,50 @@
 import db from "../config/db.js";
 // Working Hours functions
 // ==========================
-export const getWorkingHoursByDay = async ( client = null ,dayOfWeek) => {
-    const queryExecutor = client || db;
+// export const getWorkingHoursByDay = async ( client = null ,dayOfWeek) => {
+//     const queryExecutor = client || db;
+//   const res = await queryExecutor.query(
+//     "SELECT start_time, end_time FROM working_hours WHERE day_of_week=$1",
+//     [dayOfWeek]
+//   );
+//   return res.rows[0] || null;
+// };
+
+export const getWorkingHoursByDay = async (
+  client = null,
+  dayOfWeek
+) => {
+  const queryExecutor = client || db;
+
   const res = await queryExecutor.query(
-    "SELECT start_time, end_time FROM working_hours WHERE day_of_week=$1",
+    `
+    SELECT
+      start_time,
+      end_time
+    FROM working_hours
+    WHERE day_of_week = $1
+    `,
     [dayOfWeek]
   );
+
   return res.rows[0] || null;
 };
+// export const getWorkingHoursByDay = async (client = null, dayOfWeek) => {
+//   try {
+//     const queryExecutor = client || db;
+
+//     // جلب كل الـ slots لليوم المطلوب
+//     const res = await queryExecutor.query(
+//       "SELECT id, day_of_week, start_time, end_time, created_at FROM working_hours WHERE day_of_week=$1 ORDER BY start_time",
+//       [dayOfWeek]
+//     );
+
+//     return res.rows.length > 0 ? res.rows : null; // ترجع array أو null إذا ما في شيء
+//   } catch (error) {
+//     console.error("Error fetching working hours:", error);
+//     return null;
+//   }
+// };
 
 export const getWorkingHours = async () => {
 
