@@ -286,19 +286,27 @@ export function getServicesDuration(services) {
  * @param {number} totalDuration - Total duration in minutes
  * @param {string} selectedTime - Selected start time (HH:MM format)
  * @param {Array} bookingServices - Array of booking service objects
+ * @param {number} workingHourStart - Start hour (e.g., 9 for 9 AM)
+ * @param {number} workingHourEnd - End hour (e.g., 18 for 6 PM)
  * @returns {Object} Validation result { isValid: boolean, message: string }
  */
-export function validateBookingDuration(totalDuration, selectedTime, bookingServices) {
+export function validateBookingDuration(
+  totalDuration,
+  selectedTime,
+  bookingServices,
+  workingHourStart = 9,
+  workingHourEnd = 18
+) {
   // Parse the selected time to get start time in minutes
   const timeToMinutes = (timeStr) => {
     if (!timeStr) return null;
-    
+
     // Handle both "HH:MM AM/PM" and "HH:MM" formats
     const parts = timeStr.split(" ");
     const [hours, minutes] = parts[0].split(":").map(Number);
-    
+
     let totalMinutes = hours * 60 + (minutes || 0);
-    
+
     // If AM/PM is present, adjust for AM/PM
     if (parts[1]) {
       const period = parts[1].toUpperCase();
@@ -308,7 +316,7 @@ export function validateBookingDuration(totalDuration, selectedTime, bookingServ
         totalMinutes -= 12 * 60;
       }
     }
-    
+
     return totalMinutes;
   };
 
@@ -318,34 +326,32 @@ export function validateBookingDuration(totalDuration, selectedTime, bookingServ
 
   const startMinutes = timeToMinutes(selectedTime);
   const endMinutes = startMinutes + totalDuration;
-  
-  // Default working hours: 9 AM to 6 PM (9:00 - 18:00)
-  // This should ideally be fetched from backend working_hours table
-  const workingHourStart = 9 * 60; // 9:00 AM
-  const workingHourEnd = 18 * 60;  // 6:00 PM
-  
-  if (startMinutes < workingHourStart) {
+
+  const workingStartMinutes = workingHourStart * 60;
+  const workingEndMinutes = workingHourEnd * 60;
+
+  if (startMinutes < workingStartMinutes) {
     return {
       isValid: false,
-      message: "Selected time is before working hours (9:00 AM)"
+      message: `Selected time is before working hours (${workingHourStart}:00)`,
     };
   }
-  
-  if (endMinutes > workingHourEnd) {
+
+  if (endMinutes > workingEndMinutes) {
     const endTime = new Date(new Date().setHours(0, 0, 0, 0));
     endTime.setMinutes(endMinutes);
     const formattedEndTime = endTime.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
-      hour12: true
+      hour12: true,
     });
-    
+
     return {
       isValid: false,
-      message: `Services end at ${formattedEndTime}, which is after working hours (6:00 PM). Total duration: ${totalDuration} minutes`
+      message: `Services end at ${formattedEndTime}, which is after working hours (${workingHourEnd}:00). Total duration: ${totalDuration} minutes`,
     };
   }
-  
+
   return { isValid: true, message: "" };
 }
 

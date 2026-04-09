@@ -126,6 +126,7 @@ export function BookingForm({ isOpen, onClose }) {
   const [durationWarning, setDurationWarning] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [workingHourStart, setWorkingHourStart] = useState(9); // Default to 9 AM
   const [workingHourEnd, setWorkingHourEnd] = useState(18); // Default to 6 PM
   const [loadingWorkingHours, setLoadingWorkingHours] = useState(false);
   const [slotsByDate, setSlotsByDate] = useState({}); // Track available slots per date
@@ -143,12 +144,17 @@ useEffect(() => {
     try {
       setLoadingWorkingHours(true);
       const workingHours = await getWorkingHoursByDay(selectedDate); // ✅
-      if (workingHours?.end_time) {
+      if (workingHours?.start_time && workingHours?.end_time) {
         const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const startDt = DateTime.fromISO(
+          `${selectedDate}T${workingHours.start_time}`,
+          { zone: userTimeZone }
+        );
         const endDt = DateTime.fromISO(
           `${selectedDate}T${workingHours.end_time}`,
           { zone: userTimeZone }
         );
+        setWorkingHourStart(startDt.hour);
         setWorkingHourEnd(endDt.hour);
       }
     } catch (error) {
@@ -246,10 +252,16 @@ useEffect(() => {
   // Validate booking duration when time is selected
   useEffect(() => {
     if (selectedTime && selectedDate) {
-      const validation = validateBookingDuration(totalDuration, selectedTime, selectedServices);
+      const validation = validateBookingDuration(
+        totalDuration,
+        selectedTime,
+        selectedServices,
+        workingHourStart,
+        workingHourEnd
+      );
       setDurationWarning(validation.isValid ? "" : validation.message);
     }
-  }, [selectedTime, selectedDate, totalDuration, selectedServices]);
+  }, [selectedTime, selectedDate, totalDuration, selectedServices, workingHourStart, workingHourEnd]);
 
   const toggleService = (service) => {
     const exists = selectedServices.find((s) => s.id === service.id);
