@@ -5,14 +5,11 @@
  */
 
 import { DateTime } from "luxon";
-
+  const BUSINESS_TIME_ZONE = "America/Montreal";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-/**
- * Get the current time in the user's local timezone
- * @returns {DateTime} Current time in user's timezone (Luxon DateTime object)
- */
-export function getNowInBusinessTZ() {
+
+export function getNowInUserTZ() {
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const now = DateTime.now().setZone(userTimeZone);
   console.log("User timezone:", userTimeZone);
@@ -23,74 +20,41 @@ export function getNowInBusinessTZ() {
   return now;
 }
 
-/**
- * Filter out past time slots based on user's local timezone
- * @param {Array<string>} slots - Array of time slots in HH:MM format
- * @param {string} selectedDate - Selected date in YYYY-MM-DD format
- * @returns {Array<string>} Filtered slots (excludes past times if date is today in user timezone)
- */
 
-export function filterPastSlots(slots, selectedDate) {
-  if (!slots || slots.length === 0) return [];
 
-  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const nowUser = DateTime.now().setZone(userTimeZone);
-  const todayUser = nowUser.toFormat("yyyy-MM-dd");
-  const currentTimeUser = nowUser.toFormat("HH:mm");
-
-  // إذا التاريخ اليوم الحالي، فلتر الـ slots الماضية
-  if (selectedDate === todayUser) {
-    const filteredSlots = slots.filter(slot => slot > currentTimeUser);
-    console.log(`[filterPastSlots] Today (${todayUser}) at ${currentTimeUser}: ${slots.length} slots -> ${filteredSlots.length} slots`);
-    return filteredSlots;
-  }
-
-  // إذا مش اليوم، رجع كل الـ slots
-  return slots;
-}
 // export function filterPastSlots(slots, selectedDate) {
-//   if (!slots || slots.length === 0) {
-//     return [];
-//   }
+//   if (!slots || slots.length === 0) return [];
 
 //   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 //   const nowUser = DateTime.now().setZone(userTimeZone);
 //   const todayUser = nowUser.toFormat("yyyy-MM-dd");
 //   const currentTimeUser = nowUser.toFormat("HH:mm");
 
-//   // If the selected date is not today (in user timezone), return all slots
-//   if (selectedDate !== todayUser) {
-//     console.log(
-//       `[filterPastSlots] Selected date (${selectedDate}) is not today (${todayUser}), returning all slots`
-//     );
-//     return slots;
+//   // إذا التاريخ اليوم الحالي، فلتر الـ slots الماضية
+//   if (selectedDate === todayUser) {
+//     const filteredSlots = slots.filter(slot => slot > currentTimeUser);
+//     console.log(`[filterPastSlots] Today (${todayUser}) at ${currentTimeUser}: ${slots.length} slots -> ${filteredSlots.length} slots`);
+//     return filteredSlots;
 //   }
 
-//   // Filter slots that are after current user time
-//   const filteredSlots = slots.filter((slot) => {
-//     const isAfterCurrent = slot > currentTimeUser;
-//     console.log(
-//       `[filterPastSlots] Slot ${slot} vs current ${currentTimeUser}: ${isAfterCurrent ? "KEEP" : "REMOVE"}`
-//     );
-//     return isAfterCurrent;
-//   });
-
-//   console.log(
-//     `[filterPastSlots] Today (${todayUser}) at ${currentTimeUser}: ${slots.length} slots -> ${filteredSlots.length} slots`
-//   );
-
-//   return filteredSlots;
+//   // إذا مش اليوم، رجع كل الـ slots
+//   return slots;
 // }
+export function filterPastSlots(slots, selectedDate) {
+  if (!slots || slots.length === 0) return [];
 
+  const nowBusiness = DateTime.now().setZone(BUSINESS_TIME_ZONE);
 
+  const todayBusiness = nowBusiness.toFormat("yyyy-MM-dd");
+  const currentTimeBusiness = nowBusiness.toFormat("HH:mm");
 
-/**
- * Get working hours for a specific day
- * @param {string} dayName - Day name in English ("Monday", "Tuesday", etc.)
- * @returns {Promise<Object>} Working hours { start_time: "HH:MM", end_time: "HH:MM" }
- */
+  if (selectedDate === todayBusiness) {
+    return slots.filter(slot => slot > currentTimeBusiness);
+  }
 
-// في dataBooking.js - استبدل الدالة كاملاً
+  return slots;
+}
+
 export const getWorkingHoursByDay = async (dateStr) => {
   if (!dateStr) throw new Error("Date is required");
 
@@ -102,68 +66,7 @@ export const getWorkingHoursByDay = async (dateStr) => {
   const data = await response.json();
   return data || null;
 };
-// export async function getWorkingHoursForDay(dayName) {
-//   try {
-//     const daysMap = {
-//       Sunday: 0,
-//       Monday: 1,
-//       Tuesday: 2,
-//       Wednesday: 3,
-//       Thursday: 4,
-//       Friday: 5,
-//       Saturday: 6
-//     };
 
-//     const dayIndex = daysMap[dayName];
-
-//     const response = await fetch(`${API_BASE_URL}/workingHours/day/${dayIndex}`);
-//     if (!response.ok) {
-//       throw new Error(`Failed to fetch working hours: ${response.statusText}`);
-//     }
-
-//     const data = await response.json();
-//     return {
-//       start_time: data[0]?.start_time || "09:00",
-//       end_time: data[0]?.end_time || "18:00"
-//     };
-//   } catch (error) {
-//     console.error("Error fetching working hours:", error);
-//     return { start_time: "09:00", end_time: "18:00" };
-//   }
-// }
-// export async function getWorkingHoursForDay(dayName) {
-//   try {
-// const daysMap = {
-//   Sunday: 0,
-//   Monday: 1,
-//   Tuesday: 2,
-//   Wednesday: 3,
-//   Thursday: 4,
-//   Friday: 5,
-//   Saturday: 6
-// };
-
-// const dayIndex = daysMap[dayName];
-//     const response = await fetch(`${API_BASE_URL}/workingHours/day/${dayIndex}`);
-//     if (!response.ok) {
-//       throw new Error(`Failed to fetch working hours: ${response.statusText}`);
-//     }
-//     const data = await response.json();
-//     return {
-//       start_time: data.start_time || "09:00",
-//       end_time: data.end_time || "18:00"
-//     };
-//   } catch (error) {
-//     console.error("Error fetching working hours:", error);
-//     // Return default working hours if fetch fails
-//     return { start_time: "09:00", end_time: "18:00" };
-//   }
-// }
-
-/**
- * Get all categories from the backend
- * @returns {Promise<Array>} Array of categories with id, name, description, image_url
- */
 export async function getCategories() {
   try {
     const response = await fetch(`${API_BASE_URL}/categorie`);
@@ -225,8 +128,34 @@ export async function getAvailableSlots(serviceIds, bookingDate) {
     const userTimeZone =
       Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const bookingDateTime = new Date(`${bookingDate}T12:00:00`);
-    const booking_datetime = bookingDateTime.toISOString();
+    // const bookingDateTime = new Date(`${bookingDate}T12:00:00`);
+    // const booking_datetime = bookingDateTime.toISOString();
+
+// const BUSINESS_TIME_ZONE = "America/Edmonton";
+
+// const bookingDateTime = DateTime.fromISO(
+//   `${bookingDate}T12:00:00`,
+//   { zone: BUSINESS_TIME_ZONE }
+// );
+
+// const booking_datetime = bookingDateTime.toUTC().toISO();
+
+
+
+
+// const BUSINESS_TIME_ZONE = "America/Edmonton";
+
+const bookingDateTime = DateTime.fromISO(
+  `${bookingDate}T12:00:00`,
+  { zone: BUSINESS_TIME_ZONE }
+);
+
+const booking_datetime = bookingDateTime
+  .toUTC()
+  .toISO();
+
+
+
 
     const url =
       `${API_BASE_URL}/bookings/available-slots-multi` +
@@ -324,7 +253,16 @@ export function validateBookingDuration(
     return { isValid: false, message: "Select a start time" };
   }
 
-  const startMinutes = timeToMinutes(selectedTime);
+  // const startMinutes = timeToMinutes(selectedTime);
+  // const BUSINESS_TIME_ZONE = "America/Montreal";
+  
+const dt = DateTime.fromFormat(selectedTime, "HH:mm", {
+  zone: BUSINESS_TIME_ZONE,
+});
+
+const startMinutes = dt.hour * 60 + dt.minute;
+
+
   const endMinutes = startMinutes + totalDuration;
 
   const workingStartMinutes = workingHourStart * 60;
@@ -447,7 +385,6 @@ export const formatDateForDisplay = (dateString) => {
   });
 };
 
-
 /**
  * Get timezone offset from UTC
  * @returns {string} Timezone offset in format "+HH:00" or "-HH:00"
@@ -527,7 +464,8 @@ export default {
   formatDateForDisplay,
   getTimezoneOffset,
   createBooking,
-  getNowInBusinessTZ,
+  getNowInUserTZ,
   filterPastSlots,
   getWorkingHoursByDay
 };
+

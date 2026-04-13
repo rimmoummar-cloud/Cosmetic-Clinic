@@ -42,32 +42,68 @@ import {
 //   });
 // };
 
+// const generateDates = (workingHourEnd = 18) => {
+//   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+// const BUSINESS_TIME_ZONE = "America/Montreal"; // ✅ نفس الbackend
+
+//   const now = DateTime.now().setZone(BUSINESS_TIME_ZONE);
+//   const currentHour = now.hour;
+
+//   return Array.from({ length: 14 }).map((_, i) => {
+//     // ✅ تحويل Luxon → JS Date بطريقة صحيحة
+//     const baseDate = new Date(now.toISO());
+
+//     const date = new Date(baseDate);
+//     date.setDate(date.getDate() + i);
+
+//     const dateStr = date.toLocaleDateString("en-CA", {
+//       timeZone: userTimeZone,
+//     });
+
+//     const todayStr = new Date().toLocaleDateString("en-CA", {
+//       timeZone: userTimeZone,
+//     });
+
+//     // Skip today if past working hours
+//     if (dateStr === todayStr && currentHour >= workingHourEnd) {
+//       console.log(
+//         `[generateDates] Skipping today (${todayStr}) because it's past working hours (current: ${currentHour}:00, end: ${workingHourEnd}:00)`
+//       );
+//       return null;
+//     }
+
+//     return {
+//       label: date.toLocaleDateString("en-US", {
+//         weekday: "short",
+//         month: "short",
+//         day: "numeric",
+//         timeZone: userTimeZone,
+//       }),
+//       value: dateStr,
+//     };
+//   }).filter(Boolean);
+// };
 const generateDates = (workingHourEnd = 18) => {
-  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const now = new Date();
-  const currentHour = now.getHours();
+  const BUSINESS_TIME_ZONE = "America/Montreal";
+  const now = DateTime.now().setZone(BUSINESS_TIME_ZONE);
+  const currentHour = now.hour;
+  const todayStr = now.toFormat("yyyy-MM-dd"); // ✅ business TZ
 
   return Array.from({ length: 14 }).map((_, i) => {
-    const date = new Date(now);
-    date.setDate(now.getDate() + i);
+    const date = now.plus({ days: i });
+    const dateStr = date.toFormat("yyyy-MM-dd"); // ✅ business TZ
 
-    const dateStr = date.toLocaleDateString("en-CA", { timeZone: userTimeZone });
-    const todayStr = now.toLocaleDateString("en-CA", { timeZone: userTimeZone });
-
-    // Skip today if past working hours
     if (dateStr === todayStr && currentHour >= workingHourEnd) {
-      console.log(`[generateDates] Skipping today (${todayStr}) because it's past working hours (current: ${currentHour}:00, end: ${workingHourEnd}:00)`);
       return null;
     }
 
     return {
-      label: date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: userTimeZone }),
+      label: date.toFormat("EEE, MMM d"), // Luxon بدل JS Date
       value: dateStr,
     };
   }).filter(Boolean);
 };
-
-
 // const generateDates = () => {
 //   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 //   const now = new Date();
@@ -145,15 +181,26 @@ useEffect(() => {
       setLoadingWorkingHours(true);
       const workingHours = await getWorkingHoursByDay(selectedDate); // ✅
       if (workingHours?.start_time && workingHours?.end_time) {
-        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const startDt = DateTime.fromISO(
-          `${selectedDate}T${workingHours.start_time}`,
-          { zone: userTimeZone }
-        );
-        const endDt = DateTime.fromISO(
-          `${selectedDate}T${workingHours.end_time}`,
-          { zone: userTimeZone }
-        );
+        // const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        // const startDt = DateTime.fromISO(
+        //   `${selectedDate}T${workingHours.start_time}`,
+        //   { zone: userTimeZone }
+        // );
+        // const endDt = DateTime.fromISO(
+        //   `${selectedDate}T${workingHours.end_time}`,
+        //   { zone: userTimeZone }
+        // );
+    const BUSINESS_TIME_ZONE = "America/Montreal"; // ✅ نفس الbackend
+
+const startDt = DateTime.fromISO(
+  `${selectedDate}T${workingHours.start_time}`,
+  { zone: BUSINESS_TIME_ZONE }
+);
+
+const endDt = DateTime.fromISO(
+  `${selectedDate}T${workingHours.end_time}`,
+  { zone: BUSINESS_TIME_ZONE }
+);
         setWorkingHourStart(startDt.hour);
         setWorkingHourEnd(endDt.hour);
       }
@@ -297,56 +344,128 @@ useEffect(() => {
     setCurrentStep(3);
   };
 
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+
+  if (!selectedServices.length || !selectedDate || !selectedTime) {
+    toast.error("Please complete all steps before booking.");
+    return;
+  }
+
+  if (!userInfo.name || !userInfo.email || !userInfo.phone) {
+    toast.error("Please fill your contact details.");
+    return;
+  }
+
+  setBookingLoading(true);
+
+  try {
+  //  const BUSINESS_TIME_ZONE = "America/Montreal"; // UTC-4 أو UTC-5
+  const BUSINESS_TIME_ZONE = "America/Montreal"; // UTC-4 أو UTC-5
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // 1. نبني وقت الحجز كـ BUSINESS time zone (المهم)
+    // const bookingInBusinessTZ = DateTime.fromISO(
+    //   `${selectedDate}T${selectedTime}`,
+    //   { zone: BUSINESS_TIME_ZONE }
+    // );
+
+    // // 2. نحوله UTC لإرساله للـ backend
+    // const booking_datetime = bookingInBusinessTZ.toUTC().toISO();
+// const booking_datetime = DateTime.fromISO(
+//   `${selectedDate}T${selectedTime}`,
+//   { zone: BUSINESS_TIME_ZONE }
+// ).toISO();
+const booking_datetime = DateTime.fromISO(
+  `${selectedDate}T${selectedTime}`,
+  { zone: BUSINESS_TIME_ZONE }
+).toUTC().toISO();
+
+
+    await createBookingAPI({
+      name: userInfo.name,
+      email: userInfo.email,
+      phone: userInfo.phone,
+      serviceIds: selectedServices.map((s) => s.id),
+      booking_datetime,
+      note: note,
+    });
+
+    toast.success(
+      "Your appointment has been booked! We'll send you a confirmation shortly."
+    );
+
+    // Reset form
+    setCurrentStep(1);
+    setSelectedServices([]);
+    setSelectedDate("");
+    setSelectedTime("");
+    setUserInfo({ name: "", email: "", phone: "" });
+    setNote("");
+    setDurationWarning("");
+
+    setTimeout(() => {
+      onClose();
+    }, 1000);
+  } catch (error) {
+    console.error("Booking error:", error);
+    toast.error(error.message || "Failed to create booking. Please try again.");
+  } finally {
+    setBookingLoading(false);
+  }
+};
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
     
-    if (!selectedServices.length || !selectedDate || !selectedTime) {
-      toast.error("Please complete all steps before booking.");
-      return;
-    }
-    if (!userInfo.name || !userInfo.email || !userInfo.phone) {
-      toast.error("Please fill your contact details.");
-      return;
-    }
+  //   if (!selectedServices.length || !selectedDate || !selectedTime) {
+  //     toast.error("Please complete all steps before booking.");
+  //     return;
+  //   }
+  //   if (!userInfo.name || !userInfo.email || !userInfo.phone) {
+  //     toast.error("Please fill your contact details.");
+  //     return;
+  //   }
 
-    setBookingLoading(true);
-    try {
-      const localDateTime = new Date(`${selectedDate}T${selectedTime}`);
-      const booking_datetime = localDateTime.toISOString();
+  //   setBookingLoading(true);
+  //   try {
+  //     const localDateTime = new Date(`${selectedDate}T${selectedTime}`);
+  //     const booking_datetime = localDateTime.toISOString();
 
-      await createBookingAPI({
-        name: userInfo.name,
-        email: userInfo.email,
-        phone: userInfo.phone,
-        serviceIds: selectedServices.map((s) => s.id),
-        booking_datetime,
-        note: note
-      });
+  //     await createBookingAPI({
+  //       name: userInfo.name,
+  //       email: userInfo.email,
+  //       phone: userInfo.phone,
+  //       serviceIds: selectedServices.map((s) => s.id),
+  //       booking_datetime,
+  //       note: note
+  //     });
 
 
 
-      toast.success("Your appointment has been booked! We'll send you a confirmation shortly.");
+  //     toast.success("Your appointment has been booked! We'll send you a confirmation shortly.");
       
-      // Reset form
-      setCurrentStep(1);
-      setSelectedServices([]);
-      setSelectedDate("");
-      setSelectedTime("");
-      setUserInfo({ name: "", email: "", phone: "" });
-      setNote("");
-      setDurationWarning("");
+  //     // Reset form
+  //     setCurrentStep(1);
+  //     setSelectedServices([]);
+  //     setSelectedDate("");
+  //     setSelectedTime("");
+  //     setUserInfo({ name: "", email: "", phone: "" });
+  //     setNote("");
+  //     setDurationWarning("");
       
-      // Close modal after 1 second
-      setTimeout(() => {
-        onClose();
-      }, 1000);
-    } catch (error) {
-      console.error("Booking error:", error);
-      toast.error(error.message || "Failed to create booking. Please try again.");
-    } finally {
-      setBookingLoading(false);
-    }
-  };
+  //     // Close modal after 1 second
+  //     setTimeout(() => {
+  //       onClose();
+  //     }, 1000);
+  //   } catch (error) {
+  //     console.error("Booking error:", error);
+  //     toast.error(error.message || "Failed to create booking. Please try again.");
+  //   } finally {
+  //     setBookingLoading(false);
+  //   }
+  // };
 
 
 

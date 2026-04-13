@@ -2,7 +2,9 @@ import * as Booking from "../models/booking.js";
 import db from "../config/db.js";
 import { getWorkingHoursByDay } from "../models/workingHoure.js";
 import { DateTime } from "luxon";
-
+const BUSINESS_TIME_ZONE =
+  process.env.BUSINESS_TIME_ZONE || "America/Montreal";
+   
 // ==========================
 // Get All Bookings
 // ==========================
@@ -19,6 +21,7 @@ export const getallbookingss = async (req, res) => {
 // ==========================
 // Create Multi-Service Booking
 // ==========================
+
 export const createBooking = async (req, res) => {
   const client = await db.connect();
 
@@ -26,7 +29,24 @@ export const createBooking = async (req, res) => {
     await client.query("BEGIN");
 
     const { name, email, phone, serviceIds, booking_datetime } = req.body;
+console.log("=== CREATE BOOKING DEBUG ===");
 
+console.log("Raw datetime from frontend:");
+console.log(booking_datetime);
+
+// const businessTime = DateTime
+//   .fromISO(booking_datetime)
+//   .setZone(BUSINESS_TIME_ZONE);
+const businessTime = DateTime.fromISO(booking_datetime).toUTC();
+console.log("Business time interpreted:");
+console.log(
+  businessTime.toFormat("yyyy-MM-dd HH:mm")
+);
+
+console.log("Business zone:");
+console.log(BUSINESS_TIME_ZONE);
+
+console.log("============================");
     // Input validation
     if (!name || !email || !phone || !serviceIds || !booking_datetime) {
       await client.query("ROLLBACK");
@@ -98,7 +118,10 @@ export const createBooking = async (req, res) => {
 // Get Available Slots for Multiple Services
 // ==========================
 export async function getAvailableSlotsMulti(req, res) {
+
   try {
+   
+    console.log(">>> getAvailableSlotsMulti HIT");
     let { serviceIds, booking_datetime, timeZone } = req.query;
     const userTimeZone = timeZone || "UTC";
 
@@ -125,10 +148,17 @@ export async function getAvailableSlotsMulti(req, res) {
       });
     }
 
-    // Parse booking datetime in user's timezone
-    const bookingDateTime = DateTime.fromISO(booking_datetime, {
-      setZone: true,
-    }).setZone(userTimeZone);
+// const bookingDateTime = DateTime.fromISO(booking_datetime, {
+//   zone: "utc"
+// }).setZone(BUSINESS_TIME_ZONE);
+
+const bookingDateTime = DateTime.fromISO(booking_datetime, {
+  setZone: true
+}).setZone(BUSINESS_TIME_ZONE);
+
+
+
+
 
     if (!bookingDateTime.isValid) {
       return res.status(400).json({
@@ -137,32 +167,75 @@ export async function getAvailableSlotsMulti(req, res) {
       });
     }
 
-    const bookingDate = bookingDateTime.toISODate();
-
+    // const bookingDate = bookingDateTime.toISODate();
+const bookingDate = bookingDateTime
+  .setZone(BUSINESS_TIME_ZONE)
+  .toISODate();
     // Calculate total duration for all services
     let totalMinutes = 0;
-    for (let id of serviceIds) {
-      const duration = await Booking.getServiceDuration(null, id);
-      totalMinutes += duration;
-    }
+    // for (let id of serviceIds) {
+    //   const duration = await Booking.getServiceDuration(null, id);
+    //   totalMinutes += duration;
+    // }
+const servicesRes = await db.query(
+  `
+  SELECT duration_minutes
+  FROM services
+  WHERE id = ANY($1)
+  `,
+  [serviceIds]
+);
 
-    if (totalMinutes <= 0) {
-      return res.status(400).json({
-        message: "Invalid total service duration",
-        availableSlots: [],
-      });
-    }
+if (servicesRes.rows.length !== serviceIds.length) {
+  return res.status(400).json({
+    message: "One or more services not found",
+    availableSlots: []
+  });
+}
 
-    const slotDuration = 15;
+for (let s of servicesRes.rows) {
+  totalMinutes += Number(s.duration_minutes);
+}
+    // if (totalMinutes <= 0) {
+    //   return res.status(400).json({
+    //     message: "Invalid total service duration",
+    //     availableSlots: [],
+    //   });
+    // }
+
+if (totalMinutes <= 0) {
+  return res.status(400).json({
+    message: "Invalid total service duration",
+    availableSlots: [],
+  });
+}
+const CLEANING_BUFFER_MINUTES =
+  Number(process.env.CLEANING_BUFFER_MINUTES) || 15;
+
+
+// add buffer between clients
+totalMinutes += CLEANING_BUFFER_MINUTES;
+
+
+
+    // const slotDuration = 15;
+    const slotDuration =
+  Number(process.env.SLOT_DURATION) || 15;
     const slotsNeeded = Math.ceil(totalMinutes / slotDuration);
 
     // Get bookings for the selected date
-    const bookings = await Booking.getBookingsByDate(
-      null,
-      bookingDate,
-      userTimeZone
-    );
+    // const bookings = await Booking.getBookingsByDate(
+    //   null,
+    //   bookingDate,
+    //   userTimeZone
+    // );
 
+
+ const bookings = await Booking.getBookingsByDate(
+  null,
+  bookingDate,
+  BUSINESS_TIME_ZONE
+);
     // Fetch working hours for the selected day
     const dayOfWeek = bookingDateTime.weekday % 7;
     const workingHours = await getWorkingHoursByDay(null, dayOfWeek);
@@ -174,15 +247,17 @@ export async function getAvailableSlotsMulti(req, res) {
       });
     }
 
-    // Parse working hours in user's timezone
-    const startDateTime = DateTime.fromISO(
-      `${bookingDate}T${workingHours.start_time}`,
-      { zone: userTimeZone }
-    );
-    const endDateTime = DateTime.fromISO(
-      `${bookingDate}T${workingHours.end_time}`,
-      { zone: userTimeZone }
-    );
+   
+const startDateTime = DateTime.fromISO(
+  `${bookingDate}T${workingHours.start_time}`,
+  { zone: BUSINESS_TIME_ZONE }
+);
+
+const endDateTime = DateTime.fromISO(
+  `${bookingDate}T${workingHours.end_time}`,
+  { zone: BUSINESS_TIME_ZONE }
+);
+
 
     if (!startDateTime.isValid || !endDateTime.isValid) {
       return res.status(500).json({
@@ -197,17 +272,65 @@ export async function getAvailableSlotsMulti(req, res) {
 
     // Build list of blocked slots
     const blockedSlots = new Set();
-    const now = DateTime.now().setZone(userTimeZone);
+    // const now = DateTime.now().setZone(userTimeZone);
+    const now = DateTime.now().setZone(BUSINESS_TIME_ZONE);
+//   console.log("========= TIME DEBUG =========");
+
+// console.log(
+//   "Server NOW:",
+//   DateTime.now().toISO()
+// );
+
+// console.log(
+//   "Server zone:",
+//   DateTime.now().zoneName
+// );
+
+// console.log(
+//   "Business zone:",
+//   BUSINESS_TIME_ZONE
+// );
+
+// const businessNow = DateTime.now().setZone(BUSINESS_TIME_ZONE);
+
+// console.log(
+//   "Business NOW:",
+//   businessNow.toISO()
+// );
+
+// console.log(
+//   "Business HH:mm:",
+//   businessNow.toFormat("HH:mm")
+// );
+
+// console.log(
+//   "Business offset:",
+//   businessNow.offset
+// );
+
+// console.log("================================");
     const currentDateStr = now.toISODate();
     const currentMinutes = now.hour * 60 + now.minute;
 
     bookings.forEach((b) => {
-      const bookingStart = DateTime.fromJSDate(b.booking_datetime)
-        .setZone(userTimeZone);
+  // const bookingStart = DateTime.fromJSDate(b.booking_datetime)
+  // .toUTC();
+//   const bookingStart =  DateTime.fromJSDate(b.booking_datetime, {
+//   zone: "utc"
+// }).setZone(BUSINESS_TIME_ZONE);
+
+
+
+const bookingStart = DateTime
+  .fromJSDate(b.booking_datetime)
+  .setZone(BUSINESS_TIME_ZONE);
+  
       const startTime = bookingStart.toFormat("HH:mm");
       const start = timeToMinutes(startTime);
       const slots = Math.ceil(b.duration_minutes / slotDuration);
 
+
+      
       for (let i = 0; i < slots; i++) {
         const slotTime = start + i * slotDuration;
 
@@ -222,7 +345,10 @@ export async function getAvailableSlotsMulti(req, res) {
 
     // Generate all available slots
     const allSlots = [];
-    for (let m = startMinutes; m <= endMinutes - slotDuration; m += slotDuration) {
+
+    
+
+          for (let m = startMinutes; m + totalMinutes <= endMinutes; m += slotDuration) {
       allSlots.push(minutesToTime(m));
     }
 
@@ -245,7 +371,19 @@ export async function getAvailableSlotsMulti(req, res) {
       }
     });
 
-    res.json({ availableSlots: finalSlots });
+
+
+
+    const convertedSlots = finalSlots.map((slot) => {
+  const dt = DateTime.fromISO(
+    `${bookingDate}T${slot}`,
+    { zone: BUSINESS_TIME_ZONE }
+  );
+
+  return dt.toFormat("HH:mm");
+});
+
+res.json({ availableSlots: convertedSlots });
   } catch (error) {
     console.error("Available slots error:", error.message);
     res.status(500).json({ message: "Server error" });

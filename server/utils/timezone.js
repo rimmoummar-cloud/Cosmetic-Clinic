@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 
-const CLINIC_TIMEZONE = "America/Toronto";
+const CLINIC_TIMEZONE = "America/Montreal";
 
 export function toUTC(date, time) {
   return DateTime
