@@ -150,7 +150,8 @@ export const createBookingMulti = async (
   client = null,
   customer_id,
   serviceIds = [],
-  booking_datetime
+  booking_datetime,
+  note = ""
 ) => {
   const queryExecutor = client || db;
 
@@ -236,10 +237,10 @@ const bookingDateTimeUTC = DateTime.fromISO(booking_datetime);
 
   // 4️⃣ Create the main booking record
   const bookingRes = await queryExecutor.query(
-    `INSERT INTO bookings (customer_id, booking_datetime, duration_minutes, total_amount, status)
-     VALUES ($1, $2, $3, $4, 'pending')
+    `INSERT INTO bookings (customer_id, booking_datetime, duration_minutes, total_amount, status, note)
+     VALUES ($1, $2, $3, $4, 'pending', $5)
      RETURNING *`,
-    [customer_id, newStart, totalDuration, totalAmount]
+    [customer_id, newStart, totalDuration, totalAmount, note]
   );
 
   const booking = bookingRes.rows[0];

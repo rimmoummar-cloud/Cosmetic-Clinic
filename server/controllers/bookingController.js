@@ -28,7 +28,7 @@ export const createBooking = async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    const { name, email, phone, serviceIds, booking_datetime } = req.body;
+    const { name, email, phone, serviceIds, booking_datetime, note } = req.body;
 console.log("=== CREATE BOOKING DEBUG ===");
 
 console.log("Raw datetime from frontend:");
@@ -78,7 +78,8 @@ console.log("============================");
       client,
       customer.id,
       serviceIds,
-      booking_datetime
+      booking_datetime,
+      note
     );
 
     await client.query("COMMIT");
@@ -402,3 +403,57 @@ function minutesToTime(minutes) {
   const m = minutes % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
+export const getBookingWithFullDetails = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        bookings.id,
+        bookings.status,
+        bookings.note,
+        bookings.created_at,
+        bookings.booking_datetime,
+        bookings.total_amount,
+
+        customers.name AS customer_name,
+        customers.email AS customer_email,
+        customers.phone AS customer_phone,
+
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', services.id,
+              'name', services.name,
+              'duration', services.duration_minutes,
+              'price', services.price
+            )
+          ) FILTER (WHERE services.id IS NOT NULL),
+          '[]'
+        ) AS services
+
+      FROM bookings
+
+      JOIN customers
+        ON bookings.customer_id = customers.id
+
+      LEFT JOIN booking_services
+        ON bookings.id = booking_services.booking_id
+
+      LEFT JOIN services
+        ON booking_services.service_id = services.id
+
+      GROUP BY
+        bookings.id,
+        customers.id
+
+      ORDER BY bookings.created_at DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error fetching bookings"
+    });
+  }
+};

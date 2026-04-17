@@ -2,8 +2,9 @@
 // src/components/Navbar.jsx
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Sparkles, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {BookingForm} from "../../app/feutures/booking/BookingForm";
 void motion;
@@ -67,18 +68,30 @@ useEffect(() => {
     : "bg-transparent"
 }`}  >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <motion.div 
-              whileHover={{ rotate: 360, scale: 1.1 }}
-              transition={{ duration: 0.6 }}
-              className="w-12 h-12 bg-gradient-to-br from-[#FFD700] via-[#D4AF7A] to-[#C9A66B] rounded-2xl flex items-center justify-center shadow-lg shadow-[#D4AF7A]/40 group-hover:shadow-xl group-hover:shadow-[#D4AF7A]/60 transition-shadow relative"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent rounded-2xl" />
-              <Sparkles className="w-6 h-6 text-white relative z-10" />
-            </motion.div>
-            <div>
+    <div className="flex justify-between items-center h-20">
+  {/* Logo */}
+  <Link href="/" className="flex items-center gap-3 group">
+    <motion.div 
+      whileHover={{ scale: 1.08 }}
+      transition={{ duration: 0.3 }}
+      className="relative flex items-center justify-center"
+    >
+      {/* Glow behind logo */}
+      <div className="absolute w-16 h-16 rounded-full bg-white/40 blur-xl opacity-70 group-hover:opacity-100 transition" />
+
+      {/* Logo */}
+      <div className="relative mt-10">    <Image 
+        src="/image/logo.png" 
+        alt="Shiny Skin Logo" 
+        width={150} 
+        height={50} 
+        className="relative object-contain"
+      />
+      </div>
+
+    </motion.div>
+
+    <div>
               <div className="text-xl" style={{ fontFamily: 'var(--font-serif)' }}>
                 <span className="font-semibold bg-gradient-to-r from-[#D4AF7A] to-[#C9A66B] bg-clip-text text-transparent">
                   Shiny Skin
@@ -187,21 +200,7 @@ useEffect(() => {
                     </Link>
                   </motion.div>
                 ))}
-                {/* <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: navigation.length * 0.1 }}
-                >
-                  <Link
-                    // to="/"
-                    onClick={() =>{ setMobileMenuOpen(false);
-                       setOpenBooking(true)
-                    }}
-                    className="block px-6 py-3 mt-2 bg-gradient-to-r from-[#FFD700] via-[#D4AF7A] to-[#C9A66B] text-white rounded-full text-center shadow-lg"
-                  >
-                    Book Now
-                  </Link>
-                </motion.div> */}
+   
 
 
    <motion.button

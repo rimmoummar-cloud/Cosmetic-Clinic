@@ -14,6 +14,7 @@ const navItems = [
   { href: "/admin/messages", label: "Messages", icon: "💬" },
   { href: "/admin/cms", label: "CMS", icon: "📑" },
   { href: "/admin/settings", label: "Settings", icon: "⚙️" },
+    { href: "/admin/working-hours", label: "Working Hours", icon: "⏰" },
 ];
 
 export default function AdminLayout({ children }) {

@@ -424,7 +424,7 @@ export async function createBooking(bookingData) {
         phone: bookingData.phone,
         serviceIds: bookingData.serviceIds,
         booking_datetime: bookingData.booking_datetime,
-        // note: bookingData.note || "",
+        note: bookingData.note || "",
         timeZone: userTimeZone
       })
     });

@@ -25,3 +25,14 @@ export const findCustomerByPhone = async (phone) => {
   );
   return result.rows[0];
 };
+
+
+
+
+export const findCustomerByID = async (id) => {
+  const result = await db.query(
+    "SELECT * FROM customers WHERE id=$1",
+    [id]
+  );
+  return result.rows[0];
+};

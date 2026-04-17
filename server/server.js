@@ -12,7 +12,8 @@ import boxConectRoute from "./routes/boxConectRoute.js";
 import pageRoutes from "./routes/pageRoutes.js";
 import sectionRoutes from "./routes/sectionRoutes.js";
 import sectionContentRoutes from "./routes/sectionContentRoutes.js";
-
+import customerRoutes from "./routes/customeRoutes.js";
+import houreByDateRoute from "./routes/houreByDateRoute.js";
 dotenv.config();
 
 const app = express();
@@ -25,7 +26,8 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/categorie", categoriesRoutes);
 app.use("/api/workingHours", workingHoursRoutes);
 app.use("/api/boxConect", boxConectRoute);
-
+app.use("/api/customers", customerRoutes);
+app.use("/api/workingHoursByDate", houreByDateRoute);
 // ====== CMS ROUTES ======
 // Pages: Create, read, update, delete pages
 app.use("/api/pages", pageRoutes);
