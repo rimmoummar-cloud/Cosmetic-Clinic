@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import DefaultWorkingHours from "./DefaultWorkingHours";
 import WorkingHoursByDate from "./WorkingHoursByDate";
+import BreakHours from "./BreakHours";
 
-type TabKey = "default" | "byDate";
+type TabKey = "default" | "byDate" | "break";
 
 export default function WorkingHoursPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("default");
@@ -13,6 +14,7 @@ export default function WorkingHoursPage() {
     () => [
       { key: "default" as const, label: "Default Working Hours" },
       { key: "byDate" as const, label: "Working Hours By Date" },
+      { key: "break" as const, label: "Break Hours" },
     ],
     []
   );
@@ -44,7 +46,9 @@ export default function WorkingHoursPage() {
         })}
       </div>
 
-      {activeTab === "default" ? <DefaultWorkingHours /> : <WorkingHoursByDate />}
+      {activeTab === "default" && <DefaultWorkingHours />}
+      {activeTab === "byDate" && <WorkingHoursByDate />}
+      {activeTab === "break" && <BreakHours />}
     </div>
   );
 }
