@@ -40,3 +40,25 @@ export const updateOverride = async (id, data) => {
 export const deleteOverride = async (id) => {
   await db.query(`DELETE FROM working_hours_overrides WHERE id=$1`, [id]);
 };
+
+
+export const getUpcomingWorkingHours = async () => {
+  const query = `
+    SELECT *
+    FROM working_hours_overrides
+    WHERE work_date >= CURRENT_DATE
+    ORDER BY work_date ASC
+  `;
+
+  const { rows } = await db.query(query);
+  return rows;
+};
+
+export const checkOverrideDates = async (date) => {
+  const res = await db.query(
+    `SELECT * FROM working_hours_overrides WHERE work_date=$1`,
+    [date]
+  );
+
+  return res.rows[0] || null;
+};

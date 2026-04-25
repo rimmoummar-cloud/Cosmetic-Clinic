@@ -1,5 +1,5 @@
 import express from "express";
-import { createBooking, getAvailableSlotsMulti ,getallbookingss,getBookingWithFullDetails } from "../controllers/bookingController.js";
+import { createBooking, getAvailableSlotsMulti ,getallbookingss,getBookingWithFullDetails,updateBookingStatus } from "../controllers/bookingController.js";
 
 const router = express.Router();
 
@@ -11,7 +11,10 @@ router.post("/", createBooking);
 router.get("/available-slots-multi", getAvailableSlotsMulti);
 router.get("/", getallbookingss);
 router.get("/WithDetails", getBookingWithFullDetails);
-
+router.put(
+  "/:id/status",
+  updateBookingStatus
+);
 
 
 export default router;

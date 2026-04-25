@@ -21,3 +21,33 @@ export const deleteOverride = async (req, res) => {
   await model.deleteOverride(req.params.id);
   res.json({ message: "deleted" });
 };
+
+
+export const getUpcomingWorkingHours = async (req, res) => {
+  try {
+    const data = await model.getUpcomingWorkingHours();
+
+    res.status(200).json(data);
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to fetch upcoming working hours",
+    });
+  }
+};
+
+export const getOverrideByDates = async (req, res) => {
+  try {
+    const data = await model.checkOverrideDates(req.params.date);    
+    res.status(200).json(data);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Failed to fetch working hours override for the date",
+    });
+  }
+};
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 function Modal({ isOpen, onClose, title, children }) {
   if (!isOpen) return null;
@@ -26,13 +26,74 @@ function Modal({ isOpen, onClose, title, children }) {
     </div>
   );
 }
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000/api";
 
-export default function AdminBookingsPage({ bookings = [] }) {
+export default function AdminBookingsPage() {
+  const { data: bookingData = [] } = useQuery({
+  queryKey: ["bookings"],
+  queryFn: async () => {
+    const res = await fetch(
+      `${API_BASE_URL}/bookings/WithDetails`
+    );
+    return res.json();
+  },
+});
+    const queryClient = useQueryClient();
+    
+    const updateStatus = async (id, newStatus) => {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/bookings/${id}/status`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to update");
+    }
+  // 🔥 أهم سطر في المشروع كله
+ queryClient.invalidateQueries({
+  queryKey: ["availableSlots"],
+  exact: false,
+});
+
+queryClient.invalidateQueries({
+  queryKey: ["bookings"],
+});
+   await queryClient.invalidateQueries({
+      queryKey: ["bookings"],
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["slots"],
+      exact: false,
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["availableSlots"],
+      exact: false,
+    });
+    // window.location.reload();
+  } catch (err) {
+    console.error(err);
+  }
+};
     const [selectedService, setSelectedService] = useState(null);
 const [selectedNote, setSelectedNote] = useState(null);
+const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const [filter, setFilter] = useState("all");
-  const bookingData = Array.isArray(bookings) ? bookings : [];
+
   const filtered =
     filter === "all"
       ? bookingData
@@ -240,21 +301,53 @@ const [selectedNote, setSelectedNote] = useState(null);
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex gap-1">
-                      {booking.status === "pending" && (
-                        <>
-                          <button className="px-2 py-1 text-xs bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
-                            Approve
-                          </button>
-                          <button className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
-                            Cancel
-                          </button>
-                        </>
-                      )}
-                      <button className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-                        Reschedule
-                      </button>
-                    </div>
+                <div className="flex gap-1">
+
+  {["pending", "approved"].includes(booking.status) && (
+    <>
+      {booking.status === "pending" && (
+        <button
+          className="px-2 py-1 text-xs bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+          onClick={() =>
+            updateStatus(
+              booking.id,
+              "approved"
+            )
+          }
+        >
+          Approve
+        </button>
+      )}
+
+      <button
+        className="px-2 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+        onClick={() =>
+          updateStatus(
+            booking.id,
+            "cancelled"
+          )
+        }
+      >
+        Cancel
+      </button>
+    </>
+  )}
+
+  {booking.status === "approved" && (
+    <button
+      className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+      onClick={() =>
+        updateStatus(
+          booking.id,
+          "completed"
+        )
+      }
+    >
+      Done
+    </button>
+  )}
+
+</div>
                   </td>
                 </tr>
                 

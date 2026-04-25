@@ -118,6 +118,7 @@ console.log("============================");
 // ==========================
 // Get Available Slots for Multiple Services
 // ==========================
+
 export async function getAvailableSlotsMulti(req, res) {
 
   try {
@@ -277,73 +278,60 @@ const endDateTime = DateTime.fromISO(
     const now = DateTime.now().setZone(BUSINESS_TIME_ZONE);
 //   console.log("========= TIME DEBUG =========");
 
-// console.log(
-//   "Server NOW:",
-//   DateTime.now().toISO()
-// );
-
-// console.log(
-//   "Server zone:",
-//   DateTime.now().zoneName
-// );
-
-// console.log(
-//   "Business zone:",
-//   BUSINESS_TIME_ZONE
-// );
-
-// const businessNow = DateTime.now().setZone(BUSINESS_TIME_ZONE);
-
-// console.log(
-//   "Business NOW:",
-//   businessNow.toISO()
-// );
-
-// console.log(
-//   "Business HH:mm:",
-//   businessNow.toFormat("HH:mm")
-// );
-
-// console.log(
-//   "Business offset:",
-//   businessNow.offset
-// );
 
 // console.log("================================");
     const currentDateStr = now.toISODate();
     const currentMinutes = now.hour * 60 + now.minute;
 
-    bookings.forEach((b) => {
-  // const bookingStart = DateTime.fromJSDate(b.booking_datetime)
-  // .toUTC();
-//   const bookingStart =  DateTime.fromJSDate(b.booking_datetime, {
-//   zone: "utc"
-// }).setZone(BUSINESS_TIME_ZONE);
+//     bookings.forEach((b) => {
+// const bookingStart = DateTime
+//   .fromJSDate(b.booking_datetime)
+//   .setZone(BUSINESS_TIME_ZONE);
+//       const startTime = bookingStart.toFormat("HH:mm");
+//       const start = timeToMinutes(startTime);
+//       const slots = Math.ceil(b.duration_minutes / slotDuration);
+//       for (let i = 0; i < slots; i++) {
+//         const slotTime = start + i * slotDuration;
+//         // Skip past slots on today
+//         if (bookingDate === currentDateStr && slotTime < currentMinutes) {
+//           continue;
+//         }
+//         blockedSlots.add(minutesToTime(slotTime));
+//       }
+//     });
+bookings.forEach((b) => {
+  // إذا كان الحجز ملغي أو منتهي → لا نحجز السلوت
+if (!["pending", "approved"].includes(b.status)) {
+  return;
+}
 
+  const bookingStart = DateTime
+    .fromJSDate(b.booking_datetime)
+    .setZone(BUSINESS_TIME_ZONE);
 
+  const startTime = bookingStart.toFormat("HH:mm");
+  const start = timeToMinutes(startTime);
 
-const bookingStart = DateTime
-  .fromJSDate(b.booking_datetime)
-  .setZone(BUSINESS_TIME_ZONE);
-  
-      const startTime = bookingStart.toFormat("HH:mm");
-      const start = timeToMinutes(startTime);
-      const slots = Math.ceil(b.duration_minutes / slotDuration);
+  const slots = Math.ceil(
+    b.duration_minutes / slotDuration
+  );
 
+  for (let i = 0; i < slots; i++) {
+    const slotTime = start + i * slotDuration;
 
-      
-      for (let i = 0; i < slots; i++) {
-        const slotTime = start + i * slotDuration;
+    // Skip past slots on today
+    if (
+      bookingDate === currentDateStr &&
+      slotTime < currentMinutes
+    ) {
+      continue;
+    }
 
-        // Skip past slots on today
-        if (bookingDate === currentDateStr && slotTime < currentMinutes) {
-          continue;
-        }
-
-        blockedSlots.add(minutesToTime(slotTime));
-      }
-    });
-
+    blockedSlots.add(
+      minutesToTime(slotTime)
+    );
+  }
+});
     // Generate all available slots
     const allSlots = [];
 
@@ -454,6 +442,44 @@ export const getBookingWithFullDetails = async (req, res) => {
     console.error(error);
     res.status(500).json({
       message: "Error fetching bookings"
+    });
+  }
+};
+
+
+
+export const updateBookingStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        message: "Status is required",
+      });
+    }
+
+    const updated =
+      await Booking.updateBookingStatus(
+        id,
+        status
+      );
+
+    if (!updated) {
+      return res.status(404).json({
+        message: "Booking not found",
+      });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    console.error(
+      "Error updating booking status:",
+      error
+    );
+
+    res.status(500).json({
+      message: error.message,
     });
   }
 };

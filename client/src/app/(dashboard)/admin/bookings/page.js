@@ -1,20 +1,26 @@
 
+
+// "use client";
+// import { useQuery } from "@tanstack/react-query";
+// import AdminBookingsPage from "./booking";
+// const { data: bookings = [] } = useQuery({
+//   queryKey: ["bookings"],
+//   queryFn: async () => {
+//     const res = await fetch(
+//       "http://localhost:5000/api/bookings/WithDetails"
+//     );
+//     return res.json();
+//   },
+// });
+
+// export default async function Page() {
+
+//  return (
+// <AdminBookingsPage bookings={bookings} />
+//  );
+// }
 import AdminBookingsPage from "./booking";
-async function getBooking() {
-  const res = await fetch(
 
-     `http://localhost:5000/api/bookings/WithDetails`,
-    {
-    cache: "no-store"
-    }
-  );
-
-  return res.json();
-}
-
-export default async function Page() {
-   const bookings = await getBooking();
- return (
-<AdminBookingsPage bookings={bookings} />
- );
+export default function Page() {
+  return <AdminBookingsPage />;
 }

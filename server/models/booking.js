@@ -226,7 +226,7 @@ const bookingDateTimeUTC = DateTime.fromISO(booking_datetime);
      FROM bookings
      WHERE booking_datetime < $2
        AND (booking_datetime + (duration_minutes * interval '1 minute')) > $1
-       AND status NOT IN ('cancelled')
+      AND status NOT IN ('cancelled', 'completed')
      FOR UPDATE`,
     [newStart, newEnd]
   );
@@ -289,13 +289,48 @@ export const getBookingsByDate = async (
     .toUTC();
   const dayEnd = dayStart.plus({ days: 1 });
 
-  const res = await queryExecutor.query(
-    `SELECT booking_datetime, duration_minutes
-       FROM bookings
-      WHERE booking_datetime >= $1
-        AND booking_datetime < $2
-        AND status IN ('confirmed', 'pending')`,
-    [dayStart.toISO(), dayEnd.toISO()]
-  );
+const res = await queryExecutor.query(
+  `
+  SELECT
+    booking_datetime,
+    duration_minutes,
+    status
+  FROM bookings
+  WHERE booking_datetime >= $1
+    AND booking_datetime < $2
+    AND status IN ('approved', 'pending')
+  `,
+  [dayStart.toISO(), dayEnd.toISO()]
+);
   return res.rows;
+};
+
+
+
+
+
+export const updateBookingStatus = async (bookingId, newStatus) => {
+  // statuses المسموحة حسب جدولك
+  const validStatuses = [
+    "pending",
+    "approved",
+    "cancelled",
+    "completed",
+  ];
+
+  if (!validStatuses.includes(newStatus)) {
+    throw new Error("Invalid status value");
+  }
+
+  const res = await db.query(
+    `
+    UPDATE bookings
+    SET status = $1
+    WHERE id = $2
+    RETURNING *
+    `,
+    [newStatus, bookingId]
+  );
+
+  return res.rows[0];
 };

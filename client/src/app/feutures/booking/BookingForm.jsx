@@ -1,5 +1,5 @@
 "use client";
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
   Calendar,
@@ -30,60 +30,7 @@ import {
   getWorkingHoursByDay,
 } from "./dataBooking";
 
-// const generateDates = () => {
-//   const today = new Date();
-//   return Array.from({ length: 14 }).map((_, i) => {
-//     const date = new Date(today);
-//     date.setDate(today.getDate() + i);
-//     return {
-//       label: date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
-//     value: date.toLocaleDateString("en-CA"),
-//     };
-//   });
-// };
 
-// const generateDates = (workingHourEnd = 18) => {
-//   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-// const BUSINESS_TIME_ZONE = "America/Montreal"; // ✅ نفس الbackend
-
-//   const now = DateTime.now().setZone(BUSINESS_TIME_ZONE);
-//   const currentHour = now.hour;
-
-//   return Array.from({ length: 14 }).map((_, i) => {
-//     // ✅ تحويل Luxon → JS Date بطريقة صحيحة
-//     const baseDate = new Date(now.toISO());
-
-//     const date = new Date(baseDate);
-//     date.setDate(date.getDate() + i);
-
-//     const dateStr = date.toLocaleDateString("en-CA", {
-//       timeZone: userTimeZone,
-//     });
-
-//     const todayStr = new Date().toLocaleDateString("en-CA", {
-//       timeZone: userTimeZone,
-//     });
-
-//     // Skip today if past working hours
-//     if (dateStr === todayStr && currentHour >= workingHourEnd) {
-//       console.log(
-//         `[generateDates] Skipping today (${todayStr}) because it's past working hours (current: ${currentHour}:00, end: ${workingHourEnd}:00)`
-//       );
-//       return null;
-//     }
-
-//     return {
-//       label: date.toLocaleDateString("en-US", {
-//         weekday: "short",
-//         month: "short",
-//         day: "numeric",
-//         timeZone: userTimeZone,
-//       }),
-//       value: dateStr,
-//     };
-//   }).filter(Boolean);
-// };
 const generateDates = (workingHourEnd = 18) => {
   const BUSINESS_TIME_ZONE = "America/Montreal";
   const now = DateTime.now().setZone(BUSINESS_TIME_ZONE);
@@ -104,41 +51,12 @@ const generateDates = (workingHourEnd = 18) => {
     };
   }).filter(Boolean);
 };
-// const generateDates = () => {
-//   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-//   const now = new Date();
-//   const currentHour = now.getHours();
-//   const workingHourEnd = 18; // 6 PM
-
-//   return Array.from({ length: 14 }).map((_, i) => {
-//     const date = new Date(now);
-//     date.setDate(now.getDate() + i);
-
-//     const dateStr = date.toLocaleDateString("en-CA", { timeZone: userTimeZone });
-//     const todayStr = now.toLocaleDateString("en-CA", { timeZone: userTimeZone });
-
-//     // Skip today if it's past working hours (in user timezone)
-//     if (dateStr === todayStr && i === 0 && currentHour >= workingHourEnd) {
-//       console.log(`[generateDates] Skipping today (${todayStr}) because it's past working hours (current time: ${currentHour}:00)`);
-//       return null;
-//     }
-
-//     return {
-//       label: date.toLocaleDateString("en-US", {
-//         weekday: "short",
-//         month: "short",
-//         day: "numeric",
-//         timeZone: userTimeZone,
-//       }),
-
-//       value: dateStr,
-//     };
-//   }).filter(Boolean);
-// };
 
 
 
 export function BookingForm({ isOpen, onClose }) {
+  //refreshing 
+  
   // UI State
   const [currentStep, setCurrentStep] = useState(1);
   const [expandedCategory, setExpandedCategory] = useState(null);
@@ -181,15 +99,7 @@ useEffect(() => {
       setLoadingWorkingHours(true);
       const workingHours = await getWorkingHoursByDay(selectedDate); // ✅
       if (workingHours?.start_time && workingHours?.end_time) {
-        // const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        // const startDt = DateTime.fromISO(
-        //   `${selectedDate}T${workingHours.start_time}`,
-        //   { zone: userTimeZone }
-        // );
-        // const endDt = DateTime.fromISO(
-        //   `${selectedDate}T${workingHours.end_time}`,
-        //   { zone: userTimeZone }
-        // );
+      
     const BUSINESS_TIME_ZONE = "America/Montreal"; // ✅ نفس الbackend
 
 const startDt = DateTime.fromISO(
@@ -296,6 +206,67 @@ const endDt = DateTime.fromISO(
     fetchSlots();
   }, [selectedDate, selectedServices]);
 
+// const serviceIds = useMemo(
+//   () => selectedServices.map(s => s.id),
+//   [selectedServices]
+// );
+
+// const {
+//   data: availableSlots = [],
+//   isLoading: loadingSlots,
+//   error: slotsError,
+// } = useQuery({
+//   queryKey: ["availableSlots", selectedDate, serviceIds],
+
+//   queryFn: async () => {
+//     const slots = await getAvailableSlots(
+//       serviceIds,
+//       selectedDate
+//     );
+
+//     return slots;
+//   },
+
+//   enabled:
+//     !!selectedDate &&
+//     serviceIds.length > 0,
+
+//   // keepPreviousData: true,
+
+
+// keepPreviousData: false,
+// staleTime: 0,
+// refetchOnMount: "always",
+
+//   refetchOnWindowFocus: false,
+//   onSuccess: (slots) => {
+//     // نفس اللوجك القديم
+//     setSlotsByDate(prev => ({
+//       ...prev,
+//       [selectedDate]: slots,
+//     }));
+
+//     // نفس اللوجك القديم
+//     setSelectedTime("");
+//   },
+
+//   onError: (error) => {
+//     console.error(
+//       "Failed to load available slots:",
+//       error
+//     );
+
+//     toast.error(
+//       "Failed to load available time slots"
+//     );
+//   },
+// });
+
+
+
+
+
+
   // Validate booking duration when time is selected
   useEffect(() => {
     if (selectedTime && selectedDate) {
@@ -366,18 +337,7 @@ const endDt = DateTime.fromISO(
   const BUSINESS_TIME_ZONE = "America/Montreal"; // UTC-4 أو UTC-5
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    // 1. نبني وقت الحجز كـ BUSINESS time zone (المهم)
-    // const bookingInBusinessTZ = DateTime.fromISO(
-    //   `${selectedDate}T${selectedTime}`,
-    //   { zone: BUSINESS_TIME_ZONE }
-    // );
-
-    // // 2. نحوله UTC لإرساله للـ backend
-    // const booking_datetime = bookingInBusinessTZ.toUTC().toISO();
-// const booking_datetime = DateTime.fromISO(
-//   `${selectedDate}T${selectedTime}`,
-//   { zone: BUSINESS_TIME_ZONE }
-// ).toISO();
+  
 const booking_datetime = DateTime.fromISO(
   `${selectedDate}T${selectedTime}`,
   { zone: BUSINESS_TIME_ZONE }
@@ -416,58 +376,7 @@ const booking_datetime = DateTime.fromISO(
     setBookingLoading(false);
   }
 };
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-    
-  //   if (!selectedServices.length || !selectedDate || !selectedTime) {
-  //     toast.error("Please complete all steps before booking.");
-  //     return;
-  //   }
-  //   if (!userInfo.name || !userInfo.email || !userInfo.phone) {
-  //     toast.error("Please fill your contact details.");
-  //     return;
-  //   }
-
-  //   setBookingLoading(true);
-  //   try {
-  //     const localDateTime = new Date(`${selectedDate}T${selectedTime}`);
-  //     const booking_datetime = localDateTime.toISOString();
-
-  //     await createBookingAPI({
-  //       name: userInfo.name,
-  //       email: userInfo.email,
-  //       phone: userInfo.phone,
-  //       serviceIds: selectedServices.map((s) => s.id),
-  //       booking_datetime,
-  //       note: note
-  //     });
-
-
-
-  //     toast.success("Your appointment has been booked! We'll send you a confirmation shortly.");
-      
-  //     // Reset form
-  //     setCurrentStep(1);
-  //     setSelectedServices([]);
-  //     setSelectedDate("");
-  //     setSelectedTime("");
-  //     setUserInfo({ name: "", email: "", phone: "" });
-  //     setNote("");
-  //     setDurationWarning("");
-      
-  //     // Close modal after 1 second
-  //     setTimeout(() => {
-  //       onClose();
-  //     }, 1000);
-  //   } catch (error) {
-  //     console.error("Booking error:", error);
-  //     toast.error(error.message || "Failed to create booking. Please try again.");
-  //   } finally {
-  //     setBookingLoading(false);
-  //   }
-  // };
-
-
+  
 
 
 
