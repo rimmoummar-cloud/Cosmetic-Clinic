@@ -1,5 +1,6 @@
 //in this file i put the http the end point for the front end to call it in the fivh in the front end
 import express from "express";
+import { authenticateAdmin } from "../middleware/authMiddleware.js";
 import {
   getAllCategories,
   getCategoriesById,
@@ -12,8 +13,8 @@ const router = express.Router();
 
 router.get("/", getAllCategories);
 router.get("/:id", getCategoriesById);
-router.post("/", createCategories);
-router.put("/:id", updateCategories);
-router.delete("/:id", deleteCategories);
+router.post("/",authenticateAdmin, createCategories);
+router.put("/:id", authenticateAdmin, updateCategories);
+router.delete("/:id", authenticateAdmin, deleteCategories);
 
 export default router;

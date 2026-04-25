@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ServiceForm from "../services/components/ServiceForm";
-
+import api from "../../../../lib/api.js";
 export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
@@ -27,18 +27,39 @@ export default function CategoriesPage() {
     fetchCategories();
   }, []);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/categorie", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to fetch categories");
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : data?.categories || [];
-      setCategoryList(list);
-    } catch (error) {
-      setStatus({ type: "error", message: error.message || "Unable to load categories" });
-    }
-  };
+  // const fetchCategories = async () => {
+  //   try {
+  //     const res = await fetch("http://localhost:5000/api/categorie", { cache: "no-store" });
+  //     if (!res.ok) throw new Error("Failed to fetch categories");
+  //     const data = await res.json();
+  //     const list = Array.isArray(data) ? data : data?.categories || [];
+  //     setCategoryList(list);
+  //   } catch (error) {
+  //     setStatus({ type: "error", message: error.message || "Unable to load categories" });
+  //   }
+  // };
+const fetchCategories = async () => {
+  try {
+    const res = await api.get("/categorie");
 
+    const data = res.data;
+
+    const list = Array.isArray(data)
+      ? data
+      : data?.categories || [];
+
+    setCategoryList(list);
+
+  } catch (error) {
+    setStatus({
+      type: "error",
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        "Unable to load categories",
+    });
+  }
+};
   const fetchServicesByCategory = async (categoryId) => {
     try {
       setServiceLoading(true);
@@ -78,59 +99,135 @@ export default function CategoriesPage() {
     setShowModal(true);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name.trim() || !description.trim() || !imageUrl.trim()) {
-      setStatus({ type: "error", message: "Please fill all required fields" });
-      return;
-    }
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!name.trim() || !description.trim() || !imageUrl.trim()) {
+  //     setStatus({ type: "error", message: "Please fill all required fields" });
+  //     return;
+  //   }
 
-    setLoading(true);
-    setStatus(null);
+  //   setLoading(true);
+  //   setStatus(null);
 
-    const isEdit = Boolean(editingCategoryId);
-    const endpoint = isEdit ? `http://localhost:5000/api/categorie/${editingCategoryId}` : "http://localhost:5000/api/categorie";
-    const method = isEdit ? "PUT" : "POST";
+  //   const isEdit = Boolean(editingCategoryId);
+  //   const endpoint = isEdit ? `http://localhost:5000/api/categorie/${editingCategoryId}` : "http://localhost:5000/api/categorie";
+  //   const method = isEdit ? "PUT" : "POST";
 
-    try {
-      const res = await fetch(endpoint, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          description,
-          image_url: imageUrl,
-        //   is_active: isActive,
-        }),
-      });
+  //   try {
+  //     const res = await fetch(endpoint, {
+  //       method,
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         name,
+  //         description,
+  //         image_url: imageUrl,
+  //       //   is_active: isActive,
+  //       }),
+  //     });
 
-      if (!res.ok) throw new Error("Failed to save category");
+  //     if (!res.ok) throw new Error("Failed to save category");
 
-      setStatus({ type: "success", message: isEdit ? "Category updated successfully" : "Category created successfully" });
-      resetForm();
-      setShowModal(false);
-      await fetchCategories();
-    } catch (error) {
-      setStatus({ type: "error", message: error.message || "Something went wrong" });
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     setStatus({ type: "success", message: isEdit ? "Category updated successfully" : "Category created successfully" });
+  //     resetForm();
+  //     setShowModal(false);
+  //     await fetchCategories();
+  //   } catch (error) {
+  //     setStatus({ type: "error", message: error.message || "Something went wrong" });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!name.trim() || !description.trim() || !imageUrl.trim()) {
+    setStatus({ type: "error", message: "Please fill all required fields" });
+    return;
+  }
 
-  const handleDelete = async (id) => {
-    const confirmed = window.confirm("Are you sure you want to delete this category?");
-    if (!confirmed) return;
+  setLoading(true);
+  setStatus(null);
 
-    try {
-      const res = await fetch(`http://localhost:5000/api/categorie/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete category");
-      setStatus({ type: "success", message: "Category deleted successfully" });
-      await fetchCategories();
-    } catch (error) {
-      setStatus({ type: "error", message: error.message || "Unable to delete category" });
-    }
-  };
+  const isEdit = Boolean(editingCategoryId);
 
+  const endpoint = isEdit
+    ? `/categorie/${editingCategoryId}`
+    : `/categorie`;
+
+  const method = isEdit ? "put" : "post";
+
+  try {
+    const res = await api({
+      url: endpoint,
+      method: method,
+      data: {
+        name,
+        description,
+        image_url: imageUrl,
+        // is_active: isActive,
+      },
+    });
+
+    if (!res) throw new Error("Failed to save category");
+
+    setStatus({
+      type: "success",
+      message: isEdit
+        ? "Category updated successfully"
+        : "Category created successfully",
+    });
+
+    resetForm();
+    setShowModal(false);
+    await fetchCategories();
+
+  } catch (error) {
+    setStatus({
+      type: "error",
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // const handleDelete = async (id) => {
+  //   const confirmed = window.confirm("Are you sure you want to delete this category?");
+  //   if (!confirmed) return;
+
+  //   try {
+  //     const res = await fetch(`http://localhost:5000/api/categorie/${id}`, { method: "DELETE" });
+  //     if (!res.ok) throw new Error("Failed to delete category");
+  //     setStatus({ type: "success", message: "Category deleted successfully" });
+  //     await fetchCategories();
+  //   } catch (error) {
+  //     setStatus({ type: "error", message: error.message || "Unable to delete category" });
+  //   }
+  // };
+const handleDelete = async (id) => {
+  const confirmed = window.confirm("Are you sure you want to delete this category?");
+  if (!confirmed) return;
+
+  try {
+    const res = await api.delete(`/categorie/${id}`);
+
+    if (!res) throw new Error("Failed to delete category");
+
+    setStatus({ type: "success", message: "Category deleted successfully" });
+    await fetchCategories();
+
+  } catch (error) {
+    setStatus({
+      type: "error",
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        "Unable to delete category",
+    });
+  }
+};
   const openServicesModal = (categoryId) => {
     setSelectedCategoryId(categoryId);
     setShowServicesModal(true);

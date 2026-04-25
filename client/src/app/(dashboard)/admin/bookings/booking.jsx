@@ -1,5 +1,5 @@
 "use client";
-
+import api from "../../../../lib/api.js";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -32,32 +32,82 @@ const API_BASE_URL =
 
 export default function AdminBookingsPage() {
   const { data: bookingData = [] } = useQuery({
-  queryKey: ["bookings"],
-  queryFn: async () => {
-    const res = await fetch(
-      `${API_BASE_URL}/bookings/WithDetails`
-    );
-    return res.json();
-  },
+  // queryKey: ["bookings"],
+  // queryFn: async () => {
+  //   const res = await fetch(
+  //     `${API_BASE_URL}/bookings/WithDetails`
+  //   );
+  //   if (!res.ok) throw new Error("Unauthorized");
+  //   return res.json();
+  // },
+   queryKey: ["bookings"],
+   queryFn: async () => {
+  const res = await api.get("/bookings/WithDetails");
+
+  return res.data;
+},
+//   queryFn: async () => {
+//   const token = localStorage.getItem("token");
+
+//   const res = await api.get(
+//     `${API_BASE_URL}/bookings/WithDetails`,
+//     {
+//       headers: {
+//         Authorization: `Bearer ${token}`
+//       }
+//     }
+//   );
+
+//   if (!res.ok) throw new Error("Unauthorized");
+
+//   return res.json();
+// },
 });
+// const { data: bookingData = [] } = useQuery({
+//   queryKey: ["bookings"],
+//   queryFn: async () => {
+//     const res = await fetch(`${API_BASE_URL}/bookings/WithDetails`);
+//     const data = await res.json();
+
+//     return data.bookings || data.data || data || [];
+//   },
+// });
     const queryClient = useQueryClient();
     
     const updateStatus = async (id, newStatus) => {
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/bookings/${id}/status`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          status: newStatus,
-        }),
-      }
-    );
-
+    // const res = await fetch(
+    //   `${API_BASE_URL}/bookings/${id}/status`,
+    //   {
+    //     method: "PUT",
+    //     headers: {
+    //       "Content-Type":
+    //         "application/json",
+    //     },
+    //     body: JSON.stringify({
+    //       status: newStatus,
+    //     }),
+    //   }
+    // );
+//     const res = await api.put(
+//   `${API_BASE_URL}/bookings/${id}/status`,
+//   {
+//     method: "PUT",
+//     headers: {
+//       "Content-Type": "application/json",
+//       Authorization: `Bearer ${localStorage.getItem("token")}`
+//     },
+//     body: JSON.stringify({
+//       status: newStatus,
+//     }),
+//   }
+// );
+const res = await api.put(
+  `/bookings/${id}/status`,
+  {
+    status: newStatus,
+  }
+);
     if (!res.ok) {
       throw new Error("Failed to update");
     }

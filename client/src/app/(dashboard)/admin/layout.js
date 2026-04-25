@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -19,9 +19,21 @@ const navItems = [
 ];
 
 export default function AdminLayout({ children }) {
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+useEffect(() => {
+  const token = localStorage.getItem("token");
 
+  if (!token) {
+    window.location.href = "/login";
+  } else {
+    setCheckingAuth(false);
+  }
+}, []);
+if (checkingAuth) {
+  return null;
+}
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Mobile Overlay */}

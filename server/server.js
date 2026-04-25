@@ -15,13 +15,14 @@ import sectionContentRoutes from "./routes/sectionContentRoutes.js";
 import customerRoutes from "./routes/customeRoutes.js";
 import houreByDateRoute from "./routes/houreByDateRoute.js";
 import BreakeHourRouter from "./routes/BreakeHourRouter.js";
+import authRoutes from "./routes/authRoutes.js";
 dotenv.config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.use("/api", authRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/categorie", categoriesRoutes);
