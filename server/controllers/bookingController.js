@@ -3,6 +3,7 @@ import db from "../config/db.js";
 import { getWorkingHoursByDay } from "../models/workingHoure.js";
 import { DateTime } from "luxon";
 import { sendBookingEmail } from "../utils/sendEmail.js";
+import { getBookingDisclaimers } from "../utils/bookingEmailHelper.js";
 const BUSINESS_TIME_ZONE =
   process.env.BUSINESS_TIME_ZONE || "America/Montreal";
    
@@ -92,7 +93,18 @@ console.log("============================");
     await client.query("COMMIT");
 
 
+const disclaimers = await getBookingDisclaimers(booking.id);
 
+// let disclaimerHTML = "";
+
+// if (disclaimers.length > 0) {
+//   disclaimerHTML = `
+//     <h3>⚠️ Treatment Warnings</h3>
+//     <ul>
+//       ${disclaimers.map(d => `<li>${d.title}</li>`).join("")}
+//     </ul>
+//   `;
+// }
     
     const servicesRes = await db.query(
   `SELECT name FROM services WHERE id = ANY($1)`,
@@ -103,13 +115,74 @@ const serviceNames = servicesRes.rows
   .map(s => s.name)
   .join(", ");
 
-await sendBookingEmail({
-  to:customer.email,
-  customerName: name,
-  serviceName: serviceNames,
-  bookingDate: booking_datetime,
-  bookingTime: booking_datetime,
-});
+
+
+
+
+if (disclaimers.length > 0) {
+
+  // فيه مخاطر → ابعت review email
+  await sendBookingEmail({
+    to: email,
+    customerName: name,
+    serviceName: serviceNames,
+    bookingDate: booking_datetime,
+    bookingTime: booking_datetime,
+    bookingId: booking.id,
+  });
+
+} 
+// else {
+
+//   // ما فيه مخاطر → ابعت confirmation عادي
+//   await sendBookingEmail({
+//     to: email,
+//     customerName: name,
+//     serviceName: serviceNames,
+//     bookingDate: booking_datetime,
+//     bookingTime: booking_datetime,
+//   });
+
+// }
+
+
+
+// await sendBookingEmail({
+//   to: email,
+
+//   customerName: name,
+
+//   serviceName: serviceNames,
+
+//   bookingDate: booking_datetime,
+
+//   bookingTime: booking_datetime,
+
+//   bookingId: disclaimers.length > 0
+//     ? booking.id
+//     : null,
+// });
+
+//   await sendBookingEmail({
+//   to: email,
+
+//   customerName: name,
+
+//   serviceName: serviceNames,
+
+//   bookingDate: booking_datetime,
+
+//   bookingTime: booking_datetime,
+
+//   bookingId: booking.id,
+// });
+// await sendBookingEmail({
+//   to:customer.email,
+//   customerName: name,
+//   serviceName: serviceNames,
+//   bookingDate: booking_datetime,
+//   bookingTime: booking_datetime,
+// });
 
 // إرسال الإيميل
 // await sendBookingEmail({

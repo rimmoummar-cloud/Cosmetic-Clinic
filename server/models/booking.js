@@ -334,3 +334,21 @@ export const updateBookingStatus = async (bookingId, newStatus) => {
 
   return res.rows[0];
 };
+
+
+
+export const updateDisclaimerStatus =
+  async (bookingId, status) => {
+
+    const res = await db.query(
+      `
+      UPDATE bookings
+      SET disclaimer_status = $1
+      WHERE id = $2
+      RETURNING *
+      `,
+      [status, bookingId]
+    );
+
+    return res.rows[0];
+  };

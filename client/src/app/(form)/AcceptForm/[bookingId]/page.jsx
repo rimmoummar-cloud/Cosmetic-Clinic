@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-import { useParams } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
 
 import toast from "react-hot-toast";
 
@@ -34,7 +37,7 @@ async function fetchJson(
 export default function BookingReviewPage() {
 
   const params = useParams();
-
+const router = useRouter();
   const bookingId =
     params.bookingId;
 
@@ -101,26 +104,51 @@ export default function BookingReviewPage() {
             (d) => d.id
           );
 
-        await fetchJson(
-          `${API_BASE}/api/acceptance/${bookingId}`,
-          {
-            method: "POST",
+        // await fetchJson(
+        //   `${API_BASE}/api/acceptance/${bookingId}`,
+        //   {
+        //     method: "POST",
 
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
+        //     headers: {
+        //       "Content-Type":
+        //         "application/json",
+        //     },
 
-            body: JSON.stringify({
-              disclaimerIds,
-            }),
-          }
-        );
+        //     body: JSON.stringify({
+        //       disclaimerIds,
+        //     }),
+        //   }
+        // );
+
+const res = await fetch(
+  `${API_BASE}/api/acceptance/${bookingId}`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      disclaimerIds,
+    }),
+  }
+);
+
+console.log("STATUS:", res.status);
+
+const data = await res.json();
+
+console.log("RESPONSE:", data);
+
+
+
+
 
         toast.success(
           "Booking confirmed successfully 💖"
         );
-
+setTimeout(() => {
+  router.push("/booking-success");
+}, 1500);
       } catch (error) {
 
         console.error(error);
@@ -348,19 +376,25 @@ export default function BookingReviewPage() {
 
           <button
             onClick={handleAccept}
-            className="
-              w-full
-              h-14
-              rounded-2xl
-              bg-[#7aa35a]
-              hover:bg-[#6d934f]
-              transition
-              text-white
-              font-semibold
-              text-base
-              mt-7
-              shadow-md
-            "
+        
+  disabled={!accepted}
+         className={`
+  w-full
+  h-14
+  rounded-2xl
+  transition
+  text-white
+  font-semibold
+  text-base
+  mt-7
+  shadow-md
+
+  ${
+    accepted
+      ? "bg-[#7aa35a] hover:bg-[#6d934f] cursor-pointer"
+      : "bg-gray-300 cursor-not-allowed opacity-70"
+  }
+`}
           >
 
             Accept & Confirm Booking
