@@ -90,26 +90,31 @@ console.log("============================");
       note
     );
 
+
+
+
+
     await client.query("COMMIT");
 
+const disclaimers =
+  await getBookingDisclaimers(booking.id);
 
-const disclaimers = await getBookingDisclaimers(booking.id);
+if (disclaimers.length === 0) {
 
-// let disclaimerHTML = "";
+  await Booking.updateDisclaimerStatus(
+    booking.id,
+    "no_disclaimers"
+  );
+}
 
-// if (disclaimers.length > 0) {
-//   disclaimerHTML = `
-//     <h3>⚠️ Treatment Warnings</h3>
-//     <ul>
-//       ${disclaimers.map(d => `<li>${d.title}</li>`).join("")}
-//     </ul>
-//   `;
-// }
+
     
     const servicesRes = await db.query(
   `SELECT name FROM services WHERE id = ANY($1)`,
   [serviceIds]
 );
+
+
 
 const serviceNames = servicesRes.rows
   .map(s => s.name)
@@ -132,80 +137,6 @@ if (disclaimers.length > 0) {
   });
 
 } 
-// else {
-
-//   // ما فيه مخاطر → ابعت confirmation عادي
-//   await sendBookingEmail({
-//     to: email,
-//     customerName: name,
-//     serviceName: serviceNames,
-//     bookingDate: booking_datetime,
-//     bookingTime: booking_datetime,
-//   });
-
-// }
-
-
-
-// await sendBookingEmail({
-//   to: email,
-
-//   customerName: name,
-
-//   serviceName: serviceNames,
-
-//   bookingDate: booking_datetime,
-
-//   bookingTime: booking_datetime,
-
-//   bookingId: disclaimers.length > 0
-//     ? booking.id
-//     : null,
-// });
-
-//   await sendBookingEmail({
-//   to: email,
-
-//   customerName: name,
-
-//   serviceName: serviceNames,
-
-//   bookingDate: booking_datetime,
-
-//   bookingTime: booking_datetime,
-
-//   bookingId: booking.id,
-// });
-// await sendBookingEmail({
-//   to:customer.email,
-//   customerName: name,
-//   serviceName: serviceNames,
-//   bookingDate: booking_datetime,
-//   bookingTime: booking_datetime,
-// });
-
-// إرسال الإيميل
-// await sendBookingEmail({
-//   to: email,
-//   customerName: name,
-//   serviceName: serviceNames,
-//   bookingDate: booking_datetime,
-//   bookingTime: booking_datetime,
-// });
-// await sendBookingEmail({
-
-// to: customer.email,
-
-//   customerName: name,
-
-//   serviceName: serviceIds.join(", "),
-
-//   bookingDate: booking_datetime,
-
-//   bookingTime: booking_datetime,
-
-// });
-
 
 
     res.status(201).json(booking);
@@ -407,22 +338,7 @@ const endDateTime = DateTime.fromISO(
     const currentDateStr = now.toISODate();
     const currentMinutes = now.hour * 60 + now.minute;
 
-//     bookings.forEach((b) => {
-// const bookingStart = DateTime
-//   .fromJSDate(b.booking_datetime)
-//   .setZone(BUSINESS_TIME_ZONE);
-//       const startTime = bookingStart.toFormat("HH:mm");
-//       const start = timeToMinutes(startTime);
-//       const slots = Math.ceil(b.duration_minutes / slotDuration);
-//       for (let i = 0; i < slots; i++) {
-//         const slotTime = start + i * slotDuration;
-//         // Skip past slots on today
-//         if (bookingDate === currentDateStr && slotTime < currentMinutes) {
-//           continue;
-//         }
-//         blockedSlots.add(minutesToTime(slotTime));
-//       }
-//     });
+
 bookings.forEach((b) => {
   // إذا كان الحجز ملغي أو منتهي → لا نحجز السلوت
 if (!["pending", "approved"].includes(b.status)) {
@@ -515,52 +431,61 @@ function minutesToTime(minutes) {
   const m = minutes % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
+
 export const getBookingWithFullDetails = async (req, res) => {
   try {
+
     const result = await db.query(`
-      SELECT
-        bookings.id,
-        bookings.status,
-        bookings.note,
-        bookings.created_at,
-        bookings.booking_datetime,
-        bookings.total_amount,
+     SELECT
+  bookings.id,
+  bookings.status,
+  bookings.note,
+  bookings.created_at,
+  
+  -- UTC محفوظ + نسخة للعرض
+  bookings.booking_datetime,
+  (bookings.booking_datetime AT TIME ZONE 'UTC' AT TIME ZONE 'America/Montreal') 
+    AS booking_datetime_local,
 
-        customers.name AS customer_name,
-        customers.email AS customer_email,
-        customers.phone AS customer_phone,
+  bookings.total_amount,
+  bookings.disclaimer_status,
 
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'id', services.id,
-              'name', services.name,
-              'duration', services.duration_minutes,
-              'price', services.price
-            )
-          ) FILTER (WHERE services.id IS NOT NULL),
-          '[]'
-        ) AS services
+  customers.name AS customer_name,
+  customers.email AS customer_email,
+  customers.phone AS customer_phone,
 
-      FROM bookings
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'id', services.id,
+        'name', services.name,
+        'duration', services.duration_minutes,
+        'price', services.price
+      )
+    ) FILTER (WHERE services.id IS NOT NULL),
+    '[]'
+  ) AS services
 
-      JOIN customers
-        ON bookings.customer_id = customers.id
+FROM bookings
+JOIN customers ON bookings.customer_id = customers.id
+LEFT JOIN booking_services ON bookings.id = booking_services.booking_id
+LEFT JOIN services ON booking_services.service_id = services.id
 
-      LEFT JOIN booking_services
-        ON bookings.id = booking_services.booking_id
+WHERE
+  bookings.status != 'cancel'
+  AND bookings.booking_datetime >= 
+      (NOW() AT TIME ZONE 'America/Montreal') AT TIME ZONE 'UTC'
 
-      LEFT JOIN services
-        ON booking_services.service_id = services.id
-
-      GROUP BY
-        bookings.id,
-        customers.id
-
-      ORDER BY bookings.created_at DESC
+GROUP BY bookings.id, customers.id
+ORDER BY bookings.created_at DESC;
     `);
 
-    res.json(result.rows);
+    const formattedBookings = result.rows.map((booking) => ({
+      ...booking,
+      disclaimer_status: booking.disclaimer_status || "no_disclaimers",
+    }));
+
+    res.json(formattedBookings);
 
   } catch (error) {
     console.error(error);

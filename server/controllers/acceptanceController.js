@@ -1,147 +1,94 @@
-// import db from "../config/db.js";
-
-// import * as AcceptanceModel
-// from "../models/acceptance.js";
-
-// export const acceptDisclaimers =
-//   async (req, res) => {
-
-//     const client = await db.connect();
-
-//     try {
-
-//       await client.query("BEGIN");
-
-//       const { bookingId } = req.params;
-
-//       const { disclaimerIds } = req.body;
-
-//       if (
-//         !Array.isArray(disclaimerIds)
-//       ) {
-//         return res.status(400).json({
-//           message:
-//             "disclaimerIds must be array",
-//         });
-//       }
-
-//       for (const id of disclaimerIds) {
-
-//         await AcceptanceModel.saveAcceptance(
-//           client,
-//           bookingId,
-//           id
-//         );
-//       }
-
-//       // await client.query(
-//       //   `
-//       //   UPDATE bookings
-//       //   SET status = 'confirmed'
-//       //   WHERE id = $1
-//       //   `,
-//       //   [bookingId]
-//       // );
-
-//       await client.query("COMMIT");
-
-//       res.json({
-//         message:
-//           "Disclaimers accepted successfully",
-//       });
-
-//     } catch (error) {
-
-//       await client.query("ROLLBACK");
-
-//       console.error(error);
-
-//       res.status(500).json({
-//         message:
-//           "Error accepting disclaimers",
-//       });
-
-//     } finally {
-//       client.release();
-//     }
-//   };
 import db from "../config/db.js";
-import * as Booking
-from "../models/booking.js";
-import * as AcceptanceModel
-from "../models/acceptance.js";
+import * as Booking from "../models/booking.js";
 
-export const acceptDisclaimers =
-  async (req, res) => {
+export const acceptDisclaimers = async (req, res) => {
+  const client = await db.connect();
 
-    const client =
-      await db.connect();
+  try {
+    await client.query("BEGIN");
 
-    try {
+    const { bookingId } = req.params;
+    const { disclaimerIds, signature } = req.body;
 
-      await client.query("BEGIN");
+    if (!Array.isArray(disclaimerIds) || disclaimerIds.length === 0) {
+      return res.status(400).json({
+        message: "disclaimerIds must be a non-empty array",
+      });
+    }
 
-      const { bookingId } =
-        req.params;
+    const servicesRes = await client.query(
+      `SELECT service_id FROM booking_services WHERE booking_id = $1`,
+      [bookingId]
+    );
 
-      const { disclaimerIds } =
-        req.body;
-  console.log("BOOKING ID:", bookingId);
-      console.log("BODY:", req.body);
-      console.log("DISCLAIMER IDS:", disclaimerIds);
+    const serviceIds = servicesRes.rows.map((s) => s.service_id);
 
-
-
-
-
-      if (
-        !Array.isArray(
-          disclaimerIds
-        )
-      ) {
-
-        return res.status(400).json({
-          message:
-            "disclaimerIds must be array",
-        });
-      }
-
-      // هون تحفظ كل disclaimer
-
+    for (const serviceId of serviceIds) {
       for (const id of disclaimerIds) {
+        const { rows } = await client.query(
+          `SELECT title, description, type FROM service_disclaimers WHERE id = $1`,
+          [id]
+        );
 
-        await AcceptanceModel.saveAcceptance(
-          client,
-          bookingId,
-          id
+        const disclaimer = rows[0];
+        if (!disclaimer) continue;
+
+        await client.query(
+          `
+          INSERT INTO booking_disclaimer_acceptance
+          (
+            booking_id,
+            service_id,
+            disclaimer_id,
+            disclaimer_title,
+            disclaimer_description,
+            disclaimer_type,
+            is_accepted,
+            accepted_at,
+            signature
+          )
+          SELECT $1,$2,$3,$4,$5,$6,TRUE,NOW(),$7
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM booking_disclaimer_acceptance
+            WHERE booking_id = $1
+              AND service_id = $2
+              AND disclaimer_id = $3
+          )
+          `,
+          [
+            bookingId,
+            serviceId,
+            id,
+            disclaimer.title,
+            disclaimer.description,
+            disclaimer.type,
+            signature || null,
+          ]
         );
       }
-await Booking.updateDisclaimerStatus(
-  bookingId,
-  "accepted"
-);
-      await client.query("COMMIT");
-
-      res.json({
-        message:
-          "Disclaimers accepted successfully",
-      });
-
-    } catch (error) {
-
-      await client.query(
-        "ROLLBACK"
-      );
-
-      console.error(error);
-
-      res.status(500).json({
-        message:
-          "Error accepting disclaimers",
-      });
-
-    } finally {
-
-      client.release();
     }
-  };
+
+    await Booking.updateDisclaimerStatus(bookingId, "accepted");
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      success: true,
+      message: "Disclaimers accepted successfully",
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    console.error("ACCEPT ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error while accepting disclaimers",
+    });
+
+  } finally {
+    client.release();
+  }
+};

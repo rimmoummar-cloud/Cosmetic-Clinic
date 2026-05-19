@@ -43,27 +43,21 @@
 //   }
 // }
 import nodemailer from "nodemailer";
+import { DateTime } from "luxon";
 
-const transporter =
-  nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+const BUSINESS_TIME_ZONE =
+  process.env.BUSINESS_TIME_ZONE || "America/Montreal";
 
-    port: process.env.SMTP_PORT,
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false, // مهم لمعظم SMTP
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
-// export async function sendBookingEmail({
-//   to,
-//   customerName,
-//   serviceName,
-//   bookingDate,
-//   bookingTime,
-//   bookingId,
-// }) {
 export async function sendBookingEmail({
   to,
   customerName,
@@ -72,96 +66,55 @@ export async function sendBookingEmail({
   bookingTime,
   bookingId,
 }) {
-  const reviewLink =
-    `${process.env.FRONTEND_URL}/AcceptForm/${bookingId}`;
-const hasDisclaimers = !!bookingId;
   try {
+    // تحويل الوقت من UTC إلى business timezone
+    const dt = DateTime.fromISO(bookingDate, { zone: "utc" })
+      .setZone(BUSINESS_TIME_ZONE);
+
+    const formattedDate = dt.toFormat("yyyy-LL-dd");
+    const formattedTime = dt.toFormat("HH:mm");
+
+    const reviewLink =
+      `${process.env.FRONTEND_URL}/AcceptForm/${bookingId}`;
+
+    const hasDisclaimers = !!bookingId;
 
     await transporter.sendMail({
-
-      from:
-        `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
-
+      from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
-
-     subject: hasDisclaimers
-  ? "Complete Your Booking Review ✨"
-  : "Booking Request Received ✨",
+      subject: hasDisclaimers
+        ? "Complete Your Booking Review ✨"
+        : "Booking Request Received ✨",
 
       html: `
-        <div style="
-          font-family:Arial;
-          max-width:600px;
-          margin:auto;
-          padding:20px;
-        ">
+        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+          
+          <h2>Hello ${customerName} 💖</h2>
 
-          <h2>
-            Hello ${customerName} 💖
-          </h2>
+          <p>Your booking request has been received successfully.</p>
 
-          <p>
-            Your booking request has been received successfully.
-          </p>
-
-          <div style="
-            background:#f8f8f8;
-            padding:16px;
-            border-radius:12px;
-            margin:20px 0;
-          ">
-
-            <p>
-              <b>Services:</b>
-              ${serviceName}
-            </p>
-
-            <p>
-              <b>Date:</b>
-              ${bookingDate}
-            </p>
-
-            <p>
-              <b>Time:</b>
-              ${bookingTime}
-            </p>
-
+          <div style="background:#f8f8f8;padding:16px;border-radius:12px;margin:20px 0;">
+            <p><b>Services:</b> ${serviceName}</p>
+            <p><b>Date:</b> ${formattedDate}</p>
+            <p><b>Time:</b> ${formattedTime}</p>
           </div>
-${
-  hasDisclaimers
-    ? `
-      <p>
-     Before final confirmation,
-please review and accept
-the treatment disclaimers.
 
-Your booking is currently pending review
-until the disclaimer form is completed.
-      </p>
+          ${
+            hasDisclaimers
+              ? `
+              <p>
+                Before final confirmation, please review and accept the treatment disclaimers.
+              </p>
 
-      <a
-        href="${reviewLink}"
+              <a href="${reviewLink}"
+                style="display:inline-block;margin-top:20px;padding:14px 24px;background:#7aa35a;color:white;text-decoration:none;border-radius:12px;font-weight:bold;">
+                Review & Accept Form
+              </a>
+              `
+              : ""
+          }
 
-        style="
-          display:inline-block;
-          margin-top:20px;
-          padding:14px 24px;
-          background:#7aa35a;
-          color:white;
-          text-decoration:none;
-          border-radius:12px;
-          font-weight:bold;
-        "
-      >
-        Review & Accept Form
-      </a>
-    `
-    : ""
-}
-          <p style="
-            margin-top:30px;
-            color:#777;
-          ">
+          <p style="margin-top:30px;color:#777;">
             Shiny Skin Clinic ✨
           </p>
 
@@ -169,15 +122,9 @@ until the disclaimer form is completed.
       `,
     });
 
-    console.log(
-      "Booking review email sent ✔️"
-    );
+    console.log("Booking email sent ✔️");
 
   } catch (error) {
-
-    console.log(
-      "EMAIL ERROR ❌",
-      error.message
-    );
+    console.log("EMAIL ERROR ❌", error.message);
   }
 }

@@ -155,6 +155,11 @@ const [actionLoadingId, setActionLoadingId] = useState(null);
     cancelled: "bg-red-100 text-red-700",
     completed: "bg-blue-100 text-blue-700",
   };
+  const disclaimerColors = {
+  accepted: "bg-emerald-500",
+  pending: "bg-red-500",
+  no_disclaimers: "bg-yellow-400",
+};
 
   return (
     <div>
@@ -206,13 +211,8 @@ const [actionLoadingId, setActionLoadingId] = useState(null);
   })}
 </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100">
         <div className="overflow-x-auto">
-
-
-
-
-            
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50">
@@ -228,12 +228,16 @@ const [actionLoadingId, setActionLoadingId] = useState(null);
                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
                  Note
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
-                  Date & Time
-                </th>
+               <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase min-w-[220px]">
+  Date & Time
+</th>
+                              <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+  Disclaimer
+</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
                   Status
                 </th>
+  
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
                   Actions
                 </th>
@@ -330,7 +334,7 @@ const [actionLoadingId, setActionLoadingId] = useState(null);
 
 
 
-                  <td className="px-6 py-4">
+                  {/* <td className="px-6 py-4">
                     <div>
                       <p className="text-sm font-medium">
                       {booking.booking_datetime} 
@@ -340,7 +344,48 @@ const [actionLoadingId, setActionLoadingId] = useState(null);
                          {booking.created_at.split("T")[0]} at {booking.created_at.split("T")[1].slice(0, 5)}
                       </p>
                     </div>
-                  </td>
+                  </td> */}
+<td className="px-6 py-4">
+  <div>
+    <p className="text-sm font-medium">
+      {new Date(booking.booking_datetime).toLocaleString("en-US", {
+        timeZone: "America/Montreal",
+        dateStyle: "medium",
+        timeStyle: "short",
+      })}
+    </p>
+
+    <p className="text-xs text-gray-400">
+      {new Date(booking.created_at).toLocaleString("en-US", {
+        timeZone: "America/Montreal",
+        dateStyle: "medium",
+        timeStyle: "short",
+      })}
+    </p>
+  </div>
+</td>
+
+<td className="px-6 py-4">
+  <div className="flex items-center gap-2">
+
+    <div
+      className={`w-3 h-3 rounded-full ${
+        disclaimerColors[
+          booking.disclaimer_status
+        ] || "bg-gray-300"
+      }`}
+    />
+
+    <span className="text-xs capitalize text-gray-600">
+      {booking.disclaimer_status
+        ?.replace("_", " ")}
+    </span>
+
+  </div>
+</td>
+
+
+
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
@@ -405,41 +450,42 @@ const [actionLoadingId, setActionLoadingId] = useState(null);
           
             </tbody>
           </table>
-             <Modal
-  isOpen={!!selectedService}
-  onClose={() => setSelectedService(null)}
-  title="Service Details"
->
-  {selectedService?.map((service) => (
-    <div
-      key={service.id}
-      className="border-b py-2 text-sm"
-    >
-      <p className="font-medium">
-        {service.name}
-      </p>
-
-      <p className="text-gray-500">
-        Duration: {service.duration} min
-      </p>
-
-      <p className="text-gray-500">
-        Price: ${service.price}
-      </p>
-    </div>
-  ))}
-</Modal>
-<Modal
-  isOpen={!!selectedNote}
-  onClose={() => setSelectedNote(null)}
-  title="Notes"
->
-<p className="text-sm text-gray-600">
-  {selectedNote || "-"}
-</p>
-</Modal>
         </div>
       </div>
+
+      <Modal
+        isOpen={!!selectedService}
+        onClose={() => setSelectedService(null)}
+        title="Service Details"
+      >
+        {selectedService?.map((service) => (
+          <div
+            key={service.id}
+            className="border-b py-2 text-sm"
+          >
+            <p className="font-medium">
+              {service.name}
+            </p>
+
+            <p className="text-gray-500">
+              Duration: {service.duration} min
+            </p>
+
+            <p className="text-gray-500">
+              Price: ${service.price}
+            </p>
+          </div>
+        ))}
+      </Modal>
+      <Modal
+        isOpen={!!selectedNote}
+        onClose={() => setSelectedNote(null)}
+        title="Notes"
+      >
+        <p className="text-sm text-gray-600">
+          {selectedNote || "-"}
+        </p>
+      </Modal>
     </div>
   );
 }

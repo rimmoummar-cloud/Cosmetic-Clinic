@@ -1,49 +1,5 @@
 import * as DisclaimerModel from "../models/disclaimer.js";
 
-// export const getBookingDisclaimers =
-//   async (req, res) => {
-//     try {
-//       const { bookingId } = req.params;
-
-//       const disclaimers =
-//         await DisclaimerModel.getDisclaimersByBookingId(
-//           bookingId
-//         );
-
-//       res.json(disclaimers);
-
-//     } catch (error) {
-//       console.error(error);
-
-//       res.status(500).json({
-//         message:
-//           "Error fetching disclaimers",
-//       });
-//     }
-//   };
-
-// export const createDisclaimer =
-//   async (req, res) => {
-//     try {
-//       const disclaimer =
-//         await DisclaimerModel.createDisclaimer(
-//           req.body
-//         );
-
-//       res.status(201).json(disclaimer);
-
-//     } catch (error) {
-//       console.error(error);
-
-//       res.status(500).json({
-//         message:
-//           "Error creating disclaimer",
-//       });
-//     }
-//   };
-// import * as DisclaimerModel
-// from "../models/disclaimer.model.js";
-
 export const getBookingDisclaimers =
   async (req, res) => {
 
