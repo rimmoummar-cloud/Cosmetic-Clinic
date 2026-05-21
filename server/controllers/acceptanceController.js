@@ -1,6 +1,7 @@
 import db from "../config/db.js";
 import * as Booking from "../models/booking.js";
 
+import * as Accepted from "../models/acceptance.js";
 export const acceptDisclaimers = async (req, res) => {
   const client = await db.connect();
 
@@ -90,5 +91,24 @@ export const acceptDisclaimers = async (req, res) => {
 
   } finally {
     client.release();
+  }
+};
+
+
+export const getAcceptedDisclaimers = async (req, res) => {
+  try {
+
+    const data =
+      await Accepted.getAcceptedDisclaimersFullDetails();
+
+    res.status(200).json(data);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error fetching accepted disclaimers",
+    });
   }
 };

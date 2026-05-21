@@ -432,68 +432,104 @@ function minutesToTime(minutes) {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+
+
+
+
+
 export const getBookingWithFullDetails = async (req, res) => {
+
   try {
 
-    const result = await db.query(`
-     SELECT
-  bookings.id,
-  bookings.status,
-  bookings.note,
-  bookings.created_at,
-  
-  -- UTC محفوظ + نسخة للعرض
-  bookings.booking_datetime,
-  (bookings.booking_datetime AT TIME ZONE 'UTC' AT TIME ZONE 'America/Montreal') 
-    AS booking_datetime_local,
+    const bookings =
+      await Booking.getBookingWithFullDetailsModel();
 
-  bookings.total_amount,
-  bookings.disclaimer_status,
+    const formattedBookings =
+      bookings.map((booking) => ({
 
-  customers.name AS customer_name,
-  customers.email AS customer_email,
-  customers.phone AS customer_phone,
+        ...booking,
 
-  COALESCE(
-    json_agg(
-      json_build_object(
-        'id', services.id,
-        'name', services.name,
-        'duration', services.duration_minutes,
-        'price', services.price
-      )
-    ) FILTER (WHERE services.id IS NOT NULL),
-    '[]'
-  ) AS services
+        disclaimer_status:
+          booking.disclaimer_status ||
+          "no_disclaimers",
 
-FROM bookings
-JOIN customers ON bookings.customer_id = customers.id
-LEFT JOIN booking_services ON bookings.id = booking_services.booking_id
-LEFT JOIN services ON booking_services.service_id = services.id
+      }));
 
-WHERE
-  bookings.status != 'cancel'
-  AND bookings.booking_datetime >= 
-      (NOW() AT TIME ZONE 'America/Montreal') AT TIME ZONE 'UTC'
-
-GROUP BY bookings.id, customers.id
-ORDER BY bookings.created_at DESC;
-    `);
-
-    const formattedBookings = result.rows.map((booking) => ({
-      ...booking,
-      disclaimer_status: booking.disclaimer_status || "no_disclaimers",
-    }));
-
-    res.json(formattedBookings);
+    res.status(200).json(
+      formattedBookings
+    );
 
   } catch (error) {
+
     console.error(error);
+
     res.status(500).json({
       message: "Error fetching bookings"
     });
   }
 };
+// export const getBookingWithFullDetails = async (req, res) => {
+//   try {
+
+//     const result = await db.query(`
+//      SELECT
+//   bookings.id,
+//   bookings.status,
+//   bookings.note,
+//   bookings.created_at,
+  
+//   -- UTC محفوظ + نسخة للعرض
+//   bookings.booking_datetime,
+//   (bookings.booking_datetime AT TIME ZONE 'UTC' AT TIME ZONE 'America/Montreal') 
+//     AS booking_datetime_local,
+
+//   bookings.total_amount,
+//   bookings.disclaimer_status,
+
+//   customers.name AS customer_name,
+//   customers.email AS customer_email,
+//   customers.phone AS customer_phone,
+
+//   COALESCE(
+//     json_agg(
+//       json_build_object(
+//         'id', services.id,
+//         'name', services.name,
+//         'duration', services.duration_minutes,
+//         'price', services.price
+//       )
+//     ) FILTER (WHERE services.id IS NOT NULL),
+//     '[]'
+//   ) AS services
+
+// FROM bookings
+// JOIN customers ON bookings.customer_id = customers.id
+// LEFT JOIN booking_services ON bookings.id = booking_services.booking_id
+// LEFT JOIN services ON booking_services.service_id = services.id
+
+// WHERE
+//   bookings.status != 'cancel'
+//   AND bookings.booking_datetime >= 
+//       (NOW() AT TIME ZONE 'America/Montreal') AT TIME ZONE 'UTC'
+
+// GROUP BY bookings.id, customers.id
+// ORDER BY bookings.created_at DESC;
+//     `);
+
+//     const formattedBookings = result.rows.map((booking) => ({
+//       ...booking,
+//       disclaimer_status: booking.disclaimer_status || "no_disclaimers",
+//     }));
+
+//     res.json(formattedBookings);
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       message: "Error fetching bookings"
+//     });
+//   }
+// };
 
 
 
@@ -529,6 +565,39 @@ export const updateBookingStatus = async (req, res) => {
 
     res.status(500).json({
       message: error.message,
+    });
+  }
+};
+
+
+
+export const getAllBookingsWithFullDetails = async (req, res) => {
+
+  try {
+
+    const bookings =
+      await Booking.getAllBookingsWithFullDetailsModel();
+
+    const formattedBookings =
+      bookings.map((booking) => ({
+
+        ...booking,
+
+        disclaimer_status:
+          booking.disclaimer_status ||
+          "no_disclaimers",
+
+      }));
+
+    res.json(formattedBookings);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      message:
+        "Error fetching bookings"
     });
   }
 };

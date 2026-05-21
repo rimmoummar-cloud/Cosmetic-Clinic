@@ -1,5 +1,5 @@
 "use client";
-import api from "../../../../lib/api.js";
+import api from "../../../../../lib/api.js";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,80 +31,21 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000/api";
 
-export default function AdminBookingsPage() {
+export default function AllBookingsPage() {
   const router = useRouter();
   
   const { data: bookingData = [] } = useQuery({
-  // queryKey: ["bookings"],
-  // queryFn: async () => {
-  //   const res = await fetch(
-  //     `${API_BASE_URL}/bookings/WithDetails`
-  //   );
-  //   if (!res.ok) throw new Error("Unauthorized");
-  //   return res.json();
-  // },
-   queryKey: ["bookings"],
+   queryKey: ["bookingsAll"],
    queryFn: async () => {
-  const res = await api.get("/bookings/WithDetails");
+  const res = await api.get("/bookings/all/full-details");
 
   return res.data;
 },
-//   queryFn: async () => {
-//   const token = localStorage.getItem("token");
-
-//   const res = await api.get(
-//     `${API_BASE_URL}/bookings/WithDetails`,
-//     {
-//       headers: {
-//         Authorization: `Bearer ${token}`
-//       }
-//     }
-//   );
-
-//   if (!res.ok) throw new Error("Unauthorized");
-
-//   return res.json();
-// },
 });
-// const { data: bookingData = [] } = useQuery({
-//   queryKey: ["bookings"],
-//   queryFn: async () => {
-//     const res = await fetch(`${API_BASE_URL}/bookings/WithDetails`);
-//     const data = await res.json();
-
-//     return data.bookings || data.data || data || [];
-//   },
-// });
     const queryClient = useQueryClient();
     
     const updateStatus = async (id, newStatus) => {
   try {
-    // const res = await fetch(
-    //   `${API_BASE_URL}/bookings/${id}/status`,
-    //   {
-    //     method: "PUT",
-    //     headers: {
-    //       "Content-Type":
-    //         "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       status: newStatus,
-    //     }),
-    //   }
-    // );
-//     const res = await api.put(
-//   `${API_BASE_URL}/bookings/${id}/status`,
-//   {
-//     method: "PUT",
-//     headers: {
-//       "Content-Type": "application/json",
-//       Authorization: `Bearer ${localStorage.getItem("token")}`
-//     },
-//     body: JSON.stringify({
-//       status: newStatus,
-//     }),
-//   }
-// );
 const res = await api.put(
   `/bookings/${id}/status`,
   {
@@ -124,7 +65,7 @@ queryClient.invalidateQueries({
   queryKey: ["bookings"],
 });
    await queryClient.invalidateQueries({
-      queryKey: ["bookings"],
+      queryKey: ["bookingsAll"],
     });
 
     await queryClient.invalidateQueries({
@@ -136,7 +77,6 @@ queryClient.invalidateQueries({
       queryKey: ["availableSlots"],
       exact: false,
     });
-    // window.location.reload();
   } catch (err) {
     console.error(err);
   }
@@ -187,25 +127,38 @@ const [acceptanceData, setAcceptanceData] = useState([]);
   return (
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold font-[var(--font-heading)]">
-            Bookings
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            View and manage all appointments
-          </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push("/admin/bookings")}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Go back to Bookings"
+          >
+            <svg
+              className="w-5 h-5 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold font-[var(--font-heading)]">
+              All Bookings
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              View all appointments including cancelled and past bookings
+            </p>
+          </div>
         </div>
-        <button
-          onClick={() => router.push("/admin/bookings/AllBooking")}
-          className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
-        >
-          View All Bookings
-        </button>
       </div>
 
       {/* Filters */}
-{/* Filters */}
-{/* Filters */}
 <div className="flex flex-wrap items-center gap-2 mb-6">
   {["all", "pending", "approved", "completed", "cancelled"].map((f) => {
     const count =
@@ -273,7 +226,7 @@ const [acceptanceData, setAcceptanceData] = useState([]);
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {bookingData.map((booking) => (
+              {filtered.map((booking) => (
               
               
                 <tr
@@ -293,14 +246,6 @@ const [acceptanceData, setAcceptanceData] = useState([]);
                       </p>
                     </div>
                   </td>
-                        {/* <td className="px-6 py-4 text-sm text-gray-600">
-                        {booking.services.map((s) => (
-            <div key={s.id}>
-            {s.name} — {s.duration} min — ${s.price}
-    </div>
-  ))}
-
-                  </td> */}
 <td className="px-6 py-4">
   {booking.services?.length > 0 ? (
     <div className="flex items-center flex-wrap gap-1">
@@ -339,9 +284,6 @@ const [acceptanceData, setAcceptanceData] = useState([]);
   )}
 </td>
 
-                   {/* <td className="px-6 py-4 text-sm text-gray-600">
-                    {booking.note || "—"}
-                  </td> */}
 <td className="px-6 py-4 text-sm">
   {booking.note ? (
     <>
@@ -361,19 +303,6 @@ const [acceptanceData, setAcceptanceData] = useState([]);
   )}
 </td>
 
-
-
-                  {/* <td className="px-6 py-4">
-                    <div>
-                      <p className="text-sm font-medium">
-                      {booking.booking_datetime} 
-                      </p>
-                      <p className="text-xs text-gray-400">
-                     
-                         {booking.created_at.split("T")[0]} at {booking.created_at.split("T")[1].slice(0, 5)}
-                      </p>
-                    </div>
-                  </td> */}
 <td className="px-6 py-4">
   <div>
     <p className="text-sm font-medium">
@@ -421,8 +350,6 @@ const [acceptanceData, setAcceptanceData] = useState([]);
   )}
 </td>
 
-
-
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
@@ -434,7 +361,6 @@ const [acceptanceData, setAcceptanceData] = useState([]);
                   </td>
                   <td className="px-6 py-4">
                 <div className="flex gap-1">
-
   {["pending", "approved"].includes(booking.status) && (
     <>
       {booking.status === "pending" && (

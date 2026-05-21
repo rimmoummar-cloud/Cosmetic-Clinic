@@ -8,6 +8,7 @@ import "../globals.css";
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
   { href: "/admin/services", label: "Services", icon: "💆" },
+    { href: "/admin/service_disclaimers", label: "Service Disclaimers", icon: "📢" },
   { href: "/admin/categories", label: "Categories", icon: "🗂️" },
   { href: "/admin/bookings", label: "Bookings", icon: "🗓️" },
   { href: "/admin/customers", label: "Customers", icon: "👥" },

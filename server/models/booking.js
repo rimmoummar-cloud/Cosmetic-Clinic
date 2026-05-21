@@ -352,3 +352,131 @@ export const updateDisclaimerStatus =
 
     return res.rows[0];
   };
+
+
+  export const getBookingWithFullDetailsModel = async () => {
+
+  const result = await db.query(`
+    
+    SELECT
+      bookings.id,
+      bookings.status,
+      bookings.note,
+      bookings.created_at,
+      
+      bookings.booking_datetime,
+
+      (
+        bookings.booking_datetime 
+        AT TIME ZONE 'UTC' 
+        AT TIME ZONE 'America/Montreal'
+      ) AS booking_datetime_local,
+
+      bookings.total_amount,
+      bookings.disclaimer_status,
+
+      customers.name AS customer_name,
+      customers.email AS customer_email,
+      customers.phone AS customer_phone,
+
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', services.id,
+            'name', services.name,
+            'duration', services.duration_minutes,
+            'price', services.price
+          )
+        ) FILTER (WHERE services.id IS NOT NULL),
+        '[]'
+      ) AS services
+
+    FROM bookings
+
+    JOIN customers
+      ON bookings.customer_id = customers.id
+
+    LEFT JOIN booking_services
+      ON bookings.id = booking_services.booking_id
+
+    LEFT JOIN services
+      ON booking_services.service_id = services.id
+
+    WHERE
+      bookings.status != 'cancel'
+
+      AND bookings.booking_datetime >= 
+      (
+        NOW() AT TIME ZONE 'America/Montreal'
+      ) AT TIME ZONE 'UTC'
+
+    GROUP BY bookings.id, customers.id
+
+    ORDER BY bookings.created_at DESC;
+
+  `);
+
+  return result.rows;
+};
+
+
+
+
+
+
+export const getAllBookingsWithFullDetailsModel = async () => {
+
+  const result = await db.query(`
+
+    SELECT
+      bookings.id,
+      bookings.status,
+      bookings.note,
+      bookings.created_at,
+
+      bookings.booking_datetime,
+
+      (
+        bookings.booking_datetime
+        AT TIME ZONE 'UTC'
+        AT TIME ZONE 'America/Montreal'
+      ) AS booking_datetime_local,
+
+      bookings.total_amount,
+      bookings.disclaimer_status,
+
+      customers.name AS customer_name,
+      customers.email AS customer_email,
+      customers.phone AS customer_phone,
+
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', services.id,
+            'name', services.name,
+            'duration', services.duration_minutes,
+            'price', services.price
+          )
+        ) FILTER (WHERE services.id IS NOT NULL),
+        '[]'
+      ) AS services
+
+    FROM bookings
+
+    JOIN customers
+      ON bookings.customer_id = customers.id
+
+    LEFT JOIN booking_services
+      ON bookings.id = booking_services.booking_id
+
+    LEFT JOIN services
+      ON booking_services.service_id = services.id
+
+    GROUP BY bookings.id, customers.id
+
+    ORDER BY bookings.created_at DESC;
+
+  `);
+
+  return result.rows;
+};

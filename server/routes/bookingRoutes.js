@@ -1,5 +1,5 @@
 import express from "express";
-import { createBooking, getAvailableSlotsMulti ,getallbookingss,getBookingWithFullDetails,updateBookingStatus } from "../controllers/bookingController.js";
+import { createBooking, getAvailableSlotsMulti ,getallbookingss,getBookingWithFullDetails,updateBookingStatus,getAllBookingsWithFullDetails } from "../controllers/bookingController.js";
 import { authenticateAdmin } from "../middleware/authMiddleware.js";
 import csrf from "csurf";
 
@@ -13,6 +13,10 @@ router.post("/", createBooking);
 router.get("/available-slots-multi", getAvailableSlotsMulti);
 router.get("/", csrfProtection , authenticateAdmin,getallbookingss);
 router.get("/WithDetails",csrfProtection, authenticateAdmin, getBookingWithFullDetails);
+router.get(
+  "/all/full-details",
+  getAllBookingsWithFullDetails
+);
 router.put(
   "/:id/status",
   csrfProtection,
