@@ -68,8 +68,12 @@ export async function sendBookingEmail({
 }) {
   try {
     // تحويل الوقت من UTC إلى business timezone
-    const dt = DateTime.fromISO(bookingDate, { zone: "utc" })
-      .setZone(BUSINESS_TIME_ZONE);
+  // const dt = DateTime
+  // .fromJSDate(new Date(bookingDate))
+  // .setZone(BUSINESS_TIME_ZONE);
+const dt = DateTime
+  .fromISO(bookingDate, { zone: "utc" })
+  .setZone(BUSINESS_TIME_ZONE);
 
     const formattedDate = dt.toFormat("yyyy-LL-dd");
     const formattedTime = dt.toFormat("HH:mm");
@@ -128,3 +132,277 @@ export async function sendBookingEmail({
     console.log("EMAIL ERROR ❌", error.message);
   }
 }
+
+
+
+
+export async function sendBookingApprovedEmail({
+  to,
+  customerName,
+  serviceName,
+  bookingDate,
+}) {
+  try {
+
+ const dt = DateTime
+  .fromJSDate(new Date(bookingDate))
+  .setZone(BUSINESS_TIME_ZONE);
+
+  
+    const formattedDate =
+      dt.toFormat("yyyy-LL-dd");
+
+    const formattedTime =
+      dt.toFormat("HH:mm");
+
+    await transporter.sendMail({
+      from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
+      to,
+
+      subject:
+        "Your Booking Has Been Approved ✨",
+
+      html: `
+        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+
+          <h2>
+            Hello ${customerName} 💖
+          </h2>
+
+          <p>
+            Your booking has been approved successfully.
+          </p>
+
+          <div style="
+            background:#f8f8f8;
+            padding:16px;
+            border-radius:12px;
+            margin:20px 0;
+          ">
+            <p>
+              <b>Services:</b>
+              ${serviceName}
+            </p>
+
+            <p>
+              <b>Date:</b>
+              ${formattedDate}
+            </p>
+
+            <p>
+              <b>Time:</b>
+              ${formattedTime}
+            </p>
+          </div>
+
+          <p>
+            We are looking forward to seeing you ✨
+          </p>
+
+          <p>
+            You will also receive a reminder
+            24 hours before your appointment.
+          </p>
+
+          <p style="
+            margin-top:30px;
+            color:#777;
+          ">
+            Shiny Skin Clinic ✨
+          </p>
+
+        </div>
+      `,
+    });
+
+    console.log(
+      "APPROVED EMAIL SENT ✔️"
+    );
+
+  } catch (error) {
+
+    console.log(
+      "APPROVED EMAIL ERROR ❌",
+      error.message
+    );
+
+  }
+}
+
+
+
+
+export async function sendBookingCancelledEmail({
+  to,
+  customerName,
+  serviceName,
+  bookingDate,
+}) {
+
+  try {
+
+    const dt = DateTime
+      .fromISO(bookingDate, {
+        zone: "utc"
+      })
+      .setZone(BUSINESS_TIME_ZONE);
+
+    const formattedDate =
+      dt.toFormat("yyyy-LL-dd");
+
+    const formattedTime =
+      dt.toFormat("HH:mm");
+
+    await transporter.sendMail({
+
+      from:
+        `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
+
+      to,
+
+      subject:
+        "Booking Cancelled",
+
+      html: `
+        <div style="
+          font-family:Arial;
+          max-width:600px;
+          margin:auto;
+          padding:20px;
+        ">
+
+          <h2>
+            Hello ${customerName}
+          </h2>
+
+          <p>
+            Unfortunately, your booking has been cancelled.
+          </p>
+
+          <div style="
+            background:#f8f8f8;
+            padding:16px;
+            border-radius:12px;
+            margin:20px 0;
+          ">
+
+            <p>
+              <b>Services:</b>
+              ${serviceName}
+            </p>
+
+            <p>
+              <b>Date:</b>
+              ${formattedDate}
+            </p>
+
+            <p>
+              <b>Time:</b>
+              ${formattedTime}
+            </p>
+
+          </div>
+
+          <p>
+            If you would like to book another appointment,
+            feel free to contact us anytime 💖
+          </p>
+
+          <p style="
+            margin-top:30px;
+            color:#777;
+          ">
+            Shiny Skin Clinic ✨
+          </p>
+
+        </div>
+      `,
+    });
+
+    console.log(
+      "Cancellation email sent ✔️"
+    );
+
+  } catch (error) {
+
+    console.log(
+      "CANCEL EMAIL ERROR ❌",
+      error.message
+    );
+
+  }
+}
+
+
+export async function sendReminderEmail({
+  to,
+  customerName,
+  bookingDate,
+  serviceName,
+  confirmUrl,
+  cancelUrl,
+}) {
+  try {
+console.log("RAW bookingDate 👉", bookingDate);
+console.log("TYPE 👉", typeof bookingDate);
+console.log("IS DATE? 👉", bookingDate instanceof Date);
+
+  //  const dt = DateTime
+  // .fromJSDate(new Date(bookingDate))
+  // .setZone(BUSINESS_TIME_ZONE);
+  const dt = DateTime
+  .fromISO(bookingDate, { zone: "utc" })
+  .setZone(BUSINESS_TIME_ZONE);
+console.log("Luxon parse:", dt.toString());
+console.log("Valid?", dt.isValid);
+console.log("Date:", dt.toFormat("yyyy-LL-dd"));
+console.log("Time:", dt.toFormat("HH:mm"));
+
+
+
+
+    const formattedDate = dt.toFormat("yyyy-LL-dd");
+    const formattedTime = dt.toFormat("HH:mm");
+
+    await transporter.sendMail({
+      from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
+      to,
+      subject: "Booking Reminder ✨",
+
+      html: `
+        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+
+          <h2>Hello ${customerName} 💖</h2>
+
+          <p>This is a reminder for your upcoming appointment.</p>
+
+          <p><b>Services:</b> ${serviceName}</p>
+          <p><b>Date:</b> ${formattedDate}</p>
+          <p><b>Time:</b> ${formattedTime}</p>
+
+          <div style="margin-top:30px;">
+
+            <a href="${confirmUrl}"
+              style="padding:12px 20px;background:#7aa35a;color:white;text-decoration:none;border-radius:10px;margin-right:10px;">
+              Confirm
+            </a>
+
+            <a href="${cancelUrl}"
+              style="padding:12px 20px;background:#d9534f;color:white;text-decoration:none;border-radius:10px;">
+              Cancel
+            </a>
+
+          </div>
+
+        </div>
+      `,
+    });
+
+    console.log("Reminder email sent ✔️");
+
+  } catch (error) {
+    console.log("Reminder email error ❌", error.message);
+  }
+}
+
+export default transporter;

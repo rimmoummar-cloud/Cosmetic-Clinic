@@ -1,6 +1,7 @@
 "use client";
 import api from "../../../../lib/api.js";
 import { useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -32,6 +33,28 @@ const API_BASE_URL =
   "http://localhost:5000/api";
 
 export default function AdminBookingsPage() {
+
+// useEffect(() => {
+//   const getCsrfToken = async () => {
+//     try {
+//       const res = await api.get("/csrf-token");
+
+//       localStorage.setItem(
+//         "csrfToken",
+//         res.data.csrfToken
+//       );
+
+//     } catch (err) {
+//       console.error("CSRF ERROR", err);
+//     }
+//   };
+
+//   getCsrfToken();
+// }, []);
+
+
+
+
   const router = useRouter();
   
   const { data: bookingData = [] } = useQuery({
@@ -79,42 +102,21 @@ export default function AdminBookingsPage() {
     
     const updateStatus = async (id, newStatus) => {
   try {
-    // const res = await fetch(
-    //   `${API_BASE_URL}/bookings/${id}/status`,
-    //   {
-    //     method: "PUT",
-    //     headers: {
-    //       "Content-Type":
-    //         "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       status: newStatus,
-    //     }),
-    //   }
-    // );
-//     const res = await api.put(
-//   `${API_BASE_URL}/bookings/${id}/status`,
-//   {
-//     method: "PUT",
-//     headers: {
-//       "Content-Type": "application/json",
-//       Authorization: `Bearer ${localStorage.getItem("token")}`
-//     },
-//     body: JSON.stringify({
-//       status: newStatus,
-//     }),
-//   }
-// );
+ const csrfToken =
+  localStorage.getItem("csrfToken");
+
 const res = await api.put(
   `/bookings/${id}/status`,
   {
     status: newStatus,
+  },
+  {
+    headers: {
+      "X-CSRF-Token": csrfToken,
+    },
   }
 );
-    if (!res.ok) {
-      throw new Error("Failed to update");
-    }
-  // 🔥 أهم سطر في المشروع كله
+
  queryClient.invalidateQueries({
   queryKey: ["availableSlots"],
   exact: false,
@@ -147,6 +149,7 @@ const [actionLoadingId, setActionLoadingId] = useState(null);
 const [selectedAcceptance, setSelectedAcceptance] = useState(null);
 const [acceptanceLoading, setAcceptanceLoading] = useState(false);
 const [acceptanceData, setAcceptanceData] = useState([]);
+const [selectedReminders, setSelectedReminders] = useState(null);
 
   const [filter, setFilter] = useState("all");
 
@@ -269,6 +272,9 @@ const [acceptanceData, setAcceptanceData] = useState([]);
   
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
                   Actions
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                  Reminders
                 </th>
               </tr>
             </thead>
@@ -481,6 +487,18 @@ const [acceptanceData, setAcceptanceData] = useState([]);
 
 </div>
                   </td>
+                  <td className="px-6 py-4">
+                    {booking.reminders && booking.reminders.length > 0 ? (
+                      <button
+                        onClick={() => setSelectedReminders(booking.reminders)}
+                        className="text-blue-600 text-xs underline hover:text-blue-800 transition-colors"
+                      >
+                        Show All Reminders
+                      </button>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
                 </tr>
                 
              ))}
@@ -595,6 +613,60 @@ const [acceptanceData, setAcceptanceData] = useState([]);
               </div>
             ))}
           </div>
+        )}
+      </Modal>
+      <Modal
+        isOpen={!!selectedReminders}
+        onClose={() => setSelectedReminders(null)}
+        title="Reminders"
+      >
+        {selectedReminders && selectedReminders.length > 0 ? (
+          <div className="space-y-4 max-h-[400px] overflow-y-auto">
+            {selectedReminders.map((reminder, idx) => (
+              <div key={idx} className="border-b pb-4 last:border-b-0">
+                <div className="mb-2">
+                  {/* <p className="text-xs font-semibold text-gray-600">
+                    ID
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    {reminder.id}
+                  </p> */}
+                </div>
+                <div className="mb-2">
+                  <p className="text-xs font-semibold text-gray-600">
+                    Type
+                  </p>
+                  <p className="text-sm text-gray-700 capitalize">
+                    {reminder.type?.replace(/_/g, " ")}
+                  </p>
+                </div>
+                <div className="mb-2">
+                  <p className="text-xs font-semibold text-gray-600">
+                    Status
+                  </p>
+                  <p className="text-sm text-gray-700 capitalize">
+                    {reminder.status}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600">
+                    Scheduled At
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    {new Date(reminder.scheduled_at).toLocaleString("en-US", {
+                      timeZone: "America/Montreal",
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-600 text-center py-4">
+            No reminders found
+          </p>
         )}
       </Modal>
     </div>

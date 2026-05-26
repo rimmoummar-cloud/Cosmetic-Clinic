@@ -20,6 +20,7 @@ router.get(
 router.put(
   "/:id/status",
   csrfProtection,
+  authenticateAdmin,
   updateBookingStatus
 );
 

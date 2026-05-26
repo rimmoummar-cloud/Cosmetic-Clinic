@@ -2,8 +2,11 @@ import * as Booking from "../models/booking.js";
 import db from "../config/db.js";
 import { getWorkingHoursByDay } from "../models/workingHoure.js";
 import { DateTime } from "luxon";
-import { sendBookingEmail } from "../utils/sendEmail.js";
+import { sendBookingEmail , sendBookingApprovedEmail , sendBookingCancelledEmail } from "../utils/sendEmail.js";
 import { getBookingDisclaimers } from "../utils/bookingEmailHelper.js";
+import { createReminder } from "../models/bookingReminder.js";
+
+import { scheduleReminders } from "../jobs/reminderJob.js";
 const BUSINESS_TIME_ZONE =
   process.env.BUSINESS_TIME_ZONE || "America/Montreal";
    
@@ -116,13 +119,24 @@ if (disclaimers.length === 0) {
 
 
 
+if (!servicesRes.rows || servicesRes.rows.length === 0) {
+  throw new Error("Services not found");
+}
+
 const serviceNames = servicesRes.rows
   .map(s => s.name)
   .join(", ");
 
+  
+//   const reminderBooking = {
+//   id: booking.id,
+// booking_datetime: booking.booking_datetime,
+//   customer_email: email,
+//   customer_name: name,
+//   service_name: serviceNames,
+// };
 
-
-
+// scheduleReminders(reminderBooking);
 
 if (disclaimers.length > 0) {
 
@@ -533,9 +547,49 @@ export const getBookingWithFullDetails = async (req, res) => {
 
 
 
-export const updateBookingStatus = async (req, res) => {
+// export const updateBookingStatus = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { status } = req.body;
+
+//     if (!status) {
+//       return res.status(400).json({
+//         message: "Status is required",
+//       });
+//     }
+
+//     const updated =
+//       await Booking.updateBookingStatus(
+//         id,
+//         status
+//       );
+
+//     if (!updated) {
+//       return res.status(404).json({
+//         message: "Booking not found",
+//       });
+//     }
+
+//     res.json(updated);
+//   } catch (error) {
+//     console.error(
+//       "Error updating booking status:",
+//       error
+//     );
+
+//     res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+
+export const updateBookingStatus =
+async (req, res) => {
+
   try {
+
     const { id } = req.params;
+
     const { status } = req.body;
 
     if (!status) {
@@ -556,8 +610,119 @@ export const updateBookingStatus = async (req, res) => {
       });
     }
 
+    // ✅ إذا صار approved
+    if (status === "approved") {
+
+
+
+
+      const bookingDetails =
+        await Booking.getBookingEmailDetails(
+          id
+        );
+
+
+
+
+// نجهز الداتا للـ reminders + insert DB
+const reminderBooking = {
+  id: bookingDetails.id,
+  booking_datetime: bookingDetails.booking_datetime,
+  customer_email: bookingDetails.customer_email,
+  customer_name: bookingDetails.customer_name,
+  service_name: bookingDetails.services
+    .map((s) => s.name)
+    .join(", "),
+};
+
+// ⬇️ هون أهم سطر
+await scheduleReminders(reminderBooking);
+
+
+
+
+
+      if (
+        bookingDetails?.customer_email
+      ) {
+
+        await sendBookingApprovedEmail({
+
+          to:
+            bookingDetails.customer_email,
+
+          customerName:
+            bookingDetails.customer_name,
+
+          serviceName:
+            bookingDetails.services
+              .map((s) => s.name)
+              .join(", "),
+
+          bookingDate:
+            bookingDetails.booking_datetime,
+
+        });
+
+      }
+
+      const bookingDate =
+  new Date(
+    bookingDetails.booking_datetime
+  );
+
+const now = new Date();
+
+const diffHours =
+  (bookingDate - now)
+  / (1000 * 60 * 60);
+
+
+
+
+
+
+
+    }
+
+if (status === "cancelled") {
+
+  const bookingDetails =
+    await Booking.getBookingEmailDetails(
+      id
+    );
+
+  if (
+    bookingDetails?.customer_email
+  ) {
+
+    await sendBookingCancelledEmail({
+
+      to:
+        bookingDetails.customer_email,
+
+      customerName:
+        bookingDetails.customer_name,
+
+      serviceName:
+        bookingDetails.services
+          .map((s) => s.name)
+          .join(", "),
+
+      bookingDate:
+        bookingDetails.booking_datetime,
+
+    });
+
+  }
+}
+
+
+
     res.json(updated);
+
   } catch (error) {
+
     console.error(
       "Error updating booking status:",
       error
@@ -566,8 +731,18 @@ export const updateBookingStatus = async (req, res) => {
     res.status(500).json({
       message: error.message,
     });
+
   }
 };
+
+
+
+
+
+
+
+
+
 
 
 

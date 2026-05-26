@@ -375,13 +375,26 @@ export const updateDisclaimerStatus =
       bookings.total_amount,
       bookings.disclaimer_status,
 
+COALESCE(
+  json_agg(
+    DISTINCT jsonb_build_object(
+      'id', booking_reminders.id,
+      'type', booking_reminders.reminder_type,
+      'status', booking_reminders.status,
+      'scheduled_at', booking_reminders.scheduled_at
+    )
+  ) FILTER (WHERE booking_reminders.id IS NOT NULL),
+  '[]'
+) AS reminders,
+
+
       customers.name AS customer_name,
       customers.email AS customer_email,
       customers.phone AS customer_phone,
 
       COALESCE(
         json_agg(
-          json_build_object(
+         DISTINCT jsonb_build_object(
             'id', services.id,
             'name', services.name,
             'duration', services.duration_minutes,
@@ -396,6 +409,9 @@ export const updateDisclaimerStatus =
     JOIN customers
       ON bookings.customer_id = customers.id
 
+LEFT JOIN booking_reminders
+  ON booking_reminders.booking_id = bookings.id
+
     LEFT JOIN booking_services
       ON bookings.id = booking_services.booking_id
 
@@ -403,7 +419,7 @@ export const updateDisclaimerStatus =
       ON booking_services.service_id = services.id
 
     WHERE
-      bookings.status != 'cancel'
+      bookings.status != 'cancelled'
 
       AND bookings.booking_datetime >= 
       (
@@ -445,13 +461,26 @@ export const getAllBookingsWithFullDetailsModel = async () => {
       bookings.total_amount,
       bookings.disclaimer_status,
 
+COALESCE(
+  json_agg(
+    DISTINCT jsonb_build_object(
+      'id', booking_reminders.id,
+      'type', booking_reminders.reminder_type,
+      'status', booking_reminders.status,
+      'scheduled_at', booking_reminders.scheduled_at
+    )
+  ) FILTER (WHERE booking_reminders.id IS NOT NULL),
+  '[]'
+) AS reminders,
+
+
       customers.name AS customer_name,
       customers.email AS customer_email,
       customers.phone AS customer_phone,
 
       COALESCE(
         json_agg(
-          json_build_object(
+       DISTINCT jsonb_build_object(
             'id', services.id,
             'name', services.name,
             'duration', services.duration_minutes,
@@ -465,6 +494,9 @@ export const getAllBookingsWithFullDetailsModel = async () => {
 
     JOIN customers
       ON bookings.customer_id = customers.id
+
+LEFT JOIN booking_reminders
+  ON booking_reminders.booking_id = bookings.id
 
     LEFT JOIN booking_services
       ON bookings.id = booking_services.booking_id
@@ -480,3 +512,56 @@ export const getAllBookingsWithFullDetailsModel = async () => {
 
   return result.rows;
 };
+
+
+
+export const getBookingEmailDetails =
+async (id) => {
+
+  const result = await db.query(
+    `
+    SELECT
+      b.id,
+      b.booking_datetime,
+
+      c.name AS customer_name,
+      c.email AS customer_email,
+
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'name', s.name
+          )
+        ) FILTER (
+          WHERE s.id IS NOT NULL
+        ),
+        '[]'
+      ) AS services
+
+    FROM bookings b
+
+    JOIN customers c
+      ON c.id = b.customer_id
+
+    LEFT JOIN booking_services bs
+      ON bs.booking_id = b.id
+
+    LEFT JOIN services s
+      ON s.id = bs.service_id
+
+    WHERE b.id = $1
+
+    GROUP BY b.id, c.id
+    `,
+    [id]
+  );
+
+  return result.rows[0];
+};
+
+
+
+
+
+
+
