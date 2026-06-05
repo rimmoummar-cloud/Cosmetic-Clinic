@@ -55,9 +55,7 @@ const res = await api.put(
     status: newStatus,
   },
   {
-    headers: {
-      "X-CSRF-Token": csrfToken,
-    },
+  
   }
 );
 

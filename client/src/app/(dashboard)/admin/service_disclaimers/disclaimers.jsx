@@ -363,13 +363,13 @@ export default function DisclaimersPage() {
                   >
                     Edit
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => handleDelete(selectedDisclaimer.id)}
                     disabled={loading}
                     className="px-3 py-2 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
                   >
                     Delete
-                  </button>
+                  </button> */}
                 </div>
               </div>
 

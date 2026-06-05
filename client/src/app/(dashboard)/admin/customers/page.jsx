@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import api from "../../../../lib/api.js";
 import { useQuery } from "@tanstack/react-query";
+import CustomerDetails from "./components/CustomerDetails";
 
 export const getCustomers = async () => {
   const res = await api.get("/customers");
@@ -13,6 +14,7 @@ export const getCustomerById = async (id) => {
 };
 export default function AdminCustomersPage() {
   const [search, setSearch] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ["customers"],
@@ -42,6 +44,16 @@ export default function AdminCustomersPage() {
     if (Number.isNaN(date.getTime())) return "-";
     return date.toLocaleDateString();
   };
+
+  // Show customer details if selected
+  if (selectedCustomerId) {
+    return (
+      <CustomerDetails
+        customerId={selectedCustomerId}
+        onBack={() => setSelectedCustomerId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -105,9 +117,7 @@ export default function AdminCustomersPage() {
                     <td className="py-3 px-4 text-right">
                       <button
                         className="inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-medium text-primary hover:bg-accent transition-colors"
-                        onClick={() => {
-                          console.log(customer.id);
-                        }}
+                        onClick={() => setSelectedCustomerId(customer.id)}
                       >
                         View Details
                       </button>

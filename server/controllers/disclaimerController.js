@@ -1,5 +1,37 @@
 import * as DisclaimerModel from "../models/disclaimer.js";
 
+
+
+export const getBookingDisclaimersToken =
+  async (req, res) => {
+
+    try {
+
+const { token } = req.params;
+
+
+const disclaimers =
+  await DisclaimerModel.getDisclaimersByToken(
+    token
+  );
+
+      res.json(disclaimers);
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        message:
+          "Error fetching disclaimers",
+      });
+    }
+  };
+
+
+
+
+
 export const getBookingDisclaimers =
   async (req, res) => {
 
@@ -170,4 +202,44 @@ export const getDisclaimerById =
           "Error fetching disclaimer",
       });
     }
+  };
+
+
+
+  export const deleteDisclaimer =
+  async (req, res) => {
+
+    try {
+
+      const { id } = req.params;
+
+      const deleted =
+        await DisclaimerModel.deleteDisclaimer(
+          id
+        );
+
+      if (!deleted) {
+
+        return res.status(404).json({
+          message: "Disclaimer not found",
+        });
+
+      }
+
+      res.json({
+        message:
+          "Disclaimer deleted successfully",
+      });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        message:
+          "Error deleting disclaimer",
+      });
+
+    }
+
   };

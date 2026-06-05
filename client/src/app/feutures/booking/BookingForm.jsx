@@ -1,5 +1,7 @@
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useEffect, useMemo, useState } from "react";
 import {
   Calendar,
@@ -17,6 +19,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { DateTime } from "luxon";
 import { GlowingButton } from "../../components/GlowingButtom";
+import { WaitingForm } from "./WaitingForm";
 import {
   getCategories,
   getServices,
@@ -60,6 +63,7 @@ export function BookingForm({ isOpen, onClose }) {
   // UI State
   const [currentStep, setCurrentStep] = useState(1);
   const [expandedCategory, setExpandedCategory] = useState(null);
+  const [waitingFormOpen, setWaitingFormOpen] = useState(false);
   
   // Booking Data State
   const [selectedServices, setSelectedServices] = useState([]);
@@ -268,18 +272,18 @@ const endDt = DateTime.fromISO(
 
 
   // Validate booking duration when time is selected
-  useEffect(() => {
-    if (selectedTime && selectedDate) {
-      const validation = validateBookingDuration(
-        totalDuration,
-        selectedTime,
-        selectedServices,
-        workingHourStart,
-        workingHourEnd
-      );
-      setDurationWarning(validation.isValid ? "" : validation.message);
-    }
-  }, [selectedTime, selectedDate, totalDuration, selectedServices, workingHourStart, workingHourEnd]);
+  // useEffect(() => {
+  //   if (selectedTime && selectedDate) {
+  //     const validation = validateBookingDuration(
+  //       totalDuration,
+  //       selectedTime,
+  //       selectedServices,
+  //       workingHourStart,
+  //       workingHourEnd
+  //     );
+  //     setDurationWarning(validation.isValid ? "" : validation.message);
+  //   }
+  // }, [selectedTime, selectedDate, totalDuration, selectedServices, workingHourStart, workingHourEnd]);
 
   const toggleService = (service) => {
     const exists = selectedServices.find((s) => s.id === service.id);
@@ -388,16 +392,14 @@ const booking_datetime = DateTime.fromISO(
   if (!isOpen) return null;
 
   return (
-
-
-  
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/40 flex justify-center z-[9999] overflow-y-auto pt-6 pb-6"
-      onClick={onClose}
-    >
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/40 flex justify-center z-[9999] overflow-y-auto pt-6 pb-6"
+        onClick={onClose}
+      >
       <div className="w-full max-w-3xl mx-auto px-4" onClick={(e) => e.stopPropagation()}>
         <motion.div className="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden flex flex-col">
 
@@ -521,14 +523,24 @@ const booking_datetime = DateTime.fromISO(
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-3">
                       <label className="flex items-center gap-2 text-gray-800 font-medium"><Calendar className="w-4 h-4"/>Select Date</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {/* <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {availableDates.map((date) => (
                           <button key={date.value} type="button" onClick={() => setSelectedDate(date.value)}
                             className={`p-3 rounded-xl border text-sm transition ${selectedDate===date.value?"border-black bg-gray-100":"border-gray-200 bg-white hover:border-black"}`}>
                             {date.label}
                           </button>
                         ))}
-                      </div>
+                      </div> */}
+
+         <input
+  type="date"
+  value={selectedDate}
+  onChange={(e) => setSelectedDate(e.target.value)}
+  min={DateTime.now()
+    .setZone("America/Montreal")
+    .toFormat("yyyy-MM-dd")}
+  className="w-full p-3 rounded-xl border border-gray-200 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-black/20"
+/>
                     </div>
 
                     <div className="flex flex-col gap-3">
@@ -541,8 +553,18 @@ const booking_datetime = DateTime.fromISO(
                               <span className="ml-2 text-sm text-gray-600">Loading available times...</span>
                             </div>
                           ) : availableSlots.length === 0 ? (
-                            <div className="text-center py-4 text-gray-500 text-sm">
-                              No available slots on this date
+                            <div className="space-y-3">
+                              <div className="text-center py-4 text-gray-500 text-sm">
+                                No available slots on this date
+                              </div>
+                              <GlowingButton 
+                                type="button" 
+                                variant="outline" 
+                                className="w-full text-sm"
+                                onClick={() => setWaitingFormOpen(true)}
+                              >
+                                Join Waiting List
+                              </GlowingButton>
                             </div>
                           ) : (
                             <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
@@ -659,6 +681,15 @@ const booking_datetime = DateTime.fromISO(
         </motion.div>
       </div>
     </motion.div>
+
+      {/* Waiting Form Modal */}
+      <WaitingForm 
+        isOpen={waitingFormOpen}
+        onClose={() => setWaitingFormOpen(false)}
+        selectedServices={selectedServices}
+        selectedDate={selectedDate}
+      />
+    </>
   );
 }
 

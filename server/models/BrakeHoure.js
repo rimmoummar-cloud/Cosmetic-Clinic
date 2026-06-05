@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import db from "../config/db.js";
 import { DateTime } from "luxon";
 export const getAllWorkingHours = async () => {
   const query = `
@@ -72,5 +73,17 @@ export const deleteWorkingHour = async (id) => {
 };
 
 
+export const getBreakHoursByDate = async (work_date) => {
+  const result = await pool.query(
+    `
+    SELECT start_time, end_time
+    FROM breaks_houre
+    WHERE work_date = $1
+    `,
+    [work_date]
+  );
+
+  return result.rows || [];
+};
 
 

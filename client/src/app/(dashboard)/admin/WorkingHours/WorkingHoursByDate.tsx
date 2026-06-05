@@ -209,10 +209,15 @@ export default function WorkingHoursByDate() {
           body: JSON.stringify(payload),
         }
       );
+if (!res.ok) {
 
-      if (!res.ok) {
-        throw new Error("Failed to update override");
-      }
+  const errorData = await res.json();
+
+  throw new Error(
+    errorData.message ||
+    "Failed to update override"
+  );
+}
 
       setStatus("Override updated successfully.");
     } else {
@@ -225,16 +230,21 @@ export default function WorkingHoursByDate() {
         }
       );
 
-      if (!res.ok) {
-        // لو database unique ضرب
-        if (res.status === 409) {
-          setError("This date already exists");
-          setActionLoading(false);
-          return;
-        }
+  if (!res.ok) {
 
-        throw new Error("Failed to create override");
-      }
+  const errorData = await res.json();
+
+  if (res.status === 409) {
+    setError("This date already exists");
+    setActionLoading(false);
+    return;
+  }
+
+  throw new Error(
+    errorData.message ||
+    "Failed to create override"
+  );
+}
 
       setStatus("Override created successfully.");
     }

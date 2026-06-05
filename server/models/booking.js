@@ -151,7 +151,8 @@ export const createBookingMulti = async (
   customer_id,
   serviceIds = [],
   booking_datetime,
-  note = ""
+  note = "",
+  token
 ) => {
   const queryExecutor = client || db;
 
@@ -237,10 +238,10 @@ const bookingDateTimeUTC = DateTime.fromISO(booking_datetime);
 
   // 4️⃣ Create the main booking record
   const bookingRes = await queryExecutor.query(
-    `INSERT INTO bookings (customer_id, booking_datetime, duration_minutes, total_amount, status, note)
-     VALUES ($1, $2, $3, $4, 'pending', $5)
+    `INSERT INTO bookings (customer_id, booking_datetime, duration_minutes, total_amount, status, note,acceptance_token)
+     VALUES ($1, $2, $3, $4, 'pending', $5, $6)
      RETURNING *`,
-    [customer_id, newStart, totalDuration, totalAmount, note]
+    [customer_id, newStart, totalDuration, totalAmount, note, token]
   );
 
   const booking = bookingRes.rows[0];
@@ -343,7 +344,9 @@ export const updateDisclaimerStatus =
     const res = await db.query(
       `
       UPDATE bookings
-      SET disclaimer_status = $1
+      SET 
+      disclaimer_status = $1
+       
       WHERE id = $2
       RETURNING *
       `,
@@ -523,7 +526,7 @@ async (id) => {
     SELECT
       b.id,
       b.booking_datetime,
-
+  b.duration_minutes,
       c.name AS customer_name,
       c.email AS customer_email,
 

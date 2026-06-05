@@ -25,6 +25,8 @@ import { startCleanupJob } from "./jobs/cleanupJob.js";
 import bookingReminderRoutes from "./routes/bookingReminderRoutes.js";
 import { restoreReminderJobs }from "./jobs/restoreReminderJobs.js";
 import { cleanupRefreshTokens } from "./models/cleanupRefreshTokens.js";
+import waitingListRoutes from "./routes/watinglistRoute.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import csrf from "csurf";
 
 dotenv.config();
@@ -70,6 +72,8 @@ app.use("/api/pages", pageRoutes);
 app.use("/api/sections", sectionRoutes);
 app.use("/api/section-content", sectionContentRoutes);
 app.use("/api/booking-reminders", bookingReminderRoutes);
+app.use("/api/waiting-list", waitingListRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.get("/test-db", async (req, res) => {
   const result = await db.query("SELECT NOW()");
   res.json(result.rows);

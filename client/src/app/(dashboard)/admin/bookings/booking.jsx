@@ -111,9 +111,7 @@ const res = await api.put(
     status: newStatus,
   },
   {
-    headers: {
-      "X-CSRF-Token": csrfToken,
-    },
+   
   }
 );
 
@@ -198,12 +196,20 @@ const [selectedReminders, setSelectedReminders] = useState(null);
             View and manage all appointments
           </p>
         </div>
-        <button
-          onClick={() => router.push("/admin/bookings/AllBooking")}
-          className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
-        >
-          View All Bookings
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.push("/admin/bookings/waiting-list")}
+            className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors border border-blue-200"
+          >
+            Waiting List
+          </button>
+          <button
+            onClick={() => router.push("/admin/bookings/AllBooking")}
+            className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+          >
+            View All Bookings
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

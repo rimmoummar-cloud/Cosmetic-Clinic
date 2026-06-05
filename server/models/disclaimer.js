@@ -181,3 +181,60 @@ export const getDisclaimerById =
 
     return result.rows[0];
   };
+
+
+
+  export const deleteDisclaimer =
+  async (id) => {
+
+    const result = await db.query(
+      `
+      DELETE FROM service_disclaimers
+      WHERE id = $1
+
+      RETURNING *
+      `,
+      [id]
+    );
+
+    return result.rows[0];
+  };
+
+
+
+
+  export const getDisclaimersByToken =
+  async (token) => {
+
+    const result = await db.query(
+      `
+      SELECT DISTINCT
+        sd.id,
+        sd.title,
+        sd.description,
+        sd.type,
+        sd.service_id,
+        sd.is_active,
+        sd.created_at,
+
+        s.name AS service_name
+
+      FROM bookings b
+
+      JOIN booking_services bs
+        ON bs.booking_id = b.id
+
+      JOIN service_disclaimers sd
+        ON sd.service_id = bs.service_id
+
+      JOIN services s
+        ON s.id = sd.service_id
+
+      WHERE b.acceptance_token = $1
+      AND sd.is_active = true
+      `,
+      [token]
+    );
+
+    return result.rows;
+  };

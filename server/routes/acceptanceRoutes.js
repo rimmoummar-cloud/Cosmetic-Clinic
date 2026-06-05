@@ -4,15 +4,15 @@ import {
   acceptDisclaimers,
   getAcceptedDisclaimers
 } from "../controllers/acceptanceController.js";
-
+import csrf from "csurf";
+import { authenticateAdmin } from "../middleware/authMiddleware.js";
 const router = express.Router();
+const csrfProtection = csrf({ cookie: true });
 
-router.post(
-  "/:bookingId",
-  acceptDisclaimers
-);
+router.post("/confirm", acceptDisclaimers);
 router.get(
   "/",
+    csrfProtection,authenticateAdmin,
   getAcceptedDisclaimers
 );
 

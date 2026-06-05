@@ -5,8 +5,23 @@ import { DateTime } from "luxon";
 import { sendBookingEmail , sendBookingApprovedEmail , sendBookingCancelledEmail } from "../utils/sendEmail.js";
 import { getBookingDisclaimers } from "../utils/bookingEmailHelper.js";
 import { createReminder } from "../models/bookingReminder.js";
-
+import {
+  checkWaitingListForCancelledBooking
+} from "../utils/waitingListMatcher.js";
 import { scheduleReminders } from "../jobs/reminderJob.js";
+import {
+  getWorkingHoursOverrideByDate
+} from "../models/workindhourbyDate.js";
+
+import {
+  getBreakHoursByDate
+} from "../models/BrakeHoure.js";
+
+import {
+  createNotification
+} from "../models/notification.js";
+import crypto from "crypto";
+
 const BUSINESS_TIME_ZONE =
   process.env.BUSINESS_TIME_ZONE || "America/Montreal";
    
@@ -85,12 +100,14 @@ console.log("============================");
 
     // Create multi-service booking
     // This function includes overlap detection inside the same transaction
+    const token = crypto.randomUUID();
     const booking = await Booking.createBookingMulti(
       client,
       customer.id,
       serviceIds,
       booking_datetime,
-      note
+      note,
+      token
     );
 
 
@@ -98,6 +115,17 @@ console.log("============================");
 
 
     await client.query("COMMIT");
+
+await createNotification({
+  recipient_type: "admin",
+  recipient_id: 1,
+  booking_id: booking.id,
+  type: "new_booking",
+  title: "New Booking",
+  message: `${name} created a new booking`
+});
+
+
 
 const disclaimers =
   await getBookingDisclaimers(booking.id);
@@ -147,7 +175,8 @@ if (disclaimers.length > 0) {
     serviceName: serviceNames,
     bookingDate: booking_datetime,
     bookingTime: booking_datetime,
-    bookingId: booking.id,
+    // bookingId: booking.id,
+    acceptanceToken: booking.acceptance_token,
   });
 
 } 
@@ -238,10 +267,63 @@ const bookingDateTime = DateTime.fromISO(booking_datetime, {
       });
     }
 
-    // const bookingDate = bookingDateTime.toISODate();
+ 
 const bookingDate = bookingDateTime
   .setZone(BUSINESS_TIME_ZONE)
   .toISODate();
+
+const dayOfWeek = bookingDateTime.weekday % 7;
+// ==========================
+// 1. CHECK OVERRIDE (IMPORTANT)
+// ==========================
+const override = await getWorkingHoursOverrideByDate(bookingDate);
+
+
+
+// 🔥 ADD SAFETY CHECK HERE (IMPORTANT EDGE CASE FIX)
+if (override && !override.is_day_off) {
+  if (!override.start_time || !override.end_time) {
+    return res.status(500).json({
+      message: "Invalid override configuration: missing working hours"
+    });
+  }
+}
+
+let startMinutes;
+let endMinutes;
+
+if (override) {
+
+  if (override.is_day_off) {
+    return res.json({ availableSlots: [] });
+  }
+
+  startMinutes = timeToMinutes(override.start_time);
+  endMinutes = timeToMinutes(override.end_time);
+
+} else {
+
+  const workingHours = await getWorkingHoursByDay(null, dayOfWeek);
+
+  if (!workingHours) {
+    return res.status(400).json({
+      message: "No working hours configured for this day",
+      availableSlots: [],
+    });
+  }
+
+  startMinutes = timeToMinutes(workingHours.start_time);
+  endMinutes = timeToMinutes(workingHours.end_time);
+}
+
+
+
+
+
+
+
+
+
     // Calculate total duration for all services
     let totalMinutes = 0;
     // for (let id of serviceIds) {
@@ -308,41 +390,61 @@ totalMinutes += CLEANING_BUFFER_MINUTES;
   BUSINESS_TIME_ZONE
 );
     // Fetch working hours for the selected day
-    const dayOfWeek = bookingDateTime.weekday % 7;
-    const workingHours = await getWorkingHoursByDay(null, dayOfWeek);
+    // const dayOfWeek = bookingDateTime.weekday % 7;
+//     const workingHours = await getWorkingHoursByDay(null, dayOfWeek);
 
-    if (!workingHours) {
-      return res.status(400).json({
-        message: "No working hours configured for this day",
-        availableSlots: [],
-      });
-    }
+//     if (!workingHours) {
+//       return res.status(400).json({
+//         message: "No working hours configured for this day",
+//         availableSlots: [],
+//       });
+//     }
 
    
-const startDateTime = DateTime.fromISO(
-  `${bookingDate}T${workingHours.start_time}`,
-  { zone: BUSINESS_TIME_ZONE }
-);
+// const startDateTime = DateTime.fromISO(
+//   `${bookingDate}T${workingHours.start_time}`,
+//   { zone: BUSINESS_TIME_ZONE }
+// );
 
-const endDateTime = DateTime.fromISO(
-  `${bookingDate}T${workingHours.end_time}`,
-  { zone: BUSINESS_TIME_ZONE }
-);
+// const endDateTime = DateTime.fromISO(
+//   `${bookingDate}T${workingHours.end_time}`,
+//   { zone: BUSINESS_TIME_ZONE }
+// );
 
 
-    if (!startDateTime.isValid || !endDateTime.isValid) {
-      return res.status(500).json({
-        message: "Invalid working hours format",
-        availableSlots: [],
-      });
-    }
+//     if (!startDateTime.isValid || !endDateTime.isValid) {
+//       return res.status(500).json({
+//         message: "Invalid working hours format",
+//         availableSlots: [],
+//       });
+//     }
 
-    const startMinutes =
-      startDateTime.hour * 60 + startDateTime.minute;
-    const endMinutes = endDateTime.hour * 60 + endDateTime.minute;
+// startMinutes = startDateTime.hour * 60 + startDateTime.minute;
+// endMinutes = endDateTime.hour * 60 + endDateTime.minute;
 
     // Build list of blocked slots
     const blockedSlots = new Set();
+
+
+
+// ==========================
+// 2. ADD BREAKS TO BLOCKED SLOTS
+// ==========================
+const breaks = await getBreakHoursByDate(bookingDate);
+
+breaks.forEach((b) => {
+  const start = timeToMinutes(b.start_time);
+  const end = timeToMinutes(b.end_time);
+
+  for (let m = start; m < end; m += slotDuration) {
+    blockedSlots.add(minutesToTime(m));
+  }
+});
+
+
+
+
+
     // const now = DateTime.now().setZone(userTimeZone);
     const now = DateTime.now().setZone(BUSINESS_TIME_ZONE);
 //   console.log("========= TIME DEBUG =========");
@@ -362,6 +464,9 @@ if (!["pending", "approved"].includes(b.status)) {
   const bookingStart = DateTime
     .fromJSDate(b.booking_datetime)
     .setZone(BUSINESS_TIME_ZONE);
+// const bookingStart = DateTime
+//   .fromJSDate(new Date(b.booking_datetime))
+//   .setZone(BUSINESS_TIME_ZONE);
 
   const startTime = bookingStart.toFormat("HH:mm");
   const start = timeToMinutes(startTime);
@@ -428,7 +533,7 @@ if (!["pending", "approved"].includes(b.status)) {
 
 res.json({ availableSlots: convertedSlots });
   } catch (error) {
-    console.error("Available slots error:", error.message);
+   console.error("Available slots error FULL:", error);
     res.status(500).json({ message: "Server error" });
   }
 }
@@ -715,6 +820,15 @@ if (status === "cancelled") {
     });
 
   }
+
+
+  await checkWaitingListForCancelledBooking(
+    id
+  );
+console.log(
+    "🔥 checkWaitingListForCancelledBooking called"
+   
+  );
 }
 
 

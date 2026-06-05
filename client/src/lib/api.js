@@ -150,7 +150,12 @@ async function getCsrfToken() {
 api.interceptors.request.use(async (config) => {
   const method = config.method?.toLowerCase();
 
-  const methodsRequiringCSRF = ["post", "put", "delete"];
+const methodsRequiringCSRF = [
+  "post",
+  "put",
+  "patch",
+  "delete"
+];
 
   const isPublicCreateBooking =
     config.url?.startsWith("/bookings") &&

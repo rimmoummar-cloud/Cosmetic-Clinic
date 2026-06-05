@@ -1,5 +1,5 @@
 "use client";
-
+import api from "../../../../lib/api.js";
 import { useEffect, useMemo, useState } from "react";
 import WorkingHoursTable from "./components/WorkingHoursTable";
 
@@ -24,12 +24,7 @@ export default function DefaultWorkingHours() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [actionLoadingId, setActionLoadingId] = useState<number | "add" | null>(null);
-  const [newForm, setNewForm] = useState<FormState>({
-    day_of_week: "0",
-    start_time: "09:00",
-    end_time: "17:00",
-  });
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<FormState>({
     day_of_week: "0",
     start_time: "09:00",
@@ -64,12 +59,6 @@ export default function DefaultWorkingHours() {
     fetchRows();
   }, []);
 
-  const onNewFormChange = (name: keyof FormState, value: string) => {
-    setStatus("");
-    setError("");
-    setNewForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const onEditFormChange = (name: keyof FormState, value: string) => {
     setStatus("");
     setError("");
@@ -82,52 +71,64 @@ export default function DefaultWorkingHours() {
     return "";
   };
 
-  const onAdd = async () => {
-    const validationError = validateTimes(newForm.start_time, newForm.end_time);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+  // const onAdd = async () => {
+  //   const validationError = validateTimes(newForm.start_time, newForm.end_time);
+  //   if (validationError) {
+  //     setError(validationError);
+  //     return;
+  //   }
 
-    setActionLoadingId("add");
-    setError("");
-    setStatus("");
+  //   setActionLoadingId("add");
+  //   setError("");
+  //   setStatus("");
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/workingHours`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          day_of_week: Number(newForm.day_of_week),
-          start_time: newForm.start_time,
-          end_time: newForm.end_time,
-        }),
-      });
+  //   try {
+  //     const res = await fetch(`${API_BASE_URL}/workingHours`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         day_of_week: Number(newForm.day_of_week),
+  //         start_time: newForm.start_time,
+  //         end_time: newForm.end_time,
+  //       }),
+  //     });
 
-      if (!res.ok) {
-        throw new Error("Failed to create working hour");
-      }
+  //     if (!res.ok) {
+  //       throw new Error("Failed to create working hour");
+  //     }
 
-      setStatus("Working hour added successfully.");
-      await fetchRows();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to add working hour");
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
+  //     setStatus("Working hour added successfully.");
+  //     await fetchRows();
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : "Unable to add working hour");
+  //   } finally {
+  //     setActionLoadingId(null);
+  //   }
+  // };
 
-  const onEdit = (row: WorkingHourItem) => {
-    setStatus("");
-    setError("");
-    setEditingId(row.id);
-    setEditForm({
-      day_of_week: String(row.day_of_week),
-      start_time: row.start_time,
-      end_time: row.end_time,
-    });
-  };
+  // const onEdit = (row: WorkingHourItem) => {
+  //   setStatus("");
+  //   setError("");
+  //   setEditingId(row.id);
+  //   setEditForm({
+  //     day_of_week: String(row.day_of_week),
+  //     start_time: row.start_time,
+  //     end_time: row.end_time,
+  //   });
+  // };
+const onEdit = (row: WorkingHourItem) => {
+  setStatus("");
+  setError("");
+  setEditingId(row.id);
 
+  setEditForm({
+    day_of_week: String(row.day_of_week),
+
+    start_time: row.start_time.slice(0, 5),
+
+    end_time: row.end_time.slice(0, 5),
+  });
+};
   const onCancelEdit = () => {
     setEditingId(null);
     setEditForm({ day_of_week: "0", start_time: "09:00", end_time: "17:00" });
@@ -145,19 +146,21 @@ export default function DefaultWorkingHours() {
     setStatus("");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/workingHours/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          day_of_week: Number(editForm.day_of_week),
-          start_time: editForm.start_time,
-          end_time: editForm.end_time,
-        }),
-      });
+     const csrfToken = localStorage.getItem("csrfToken");
 
-      if (!res.ok) {
-        throw new Error("Failed to update working hour");
-      }
+const res = await api.put(
+  `/workingHours/${id}`,
+  {
+    day_of_week: Number(editForm.day_of_week),
+    start_time: editForm.start_time,
+    end_time: editForm.end_time,
+  },
+  {
+    headers: {
+      "X-CSRF-Token": csrfToken,
+    },
+  }
+);
 
       setStatus("Working hour updated successfully.");
       setEditingId(null);
@@ -169,34 +172,34 @@ export default function DefaultWorkingHours() {
     }
   };
 
-  const onDelete = async (id: number) => {
-    const confirmed = window.confirm("Are you sure you want to delete this row?");
-    if (!confirmed) return;
+  // const onDelete = async (id: number) => {
+  //   const confirmed = window.confirm("Are you sure you want to delete this row?");
+  //   if (!confirmed) return;
 
-    setActionLoadingId(id);
-    setError("");
-    setStatus("");
+  //   setActionLoadingId(id);
+  //   setError("");
+  //   setStatus("");
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/workingHours/${id}`, {
-        method: "DELETE",
-      });
+  //   try {
+  //     const res = await fetch(`${API_BASE_URL}/workingHours/${id}`, {
+  //       method: "DELETE",
+  //     });
 
-      if (!res.ok) {
-        throw new Error("Failed to delete working hour");
-      }
+  //     if (!res.ok) {
+  //       throw new Error("Failed to delete working hour");
+  //     }
 
-      setStatus("Working hour deleted successfully.");
-      if (editingId === id) {
-        setEditingId(null);
-      }
-      await fetchRows();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to delete working hour");
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
+  //     setStatus("Working hour deleted successfully.");
+  //     if (editingId === id) {
+  //       setEditingId(null);
+  //     }
+  //     await fetchRows();
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : "Unable to delete working hour");
+  //   } finally {
+  //     setActionLoadingId(null);
+  //   }
+  // };
 
   return (
     <WorkingHoursTable
@@ -205,17 +208,13 @@ export default function DefaultWorkingHours() {
       error={error}
       status={status}
       dayLabels={dayLabels}
-      newForm={newForm}
       editForm={editForm}
       editingId={editingId}
       actionLoadingId={actionLoadingId}
-      onNewFormChange={onNewFormChange}
       onEditFormChange={onEditFormChange}
-      onAdd={onAdd}
       onEdit={onEdit}
       onCancelEdit={onCancelEdit}
       onSaveEdit={onSaveEdit}
-      onDelete={onDelete}
     />
   );
 }

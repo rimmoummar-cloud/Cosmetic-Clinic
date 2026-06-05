@@ -12,3 +12,25 @@ export const getCustomerByID = async (req, res) => {
   }
   res.json(customer);
 };
+
+
+export const getCustomersAnalytics = async (
+  req,
+  res
+) => {
+  try {
+
+    const data =
+      await Customer.getCustomersAnalytics();
+
+    res.status(200).json(data);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to fetch customers"
+    });
+  }
+};

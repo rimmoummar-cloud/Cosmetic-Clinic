@@ -62,3 +62,21 @@ export const checkOverrideDates = async (date) => {
 
   return res.rows[0] || null;
 };
+
+
+
+
+
+export const getWorkingHoursOverrideByDate = async (work_date) => {
+  const result = await db.query(
+    `
+    SELECT *
+    FROM working_hours_overrides
+    WHERE work_date = $1
+    LIMIT 1
+    `,
+    [work_date]
+  );
+
+  return result.rows[0] || null;
+};

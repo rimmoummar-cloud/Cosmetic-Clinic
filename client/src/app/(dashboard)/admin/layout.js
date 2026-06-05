@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import api from "../../../lib/api";
 import "../globals.css";
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
     { href: "/admin/service_disclaimers", label: "Service Disclaimers", icon: "📢" },
   { href: "/admin/categories", label: "Categories", icon: "🗂️" },
   { href: "/admin/bookings", label: "Bookings", icon: "🗓️" },
+  { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
   { href: "/admin/customers", label: "Customers", icon: "👥" },
   { href: "/admin/reviews", label: "Reviews", icon: "⭐" },
   { href: "/admin/messages", label: "Messages", icon: "💬" },
@@ -36,9 +37,33 @@ async function handleLogout() {
 }
 
 export default function AdminLayout({ children }) {
+  const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
+
+  const fetchUnreadCount = async () => {
+  try {
+    const response = await api.get(
+      "/notifications/admin/1"
+    );
+
+    const notifications = response.data || [];
+
+    const unread = notifications.filter(
+      (n) => !n.is_read
+    ).length;
+console.log("notifications:", notifications);
+console.log("unread count:", unread);
+    setUnreadCount(unread);
+  } catch (err) {
+    console.error(
+      "Failed to fetch notifications:",
+      err
+    );
+  }
+};
 // useEffect(() => {
 //   const token = localStorage.getItem("token");
 
@@ -48,21 +73,54 @@ export default function AdminLayout({ children }) {
 //     setCheckingAuth(false);
 //   }
 // }, []);
+// useEffect(() => {
+//   const checkAuth = async () => {
+//    await fetchUnreadCount();
+//   };
+
+//   checkAuth();
+
+
+
+// const interval = setInterval(() => {
+//   fetchUnreadCount();
+// }, 5000);
+
+// return () => clearInterval(interval);
+
+
+
+// }, []);
+// if (checkingAuth) {
+//   return null;
+// }
 useEffect(() => {
   const checkAuth = async () => {
     try {
       await api.get("/me");
+
       setCheckingAuth(false);
+
+      await fetchUnreadCount();
     } catch {
       window.location.href = "/login";
     }
   };
 
   checkAuth();
+
+  const interval = setInterval(() => {
+    fetchUnreadCount();
+  }, 5000);
+
+  return () => clearInterval(interval);
 }, []);
+
+
 if (checkingAuth) {
   return null;
 }
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Mobile Overlay */}
@@ -157,9 +215,16 @@ if (checkingAuth) {
 >
   Logout
 </button>
-            <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <button 
+              onClick={() => router.push("/admin/notifications")}
+              className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
               <span className="text-xl">🔔</span>
-              <span className="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 bg-danger text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </button>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold">

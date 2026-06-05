@@ -58,7 +58,11 @@ export function filterPastSlots(slots, selectedDate) {
 export const getWorkingHoursByDay = async (dateStr) => {
   if (!dateStr) throw new Error("Date is required");
 
-  const dayNumber = new Date(dateStr + "T00:00:00").getDay();
+  // const dayNumber = new Date(dateStr + "T00:00:00").getDay();
+const dayNumber = DateTime
+  .fromISO(dateStr, { zone: BUSINESS_TIME_ZONE })
+  .weekday % 7;
+
 
   const response = await fetch(`${API_BASE_URL}/workingHours/day/${dayNumber}`);
   if (!response.ok) throw new Error("Failed to fetch working hours");
@@ -373,18 +377,23 @@ export function calculateEndTime(startTime, duration) {
 //   });
 // }
 
+// export const formatDateForDisplay = (dateString) => {
+//   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+//   return new Date(dateString).toLocaleDateString("en-US", {
+//     weekday: "long",
+//     year: "numeric",
+//     month: "long",
+//     day: "numeric",
+//     timeZone: userTimeZone,
+//   });
+// };
 export const formatDateForDisplay = (dateString) => {
-  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  return new Date(dateString).toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: userTimeZone,
-  });
+  return DateTime.fromISO(
+    dateString,
+    { zone: BUSINESS_TIME_ZONE }
+  ).toFormat("cccc, LLLL d, yyyy");
 };
-
 /**
  * Get timezone offset from UTC
  * @returns {string} Timezone offset in format "+HH:00" or "-HH:00"

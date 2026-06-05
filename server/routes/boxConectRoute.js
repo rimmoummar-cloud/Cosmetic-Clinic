@@ -1,4 +1,6 @@
 import express from "express";
+import csrf from "csurf";
+import { authenticateAdmin } from "../middleware/authMiddleware.js";
 import {
   getMassege,
 
@@ -7,8 +9,8 @@ import {
 } from "../controllers/boxConectController.js";
 
 const router = express.Router();
-
-router.get("/", getMassege);
+const csrfProtection = csrf({ cookie: true });
+router.get("/", csrfProtection, authenticateAdmin, getMassege);
 
 router.post("/", createMassege);
 

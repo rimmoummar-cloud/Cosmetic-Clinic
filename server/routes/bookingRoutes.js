@@ -11,16 +11,17 @@ router.post("/", createBooking);
 // get available time slots
 // router.get("/available-slots", getAvailableSlots);
 router.get("/available-slots-multi", getAvailableSlotsMulti);
-router.get("/", csrfProtection , authenticateAdmin,getallbookingss);
-router.get("/WithDetails",csrfProtection, authenticateAdmin, getBookingWithFullDetails);
+router.get("/",  authenticateAdmin, csrfProtection, getallbookingss);
+router.get("/WithDetails", authenticateAdmin, csrfProtection,  getBookingWithFullDetails);
 router.get(
   "/all/full-details",
+  authenticateAdmin, csrfProtection, 
   getAllBookingsWithFullDetails
+  
 );
 router.put(
   "/:id/status",
-  csrfProtection,
-  authenticateAdmin,
+ authenticateAdmin, csrfProtection, 
   updateBookingStatus
 );
 

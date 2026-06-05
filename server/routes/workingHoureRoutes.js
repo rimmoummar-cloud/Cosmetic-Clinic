@@ -1,9 +1,9 @@
 import express from "express";
 import {
   getAllWorkingHour,
-  createWorkingHour,
+
   updateWorkingHour,
-  deleteWorkingHour,
+
   getWorkingHourByDay
 } from "../controllers/workinghourController.js";
 import { authenticateAdmin } from "../middleware/authMiddleware.js";
@@ -15,8 +15,8 @@ const csrfProtection = csrf({ cookie: true });
 
 router.get("/", getAllWorkingHour);
 router.get("/day/:dayOfWeek", getWorkingHourByDay);
-router.post("/", csrfProtection, createWorkingHour);
-router.put("/:id", csrfProtection, updateWorkingHour);
-router.delete("/:id", csrfProtection, deleteWorkingHour);
+// router.post("/", csrfProtection, createWorkingHour);
+router.put("/:id", csrfProtection, authenticateAdmin, updateWorkingHour);
+// router.delete("/:id", csrfProtection, deleteWorkingHour);
 
 export default router;
