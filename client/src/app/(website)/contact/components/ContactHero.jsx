@@ -4,9 +4,9 @@ import { SectionHeader } from "../../../components/sectionHeader";
 import { FloatingElement } from "../../../components/AnimatedElements";
 
 export default function ContactHero({ data = {} }) {
-  const label = data?.label || data?.eyebrow || "";
+  const label = data?.label || data?.eyebrow || "Contact us";
   const title = data?.title || data?.heading || "";
-  const description = data?.description || data?.summary || "";
+  const description = data?.description || data?.subtitle || "";
 
   return (
     <section className="relative py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#FFD700]/20 via-[#E8DDD0]/30 to-[#E8C7C3]/20 overflow-hidden">

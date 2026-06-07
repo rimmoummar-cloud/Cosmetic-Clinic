@@ -20,9 +20,17 @@ import rateLimit from "express-rate-limit";
 import { authenticateAdmin } from "../middleware/authMiddleware.js";
 import { login, me, logout } from "../controllers/authController.js";
 import {
-    refresh
+    refresh,
+    updateProfile,
+    verifyPassword
 }
 from "../controllers/authController.js";
+
+
+
+
+
+
 import csrf from "csurf";
 
 const router = express.Router();
@@ -63,4 +71,22 @@ router.post(
   csrfProtection,
   refresh
 );
+
+
+router.put(
+  "/profile",
+  authenticateAdmin,
+  csrfProtection,
+  updateProfile
+);
+
+router.post(
+  "/verify-password",
+  authenticateAdmin,
+    csrfProtection,
+  verifyPassword
+);
+
+
+
 export default router;

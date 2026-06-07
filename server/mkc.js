@@ -223,6 +223,50 @@ const pagesData = [
       },
     ],
   },
+
+
+
+  {
+  name: "Footer",
+  slug: "footer",
+  description: "Website footer",
+  sections: [
+    {
+      name: "footer",
+      slug: "footer",
+      order: 1,
+      content: {
+        brandName: "Shiny Skin",
+        brandSubtitle: "Aesthetic & Beauty Clinic",
+
+        description:
+          "Your trusted partner in beauty and aesthetic treatments. We combine luxury with professional care to help you look and feel your best.",
+
+        contact: {
+          address: "123 Beauty Lane",
+          city: "New York, NY 10001",
+          email: "hello@shinyskin.com",
+          phone: "(555) 123-4567"
+        },
+
+        workingHours: {
+          weekdays: "Mon-Fri: 9am-8pm",
+          weekend: "Sat-Sun: 10am-6pm",
+          note: "except sunday"
+        },
+
+        socialLinks: {
+          instagram: "#",
+          facebook: "#",
+          twitter: "#"
+        },
+
+        copyright:
+          "© 2026 Shiny Skin Aesthetic & Beauty Clinic. All rights reserved."
+      }
+    }
+  ]
+}
 ];
 
 const findPageIdBySlug = async (client, slug) => {

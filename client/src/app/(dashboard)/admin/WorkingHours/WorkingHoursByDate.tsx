@@ -1,5 +1,5 @@
 "use client";
-
+import api from "../../../../lib/api.js";
 import { useEffect, useState } from "react";
 import DateOverrideTable from "./components/DateOverrideTable";
 
@@ -18,7 +18,7 @@ type FormState = {
   is_day_off: boolean;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 const defaultForm: FormState = {
   work_date: "",
@@ -52,15 +52,11 @@ export default function WorkingHoursByDate() {
     setError("");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/workingHoursByDate/upcoming`, {
-        cache: "no-store",
-      });
+   const { data: result } =
+  await api.get(
+    "/workingHoursByDate/upcoming"
+  );
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch working hours");
-      }
-
-      const result = await res.json();
       const upcoming: OverrideItem[] = Array.isArray(result) ? result : [];
       setData(upcoming);
     } catch (err) {
@@ -142,27 +138,31 @@ export default function WorkingHoursByDate() {
     const formDate = normalizeDate(form.work_date);
 
     // STEP 3: Call duplicate check API safely
-    const checkRes = await fetch(
-      `${API_BASE_URL}/workingHoursByDate/date/${formDate}`
-    );
+    // const checkRes = await fetch(
+    //   `${API_BASE_URL}/workingHoursByDate/date/${formDate}`
+    // );
 
     // مهم جداً: تأكد من response
-    if (!checkRes.ok) {
-      // إذا رجع 404 مثلاً → يعني ما في duplicate
-      if (checkRes.status !== 404) {
-        setError("Failed to validate date. Please try again.");
-        setActionLoading(false);
-        return;
-      }
-    }
+let checkData = null;
 
-    let checkData: any = null;
+try {
+  const response =
+    await api.get(
+      `/workingHoursByDate/date/${formDate}`
+    );
 
-    try {
-      checkData = await checkRes.json();
-    } catch {
-      checkData = null;
-    }
+  checkData = response.data;
+} catch (error) {
+
+  if (error.response?.status !== 404) {
+    setError(
+      "Failed to validate date. Please try again."
+    );
+
+    setActionLoading(false);
+    return;
+  }
+}
 
     // STEP 4: Determine if duplicate exists
     let exists = false;
@@ -200,55 +200,106 @@ export default function WorkingHoursByDate() {
     };
 
     // STEP 7: Update or Create
-    if (isEditing && editingId !== null) {
-      const res = await fetch(
-        `${API_BASE_URL}/workingHoursByDate/${editingId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-if (!res.ok) {
+//     if (isEditing && editingId !== null) {
+//       const res = await fetch(
+//         `${API_BASE_URL}/workingHoursByDate/${editingId}`,
+//         {
+//           method: "PUT",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify(payload),
+//         }
+//       );
+// if (!res.ok) {
 
-  const errorData = await res.json();
+//   const errorData = await res.json();
 
-  throw new Error(
-    errorData.message ||
-    "Failed to update override"
-  );
-}
+//   throw new Error(
+//     errorData.message ||
+//     "Failed to update override"
+//   );
+// }
 
-      setStatus("Override updated successfully.");
-    } else {
-      const res = await fetch(
-        `${API_BASE_URL}/workingHoursByDate`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+//       setStatus("Override updated successfully.");
+//     } else {
+//       const res = await fetch(
+//         `${API_BASE_URL}/workingHoursByDate`,
+//         {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify(payload),
+//         }
+//       );
 
-  if (!res.ok) {
+//   if (!res.ok) {
 
-  const errorData = await res.json();
+//   const errorData = await res.json();
 
-  if (res.status === 409) {
-    setError("This date already exists");
-    setActionLoading(false);
-    return;
+//   if (res.status === 409) {
+//     setError("This date already exists");
+//     setActionLoading(false);
+//     return;
+//   }
+
+//   throw new Error(
+//     errorData.message ||
+//     "Failed to create override"
+//   );
+// }
+
+//       setStatus("Override created successfully.");
+//     }
+// STEP 7: Update or Create
+
+if (isEditing && editingId !== null) {
+  try {
+    await api.put(
+      `/workingHoursByDate/${editingId}`,
+      payload
+    );
+
+    setStatus(
+      "Override updated successfully."
+    );
+
+  } catch (error) {
+
+    const message =
+      error.response?.data?.message ||
+      "Failed to update override";
+
+    throw new Error(message);
   }
 
-  throw new Error(
-    errorData.message ||
-    "Failed to create override"
-  );
-}
+} else {
 
-      setStatus("Override created successfully.");
+  try {
+
+    await api.post(
+      "/workingHoursByDate",
+      payload
+    );
+
+    setStatus(
+      "Override created successfully."
+    );
+
+  } catch (error) {
+
+    if (
+      error.response?.status === 409
+    ) {
+      setError("This date already exists");
+      setActionLoading(false);
+      return;
     }
 
+    const message =
+      error.response?.data?.message ||
+      "Failed to create override";
+
+    throw new Error(message);
+  }
+}
     // STEP 8: Reset form
     setIsModalOpen(false);
     setIsEditing(false);
@@ -268,78 +319,6 @@ if (!res.ok) {
     setActionLoading(false);
   }
 };
-  // const onSubmit = async () => {
-  //   // STEP 1: Validate required fields
-  //   const validationError = validateForm();
-  //   if (validationError) {
-  //     setError(validationError);
-  //     return;
-  //   }
-
-  //   setActionLoading(true);
-  //   setError("");
-  //   setStatus("");
-
-  //   try {
-  //     // STEP 2: Check backend duplicate API
-  //     const formDate = normalizeDate(form.work_date);
-  //     const checkRes = await fetch(`${API_BASE_URL}/workingHoursByDate/date/${formDate}`);
-  //     const checkData = await checkRes.json();
-      
-  //     // STEP 3: If duplicate exists, check if it's a different record (not the one being edited)
-  //     const hasDuplicate = Array.isArray(checkData) && checkData.length > 0;
-  //     if (hasDuplicate && !(isEditing && checkData.some((item) => item.id === editingId))) {
-  //       setError("This date already exists");
-  //       setActionLoading(false);
-  //       return;
-  //     }
-
-  //     // STEP 4: Proceed with POST or PUT
-  //     const payload = {
-  //       work_date: formDate,
-  //       start_time: form.is_day_off ? null : form.start_time,
-  //       end_time: form.is_day_off ? null : form.end_time,
-  //       is_day_off: form.is_day_off,
-  //     };
-
-  //     if (isEditing && editingId !== null) {
-  //       const res = await fetch(`${API_BASE_URL}/workingHoursByDate/${editingId}`, {
-  //         method: "PUT",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify(payload),
-  //       });
-
-  //       if (!res.ok) {
-  //         throw new Error("Failed to update override");
-  //       }
-
-  //       setStatus("Override updated successfully.");
-  //     } else {
-  //       const res = await fetch(`${API_BASE_URL}/workingHoursByDate`, {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify(payload),
-  //       });
-
-  //       if (!res.ok) {
-  //         throw new Error("Failed to create override");
-  //       }
-
-  //       setStatus("Override created successfully.");
-  //     }
-
-  //     setIsModalOpen(false);
-  //     setIsEditing(false);
-  //     setEditingId(null);
-  //     setForm(defaultForm);
-  //     // STEP 5: Refresh table after success
-  //     await fetchUpcomingWorkingHours();
-  //   } catch (err) {
-  //     setError(err instanceof Error ? err.message : "Unable to save override");
-  //   } finally {
-  //     setActionLoading(false);
-  //   }
-  // };
 
   const onDelete = async (id: number) => {
     const confirmed = window.confirm("Are you sure you want to delete this override?");
@@ -350,16 +329,14 @@ if (!res.ok) {
     setStatus("");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/workingHoursByDate/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to delete override");
-      }
-
+   await api.delete(
+  `/workingHoursByDate/${id}`
+);
       setStatus("Override deleted successfully.");
       await fetchUpcomingWorkingHours();
+
+
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to delete override");
     } finally {

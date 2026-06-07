@@ -1,5 +1,5 @@
 "use client";
-
+import api from "../../../../lib/api.js";
 import { useEffect, useMemo, useState } from "react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
@@ -353,66 +353,6 @@ export default function CmsDashboard() {
     });
   };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   if (!selectedSection) return;
-  //   setSaving(true);
-  //   try {
-  //     console.log("Section ID:",content.data.id);
-  //     //    console.log("Sending content:", content);
-  // console.log(content);
-  //     console.log(content.data.content);
-  //     const res = await fetch(
-  //       `http://localhost:5000/api/section-content/${content.data.id}`,
-  //       {
-  //         method: "PUT",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify(content.data.content),
-  //       }
-  //     );
-
-  //     if (!res.ok) throw new Error("Failed to update content");
-  //     showToast("success", "Section content updated");
-  //   } catch (err) {
-  //     showToast("error", err.message);
-  //   } finally {
-  //     setSaving(false);
-  //   }
-  // };
-
-
-
-
-// const handleSubmit = async (e) => {
-//   e.preventDefault();
-//   if (!selectedSection) return;
-
-//   setSaving(true);
-
-//   try {
-//     const res = await fetch(
-//       `http://localhost:5000/api/section-content/${content.data.id}`,
-//       {
-//         method: "PUT",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(content.data.content),
-//       }
-//     );
-
-//     if (!res.ok) throw new Error("Failed to update content");
-
-//     showToast("success", "Section content updated");
-
-//     // 🔥 هذا السطر هو الحل
-//     await openSection(selectedSection);
-
-//   } catch (err) {
-//     showToast("error", err.message);
-//   } finally {
-//     setSaving(false);
-//   }
-// };
-
 
 
 
@@ -425,16 +365,30 @@ const handleSubmit = async (e) => {
     console.log("Section ID:", content.data.id);
     console.log("Sending content:", content.data.content);
 
-    const res = await fetch(
-      `http://localhost:5000/api/section-content/${content.data.id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(content.data.content), // فقط المحتوى
-      }
-    );
+    // const res = await fetch(
+    //   `http://localhost:5000/api/section-content/${content.data.id}`,
+    //   {
+    //     method: "PUT",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify(content.data.content), // فقط المحتوى
+    //   }
+    // );
+try {
+  await api.put(
+    `/section-content/${content.data.id}`,
+    content.data.content
+  );
 
-    if (!res.ok) throw new Error("Failed to update content");
+  showToast("success", "Section content updated");
+} catch (err) {
+  showToast(
+    "error",
+    err.response?.data?.message ||
+    err.message ||
+    "Failed to update content"
+  );
+}
+    // if (!res.ok) throw new Error("Failed to update content");
     showToast("success", "Section content updated");
   } catch (err) {
     showToast("error", err.message);

@@ -5,6 +5,7 @@ import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { GlowingButton } from "../../../components/GlowingButtom";
 import { FloatingElement } from "../../../components/AnimatedElements";
+import api from "../../../../lib/api.js";
 
 export default function ContactForm({ data = {} }) {
   const [formData, setFormData] = useState({
@@ -13,14 +14,15 @@ export default function ContactForm({ data = {} }) {
     subject: "",
     message: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const title = data?.title || data?.heading || "";
   const description = data?.description || data?.summary || "";
-  const buttonText = data?.buttonText || data?.ctaText || data?.cta || "";
-  const successMessage = data?.successMessage || data?.success || "";
-  const errorMessage = data?.errorMessage || data?.validationMessage || "";
-  const placeholders = data?.placeholders || {};
-  const labels = data?.labels || {};
+  const buttonText = data?.buttonText || data?.ctaText || data?.cta || "Submit";
+  const successMessage = data?.successMessage || data?.success || "Your message has been sent successfully!";
+  const errorMessage = data?.errorMessage || data?.validationMessage || "something went wrong, please try again.";
+  const placeholders = data?.placeholders || {"name": "Your Name", "email": "Your Email", "subject": "Subject", "message": "Your Message"};
+  const labels = data?.labels || {"name": "Name", "email": "Email", "subject": "Subject", "message": "Message"};
 
   const handleChange = (e) => {
     setFormData({
@@ -29,22 +31,62 @@ export default function ContactForm({ data = {} }) {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      if (errorMessage) toast.error(errorMessage);
+    // Validation
+    if (!formData.name?.trim()) {
+      toast.error("Name is required");
       return;
     }
 
-    if (successMessage) toast.success(successMessage);
+    if (!formData.email?.trim()) {
+      toast.error("Email is required");
+      return;
+    }
 
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
+    // Email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!formData.message?.trim()) {
+      toast.error("Message is required");
+      return;
+    }
+
+    // Submit to API
+    setIsLoading(true);
+    try {
+      const response = await api.post("/boxConect", {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        message: formData.message.trim(),
+      });
+
+      // Show success message
+      const successMsg = successMessage || "Your message has been sent successfully!";
+      toast.success(successMsg);
+
+      // Reset form
+   setFormData(() => ({
+  name: "",
+  email: "",
+
+  message: "",
+}));
+    } catch (error) {
+      // Show error message from server or fallback
+      const errorMsg =
+        error.response?.data?.message ||
+        errorMessage ||
+        "Failed to send message. Please try again.";
+      toast.error(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -125,28 +167,7 @@ export default function ContactForm({ data = {} }) {
               </motion.div>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              {labels.subject && (
-                <label htmlFor="subject" className="block text-[#2C2C2C] mb-2 font-medium">
-                  {labels.subject}
-                </label>
-              )}
-              <motion.input
-                whileFocus={{ scale: 1.02 }}
-                type="text"
-                  id="subject"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#F5F1ED] border border-[#D4AF7A]/20 focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] transition-all shadow-sm hover:shadow-md"
-                  placeholder={placeholders.subject || ""}
-                />
-              </motion.div>
+         
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -178,9 +199,14 @@ export default function ContactForm({ data = {} }) {
               className="pt-4"
             >
               {buttonText && (
-                <GlowingButton type="submit" variant="primary" className="w-full">
+                <GlowingButton 
+                  type="submit" 
+                  variant="primary" 
+                  className="w-full"
+                  disabled={isLoading}
+                >
                   <Send className="w-5 h-5 inline mr-2" />
-                  {buttonText}
+                  {isLoading ? "Sending..." : buttonText}
                 </GlowingButton>
               )}
             </motion.div>
@@ -190,3 +216,30 @@ export default function ContactForm({ data = {} }) {
     </section>
   );
 }
+
+
+
+
+
+  //  <motion.div
+  //             initial={{ opacity: 0, y: 20 }}
+  //             whileInView={{ opacity: 1, y: 0 }}
+  //             viewport={{ once: true }}
+  //           >
+  //             {labels.subject && (
+  //               <label htmlFor="subject" className="block text-[#2C2C2C] mb-2 font-medium">
+  //                 {labels.subject}
+  //               </label>
+  //             )}
+  //             <motion.input
+  //               whileFocus={{ scale: 1.02 }}
+  //               type="text"
+  //                 id="subject"
+  //                 name="subject"
+  //                 value={formData.subject}
+  //                 onChange={handleChange}
+  //                 required
+  //                 className="w-full px-4 py-3 rounded-2xl bg-gradient-to-br from-[#FAF8F5] to-[#F5F1ED] border border-[#D4AF7A]/20 focus:outline-none focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] transition-all shadow-sm hover:shadow-md"
+  //                 placeholder={placeholders.subject || ""}
+  //               />
+  //             </motion.div>

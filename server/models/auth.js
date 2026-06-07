@@ -20,7 +20,7 @@ WHERE email = $1
 export async function findAdminById(id) {
     const result = await db.query(
         `
-        SELECT id, email
+       SELECT id, name, email
         FROM admins
         WHERE id = $1
         `,
@@ -44,3 +44,55 @@ export async function findAdminById(id) {
 //     return result.rows[0];
 
 // }
+
+
+
+
+export async function updateAdminProfileModle(
+  id,
+  name,
+  email,
+  hashedPassword
+) {
+
+  const result = await db.query(
+    `
+    UPDATE admins
+    SET
+      name = $1,
+      email = $2,
+      password = $3
+    WHERE id = $4
+    RETURNING id, name, email
+    `,
+    [
+      name,
+      email,
+      hashedPassword,
+      id
+    ]
+  );
+
+  return result.rows[0];
+}
+
+export async function findAdminByIdWithPassword(id) {
+  const result = await db.query(
+    `
+    SELECT id, name, email, password
+    FROM admins
+    WHERE id = $1
+    `,
+    [id]
+  );
+
+  return result.rows[0];
+}
+
+
+
+
+
+
+
+
