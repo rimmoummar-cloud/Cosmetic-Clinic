@@ -1,131 +1,520 @@
 "use client";
 
-import { bookings } from "../../../data/bookings";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import api from "../../../../lib/api";
 
 export default function AdminDashboard() {
-  const stats = [
-    { label: "Total Bookings", value: "248", change: "+12%", icon: "📅", color: "from-blue-500 to-blue-600" },
-    { label: "Total Customers", value: "1,847", change: "+8%", icon: "👥", color: "from-emerald-500 to-emerald-600" },
-    { label: "Active Services", value: "11", change: "+2", icon: "💆", color: "from-purple-500 to-purple-600" },
-    { label: "Revenue", value: "$42,580", change: "+15%", icon: "💰", color: "from-primary to-primary-dark" },
-  ];
+const [dashboard, setDashboard] =
+useState({
+todayBookings: 0,
+todayRevenue: 0,
+totalCustomers: 0,
+newCustomersToday: 0,
+totalServices: 0,
+pendingBookings: 0,
+approvedBookings: 0,
+revenueThisMonth: 0,
+completionRate: 0,
+mostRequestedService: null,
+leastRequestedService: null,
+unreadNotifications: [],
+});
 
-  const statusColors = {
-    approved: "bg-emerald-100 text-emerald-700",
-    pending: "bg-amber-100 text-amber-700",
-    cancelled: "bg-red-100 text-red-700",
-    completed: "bg-blue-100 text-blue-700",
-  };
+const [loading, setLoading] =
+useState(true);
 
-  return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold font-[var(--font-heading)]">
-          Dashboard
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Welcome back! Here&apos;s what&apos;s happening at your clinic.
-        </p>
-      </div>
+const fetchDashboard =
+async () => {
+try {
+const res =
+await api.get(
+"/dashboard"
+);
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, i) => (
+
+    setDashboard(
+      res.data.data
+    );
+  } catch (err) {
+    console.log(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+useEffect(() => {
+fetchDashboard();
+}, []);
+
+const stats = [
+{
+label:
+"Today's Bookings",
+value:
+dashboard.todayBookings,
+icon: "📅",
+color:
+"from-blue-500 to-blue-600",
+},
+
+
+{
+  label:
+    "Total Customers",
+  value:
+    dashboard.totalCustomers,
+  icon: "👥",
+  color:
+    "from-emerald-500 to-emerald-600",
+},
+
+{
+  label:
+    "Today's Revenue",
+  value: `$${Number(
+    dashboard.todayRevenue
+  ).toLocaleString()}`,
+  icon: "💰",
+  color:
+    "from-[#8B6B4F] to-[#6F523C]",
+},
+
+{
+  label:
+    "Total Services",
+  value:
+    dashboard.totalServices,
+  icon: "💆",
+  color:
+    "from-purple-500 to-purple-600",
+},
+
+{
+  label:
+    "New Customers Today",
+  value:
+    dashboard.newCustomersToday,
+  icon: "🆕",
+  color:
+    "from-cyan-500 to-cyan-600",
+},
+
+{
+  label:
+    "Pending Bookings",
+  value:
+    dashboard.pendingBookings,
+  icon: "⏳",
+  color:
+    "from-amber-500 to-amber-600",
+},
+
+{
+  label:
+    "Approved Bookings",
+  value:
+    dashboard.approvedBookings,
+  icon: "✅",
+  color:
+    "from-green-500 to-green-600",
+},
+
+{
+  label:
+    "Revenue This Month",
+  value: `$${Number(
+    dashboard.revenueThisMonth
+  ).toLocaleString()}`,
+  icon: "📈",
+  color:
+    "from-indigo-500 to-indigo-600",
+},
+
+{
+  label:
+    "Booking Completion Rate",
+  value: `${dashboard.completionRate}%`,
+  icon: "🎯",
+  color:
+    "from-pink-500 to-pink-600",
+},
+
+
+];
+
+if (loading) {
+return ( <div className="p-6">
+Loading Dashboard... </div>
+);
+}
+
+return ( <div className="space-y-8">
+
+
+  {/* HEADER */}
+
+  <div>
+    <h1
+      className="
+        text-3xl
+        font-bold
+        font-[var(--font-heading)]
+      "
+    >
+      Dashboard
+    </h1>
+
+    <p className="text-gray-500 mt-1">
+      Welcome back!
+      Here&apos;s what&apos;s
+      happening today.
+    </p>
+  </div>
+
+  {/* STATS */}
+
+  <div
+    className="
+      grid
+      grid-cols-1
+      md:grid-cols-2
+      xl:grid-cols-3
+      gap-6
+    "
+  >
+    {stats.map(
+      (item) => (
+        <div
+          key={
+            item.label
+          }
+          className="
+            bg-white
+            rounded-2xl
+            p-6
+            border
+            border-gray-100
+            shadow-sm
+            hover:shadow-lg
+            transition
+          "
+        >
           <div
-            key={stat.label}
-            className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fadeInUp"
-            style={{ animationDelay: `${i * 0.1}s` }}
+            className="
+              flex
+              justify-between
+              items-start
+            "
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white text-xl`}>
-                {stat.icon}
-              </div>
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                {stat.change}
-              </span>
-            </div>
-            <p className="text-2xl font-bold font-[var(--font-heading)]">
-              {stat.value}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
-          </div>
-        ))}
-      </div>
+            <div>
+              <p
+                className="
+                  text-sm
+                  text-gray-500
+                  mb-2
+                "
+              >
+                {
+                  item.label
+                }
+              </p>
 
-      {/* Recent Bookings */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-bold font-[var(--font-heading)]">
-            Recent Bookings
-          </h2>
-          <a
-            href="/admin/bookings"
-            className="text-sm text-primary hover:underline font-medium"
-          >
-            View All
-          </a>
+              <h2
+                className="
+                  text-3xl
+                  font-bold
+                "
+              >
+                {
+                  item.value
+                }
+              </h2>
+            </div>
+
+            <div
+              className={`
+                w-14
+                h-14
+                rounded-2xl
+                text-white
+                text-2xl
+                flex
+                items-center
+                justify-center
+                bg-gradient-to-br
+                ${item.color}
+              `}
+            >
+              {
+                item.icon
+              }
+            </div>
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Service
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Time
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {bookings.map((booking) => (
-                <tr
-                  key={booking.id}
-                  className="hover:bg-gray-50/50 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold">
-                        {booking.customerName[0]}
-                      </div>
-                      <span className="text-sm font-medium">
-                        {booking.customerName}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {booking.services.join(", ")}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {booking.date}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {booking.time}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                        statusColors[booking.status] || ""
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      )
+    )}
+  </div>
+
+  {/* SERVICES */}
+
+  <div
+    className="
+      grid
+      lg:grid-cols-2
+      gap-6
+    "
+  >
+    <div
+      className="
+        bg-white
+        rounded-2xl
+        border
+        border-gray-100
+        p-6
+      "
+    >
+      <div
+        className="
+          flex
+          items-center
+          gap-3
+        "
+      >
+        <span className="text-3xl">
+          🔥
+        </span>
+
+        <div>
+          <h2
+            className="
+              text-lg
+              font-bold
+            "
+          >
+            Most Requested
+            Service
+          </h2>
+
+          <p className="text-gray-500">
+            {dashboard
+              .mostRequestedService
+              ? dashboard
+                  .mostRequestedService
+                  .name
+              : "No Bookings"}
+          </p>
+
+          {dashboard
+            .mostRequestedService && (
+            <p
+              className="
+                text-sm
+                text-[#8B6B4F]
+                mt-1
+              "
+            >
+              Total Bookings:
+              {" "}
+              {
+                dashboard
+                  .mostRequestedService
+                  .total
+              }
+            </p>
+          )}
         </div>
       </div>
     </div>
-  );
+
+    <div
+      className="
+        bg-white
+        rounded-2xl
+        border
+        border-gray-100
+        p-6
+      "
+    >
+      <div
+        className="
+          flex
+          items-center
+          gap-3
+        "
+      >
+        <span className="text-3xl">
+          📉
+        </span>
+
+        <div>
+          <h2
+            className="
+              text-lg
+              font-bold
+            "
+          >
+            Least Requested
+            Service
+          </h2>
+
+          <p className="text-gray-500">
+            {dashboard
+              .leastRequestedService
+              ? dashboard
+                  .leastRequestedService
+                  .name
+              : "No Bookings"}
+          </p>
+
+          {dashboard
+            .leastRequestedService && (
+            <p
+              className="
+                text-sm
+                text-[#8B6B4F]
+                mt-1
+              "
+            >
+              Total Bookings:
+              {" "}
+              {
+                dashboard
+                  .leastRequestedService
+                  .total
+              }
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* NOTIFICATIONS */}
+
+  <div
+    className="
+      bg-white
+      rounded-2xl
+      border
+      border-gray-100
+      overflow-hidden
+    "
+  >
+    <div
+      className="
+        p-6
+        border-b
+        border-gray-100
+        flex
+        justify-between
+        items-center
+      "
+    >
+      <h2
+        className="
+          text-lg
+          font-bold
+        "
+      >
+        Unread Notifications
+      </h2>
+
+      <Link
+        href="/admin/notifications"
+        className="
+          text-[#8B6B4F]
+          font-medium
+          hover:underline
+        "
+      >
+        View All
+      </Link>
+    </div>
+
+    <div className="divide-y">
+      {dashboard
+        .unreadNotifications
+        .length ===
+      0 ? (
+        <div
+          className="
+            p-8
+            text-center
+            text-gray-400
+          "
+        >
+          No unread
+          notifications
+        </div>
+      ) : (
+        dashboard
+          .unreadNotifications
+          .map(
+            (
+              notification
+            ) => (
+              <div
+                key={
+                  notification.id
+                }
+                className="
+                  p-5
+                  hover:bg-gray-50
+                "
+              >
+                <div
+                  className="
+                    flex
+                    justify-between
+                    gap-4
+                  "
+                >
+                  <div>
+                    <h3
+                      className="
+                        font-semibold
+                      "
+                    >
+                      {
+                        notification.title
+                      }
+                    </h3>
+
+                    <p
+                      className="
+                        text-sm
+                        text-gray-500
+                        mt-1
+                      "
+                    >
+                      {
+                        notification.message
+                      }
+                    </p>
+                  </div>
+
+                  <span
+                    className="
+                      text-xs
+                      text-gray-400
+                      whitespace-nowrap
+                    "
+                  >
+                    {new Date(
+                      notification.created_at
+                    ).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            )
+          )
+      )}
+    </div>
+  </div>
+</div>
+
+
+);
 }

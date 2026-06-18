@@ -28,7 +28,7 @@ import { cleanupRefreshTokens } from "./models/cleanupRefreshTokens.js";
 import waitingListRoutes from "./routes/watinglistRoute.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 
-
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import serviceAggregateRoutes from "./routes/serviceAggregateRoutes.js";
 import relatedServiceRoutes from "./routes/relatedServiceRoutes.js";
 import suitableForRoutes from "./routes/suitableForRoutes.js";
@@ -98,6 +98,7 @@ app.use("/api/suitable-for", suitableForRoutes);
 app.use("/api/contraindications", contraindicationRoutes);
 app.use("/api/related-services",relatedServiceRoutes);
 app.use("/api/services",serviceAggregateRoutes);
+app.use("/api/dashboard",dashboardRoutes);
 // app.use("/api/reviews", reviewsRoutes);
 app.get("/test-db", async (req, res) => {
   const result = await db.query("SELECT NOW()");
