@@ -22,6 +22,27 @@
 
 import * as ContentModel from '../models/sectionContent.js';
 
+const parseContentBody = (body) => {
+  if (typeof body.content === 'string') {
+    return JSON.parse(body.content);
+  }
+
+  if (body.content && typeof body.content === 'object') {
+    return body.content;
+  }
+
+  return body;
+};
+
+const setValueAtPath = (data, path, value) => {
+  if (!path.length) return value;
+
+  const [head, ...rest] = path;
+  const clone = Array.isArray(data) ? [...data] : { ...data };
+  clone[head] = setValueAtPath(clone[head], rest, value);
+  return clone;
+};
+
 /**
  * API Endpoint: GET /api/section-content/section/:sectionId
  * Get all content versions for a section
@@ -185,9 +206,24 @@ export const updateContent = async (req, res) => {
       });
     }
 
+    let contentPayload = parseContentBody(req.body);
+
+    if (req.file) {
+      const imagePath = `/uploads/section-content/${req.file.filename}`;
+      const imageFieldPath = req.body.image_path
+        ? JSON.parse(req.body.image_path)
+        : ['image'];
+
+      contentPayload = setValueAtPath(
+        contentPayload,
+        imageFieldPath,
+        imagePath
+      );
+    }
+
     const content = await ContentModel.updateContent(
       id,
-      req.body,
+      contentPayload,
       createNewVersion !== 'false'
     );
 

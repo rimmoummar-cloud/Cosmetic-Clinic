@@ -2,8 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import api from "../../../../../../../lib/api";
-
-const API_URL = "http://localhost:5000";
+import { getMediaUrl } from "../../../../../../../lib/mediaUrl";
 
 export default function Page({ params }) {
   const { serviceId } = use(params);
@@ -77,13 +76,13 @@ export default function Page({ params }) {
 
     setBeforePreview(
       item.before_image
-        ? `${API_URL}${item.before_image}`
+        ? getMediaUrl(item.before_image)
         : ""
     );
 
     setAfterPreview(
       item.after_image
-        ? `${API_URL}${item.after_image}`
+        ? getMediaUrl(item.after_image)
         : ""
     );
 
@@ -209,14 +208,14 @@ export default function Page({ params }) {
               <tr key={item.id} className="border-t">
                 <td className="p-3">
                   <img
-                    src={`${API_URL}${item.before_image}`}
+                    src={getMediaUrl(item.before_image)}
                     className="w-24 h-20 object-cover rounded"
                   />
                 </td>
 
                 <td className="p-3">
                   <img
-                    src={`${API_URL}${item.after_image}`}
+                    src={getMediaUrl(item.after_image)}
                     className="w-24 h-20 object-cover rounded"
                   />
                 </td>

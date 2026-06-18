@@ -2,9 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import api from "../../../../../../../lib/api";
-
-const IMAGE_URL =
-  "http://localhost:5000";
+import { getMediaUrl } from "../../../../../../../lib/mediaUrl";
 
 export default function Page({
   params,
@@ -234,7 +232,7 @@ const fetchServices = async () => {
 
                   {item.related_service_image ? (
                     <img
-                      src={`${IMAGE_URL}${item.related_service_image}`}
+                      src={getMediaUrl(item.related_service_image)}
                       className="
                         w-16
                         h-16

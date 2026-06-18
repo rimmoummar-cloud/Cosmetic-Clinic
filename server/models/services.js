@@ -38,14 +38,14 @@ export const getServiceByCategoryId = async (id) => {
 
 
 export const createService = async (data) => {
-  const { name, description, price, duration_minutes, category_id } = data;
+  const { name, description, price, duration_minutes, category_id, image_url = null } = data;
 
   const result = await db.query(
     `INSERT INTO services 
-    (name, description, price, duration_minutes, category_id)
-    VALUES ($1,$2,$3,$4,$5)
+    (name, description, price, duration_minutes, category_id, image_url)
+    VALUES ($1,$2,$3,$4,$5,$6)
     RETURNING *`,
-    [name, description, price, duration_minutes, category_id]
+    [name, description, price, duration_minutes, category_id, image_url]
   );
 
   return result.rows[0];

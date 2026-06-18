@@ -1,5 +1,6 @@
 "use client";
 import api from "../../../../lib/api.js";
+import { getMediaUrl } from "../../../../lib/mediaUrl.js";
 import { useEffect, useMemo, useState } from "react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
@@ -90,6 +91,7 @@ function FieldRenderer({
   value,
   path,
   onChange,
+  onImageFile,
   onAddItem,
   onRemoveItem,
 }) {
@@ -134,6 +136,7 @@ function FieldRenderer({
                 value={item}
                 path={[...path, idx]}
                 onChange={onChange}
+                onImageFile={onImageFile}
                 onAddItem={onAddItem}
                 onRemoveItem={onRemoveItem}
               />
@@ -158,6 +161,7 @@ function FieldRenderer({
               value={val}
               path={[...path, key]}
               onChange={onChange}
+              onImageFile={onImageFile}
               onAddItem={onAddItem}
               onRemoveItem={onRemoveItem}
             />
@@ -195,7 +199,7 @@ function FieldRenderer({
           {value ? (
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
               <img
-                src={value}
+                src={getMediaUrl(value)}
                 alt={fieldKey}
                 className="h-40 w-full object-cover"
               />
@@ -214,6 +218,7 @@ function FieldRenderer({
                 if (!file) return;
                 const objectUrl = URL.createObjectURL(file);
                 onChange(path, objectUrl);
+                onImageFile(path, file);
               }}
               className="w-full cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none transition file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:border-primary"
             />
@@ -251,6 +256,7 @@ export default function CmsDashboard() {
   const [pages, setPages] = useState([]);
   const [sections, setSections] = useState([]);
   const [content, setContent] = useState(null);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
 
   const [selectedPage, setSelectedPage] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
@@ -288,6 +294,7 @@ export default function CmsDashboard() {
     setSelectedPage(page);
     setSelectedSection(null);
     setContent(null);
+    setSelectedImageFile(null);
     setLoadingSections(true);
     try {
    
@@ -324,6 +331,7 @@ export default function CmsDashboard() {
       const data = await res.json();
       const contentObj = data?.content || data;
       setContent(contentObj || {});
+      setSelectedImageFile(null);
     } catch (err) {
       showToast("error", err.message);
     } finally {
@@ -333,6 +341,13 @@ export default function CmsDashboard() {
 
   const handleFieldChange = (pathArr, value) => {
     setContent((prev) => setValueAtPath(prev, pathArr, value));
+  };
+
+  const handleImageFile = (pathArr, file) => {
+    setSelectedImageFile({
+      path: pathArr,
+      file,
+    });
   };
 
   const handleAddItem = (pathArr, currentValue) => {
@@ -374,12 +389,30 @@ const handleSubmit = async (e) => {
     //   }
     // );
 try {
+  const payload = new FormData();
+  payload.append(
+    "content",
+    JSON.stringify(content.data.content)
+  );
+
+  if (selectedImageFile?.file) {
+    const contentPath =
+      selectedImageFile.path[0] === "data" &&
+      selectedImageFile.path[1] === "content"
+        ? selectedImageFile.path.slice(2)
+        : selectedImageFile.path;
+
+    payload.append("image", selectedImageFile.file);
+    payload.append("image_path", JSON.stringify(contentPath));
+  }
+
   await api.put(
     `/section-content/${content.data.id}`,
-    content.data.content
+    payload
   );
 
   showToast("success", "Section content updated");
+  setSelectedImageFile(null);
 } catch (err) {
   showToast(
     "error",
@@ -518,6 +551,7 @@ try {
                 value={content}
                 path={[]}
                 onChange={handleFieldChange}
+                onImageFile={handleImageFile}
                 onAddItem={handleAddItem}
                 onRemoveItem={handleRemoveItem}
               />

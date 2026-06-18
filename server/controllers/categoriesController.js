@@ -15,14 +15,35 @@ export const getCategoriesById = async (req, res) => {
 };
 
 export const createCategories = async (req, res) => {
-  const categories = await Categorie.createCategories(req.body);
+  const imageUrl = req.file
+    ? `/uploads/categories/${req.file.filename}`
+    : req.body.image_url;
+
+  const categories = await Categorie.createCategories({
+    ...req.body,
+    image_url: imageUrl,
+  });
   res.json(categories);
 };
 
 export const updateCategories = async (req, res) => {
+  const oldCategory = await Categorie.getCategoriesById(req.params.id);
+  const hasImageUrl = Object.prototype.hasOwnProperty.call(
+    req.body,
+    "image_url"
+  );
+  const imageUrl = req.file
+    ? `/uploads/categories/${req.file.filename}`
+    : hasImageUrl
+      ? req.body.image_url
+      : oldCategory?.image_url;
+
   const categories = await Categorie.updateCategories(
     req.params.id,
-    req.body
+    {
+      ...req.body,
+      image_url: imageUrl,
+    }
   );
   res.json(categories);
 };

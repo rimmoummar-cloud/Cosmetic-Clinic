@@ -9,6 +9,7 @@ export default function ServiceForm({ onSubmit, loading = false, initialData = {
   const [price, setPrice] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState(null);
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState("");
 
@@ -19,6 +20,7 @@ export default function ServiceForm({ onSubmit, loading = false, initialData = {
     setPrice(initialData?.price ?? "");
     setDurationMinutes(initialData?.duration_minutes ?? initialData?.duration ?? "");
     setImageUrl(initialData?.image_url ?? "");
+    setImageFile(null);
     setIsActive(initialData?.is_active ?? true);
     setError("");
   }, [initialData, categories]);
@@ -32,15 +34,18 @@ export default function ServiceForm({ onSubmit, loading = false, initialData = {
 
     setError("");
 
-    const payload = {
-      category_id: Number(categoryId),
-      name,
-      description,
-      price: Number(price),
-      duration_minutes: Number(durationMinutes),
-      image_url: imageUrl,
-      is_active: Boolean(isActive),
-    };
+    const payload = new FormData();
+    payload.append("category_id", Number(categoryId));
+    payload.append("name", name);
+    payload.append("description", description);
+    payload.append("price", Number(price));
+    payload.append("duration_minutes", Number(durationMinutes));
+    payload.append("image_url", imageUrl);
+    payload.append("is_active", Boolean(isActive));
+
+    if (imageFile) {
+      payload.append("image", imageFile);
+    }
 
     try {
       await onSubmit(payload);
@@ -105,8 +110,14 @@ export default function ServiceForm({ onSubmit, loading = false, initialData = {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-        <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-primary transition-colors">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+        <div className="space-y-3 border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:border-primary transition-colors">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+            className="w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary"
+          />
           <input
             type="text"
             placeholder="Paste image URL"

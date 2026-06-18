@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { services as seedServices, categories as seedCategories } from "../../../data/services";
 import ServiceForm from "./components/ServiceForm";
 import api from "../../../../lib/api.js";
+import { getMediaUrl } from "../../../../lib/mediaUrl.js";
 import Link from "next/link";
 export default function ServicesPage({ service, categories = seedCategories }) {
   const [showModal, setShowModal] = useState(false);
@@ -203,7 +204,7 @@ const handleDelete = async (id) => {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-lg overflow-hidden">
                         {svc.image_url ? (
-                          <img src={svc.image_url} alt={svc.name} className="w-full h-full object-cover" />
+                          <img src={getMediaUrl(svc.image_url)} alt={svc.name} className="w-full h-full object-cover" />
                         ) : (
                           categories.find((c) => c.id === svc.category_id)?.icon
                         )}

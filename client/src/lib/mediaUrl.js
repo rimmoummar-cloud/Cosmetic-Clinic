@@ -1,0 +1,35 @@
+const API_MEDIA_BASE = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:5000"
+)
+  .replace(/\/api\/?$/, "")
+  .replace(/\/+$/, "");
+
+export function getMediaUrl(path) {
+  if (!path) return "";
+
+  const value = String(path).trim();
+  const normalizePath = (pathname) =>
+    pathname
+      .replace(/\/{2,}/g, "/")
+      .replace(/^(\/?uploads\/)+/, "/uploads/");
+
+  if (
+    value.startsWith("blob:") ||
+    value.startsWith("data:")
+  ) {
+    return value;
+  }
+
+  if (
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  ) {
+    const url = new URL(value);
+    url.pathname = normalizePath(url.pathname);
+    return url.toString();
+  }
+
+  const normalizedPath = normalizePath(value).replace(/^\/+/, "");
+  return `${API_MEDIA_BASE}/${normalizedPath}`;
+}

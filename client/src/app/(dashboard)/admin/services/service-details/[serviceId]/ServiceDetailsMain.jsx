@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "../../../../../../lib/api";
+import { getMediaUrl } from "../../../../../../lib/mediaUrl";
 
 export default function ServiceDetailsMain({
   serviceId,
@@ -181,7 +182,7 @@ export default function ServiceDetailsMain({
           >
             {svc.image_url && (
               <img
-                src={svc.image_url}
+                src={getMediaUrl(svc.image_url)}
                 alt={svc.name}
                 className="
                   w-full

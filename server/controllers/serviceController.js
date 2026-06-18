@@ -35,14 +35,35 @@ export const getServiceByCategory = async (req, res) => {
 
 
 export const createService = async (req, res) => {
-  const service = await Service.createService(req.body);
+  const imageUrl = req.file
+    ? `/uploads/services/${req.file.filename}`
+    : req.body.image_url;
+
+  const service = await Service.createService({
+    ...req.body,
+    image_url: imageUrl,
+  });
   res.json(service);
 };
 
 export const updateService = async (req, res) => {
+  const oldService = await Service.getServiceById(req.params.id);
+  const hasImageUrl = Object.prototype.hasOwnProperty.call(
+    req.body,
+    "image_url"
+  );
+  const imageUrl = req.file
+    ? `/uploads/services/${req.file.filename}`
+    : hasImageUrl
+      ? req.body.image_url
+      : oldService?.image_url;
+
   const service = await Service.updateService(
     req.params.id,
-    req.body
+    {
+      ...req.body,
+      image_url: imageUrl,
+    }
   );
   res.json(service);
 };

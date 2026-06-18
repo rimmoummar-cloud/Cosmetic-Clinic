@@ -16,9 +16,11 @@ import {
 
 import { authenticateAdmin } from "../middleware/authMiddleware.js";
 import csrf from "csurf";
+import { createUpload } from "../middleware/upload.js";
 
 const router = express.Router();
 const csrfProtection = csrf({ cookie: true });
+const upload = createUpload("section-content");
 
 
 router.get('/section/:sectionId/latest', getLatestContentBySectionId);
@@ -31,7 +33,7 @@ router.get('/:id', getContentById);
 router.post('/', authenticateAdmin, csrfProtection, createContent);
 
 
- router.put('/:id', authenticateAdmin, csrfProtection, updateContent);
+ router.put('/:id', authenticateAdmin, csrfProtection, upload.single('image'), updateContent);
 
 
 router.delete('/:id', authenticateAdmin, csrfProtection, deleteContent);

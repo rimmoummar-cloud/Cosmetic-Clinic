@@ -43,10 +43,18 @@ export async function sendBookingEmail({
 
       html: `
         <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
-          
-          <h2>Hello ${customerName} 💖</h2>
+        <div style="text-align:center;margin-bottom:20px;">
+  <h1 style="margin:0;">Shiny Skin Clinic</h1>
+  <p style="color:#777;font-size:12px;">Official Appointment System</p>
+</div>
+         <h2>Booking Confirmation</h2>
 
-          <p>Your booking request has been received successfully.</p>
+<p>Dear ${customerName},</p>
+
+<p>
+This is a confirmation that we have received your booking request at Shiny Skin Clinic.
+Our team will review it and notify you once it is confirmed.
+</p>
 
           <div style="background:#f8f8f8;padding:16px;border-radius:12px;margin:20px 0;">
             <p><b>Services:</b> ${serviceName}</p>
@@ -113,15 +121,18 @@ export async function sendBookingApprovedEmail({
 
       html: `
         <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+<div style="text-align:center;margin-bottom:20px;">
+  <h1 style="margin:0;">Shiny Skin Clinic</h1>
+  <p style="color:#777;font-size:12px;">Official Appointment System</p>
+</div>
+         <h2>Booking Approved</h2>
 
-          <h2>
-            Hello ${customerName} 💖
-          </h2>
+<p>Dear ${customerName},</p>
 
-          <p>
-            Your booking has been approved successfully.
-          </p>
-
+<p>
+We are pleased to inform you that your booking has been approved.
+Please find your appointment details below.
+</p>
           <div style="
             background:#f8f8f8;
             padding:16px;
@@ -219,14 +230,18 @@ export async function sendBookingCancelledEmail({
           margin:auto;
           padding:20px;
         ">
+<div style="text-align:center;margin-bottom:20px;">
+  <h1 style="margin:0;">Shiny Skin Clinic</h1>
+  <p style="color:#777;font-size:12px;">Official Appointment System</p>
+</div>
+        <h2>Booking Cancelled</h2>
 
-          <h2>
-            Hello ${customerName}
-          </h2>
+<p>Dear ${customerName},</p>
 
-          <p>
-            Unfortunately, your booking has been cancelled.
-          </p>
+<p>
+We would like to inform you that your booking has been cancelled.
+Please review the details below.
+</p>
 
           <div style="
             background:#f8f8f8;
@@ -320,10 +335,18 @@ console.log("Time:", dt.toFormat("HH:mm"));
 
       html: `
         <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+<div style="text-align:center;margin-bottom:20px;">
+  <h1 style="margin:0;">Shiny Skin Clinic</h1>
+  <p style="color:#777;font-size:12px;">Official Appointment System</p>
+</div>
+        <h2>Appointment Reminder</h2>
 
-          <h2>Hello ${customerName} 💖</h2>
+<p>Dear ${customerName},</p>
 
-          <p>This is a reminder for your upcoming appointment.</p>
+<p>
+This is a reminder of your upcoming appointment at Shiny Skin Clinic.
+Please find your appointment details below.
+</p>
 
           <p><b>Services:</b> ${serviceName}</p>
           <p><b>Date:</b> ${formattedDate}</p>
@@ -377,16 +400,21 @@ export async function sendWaitingListApprovedEmail({
 
       html: `
         <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+<div style="text-align:center;margin-bottom:20px;">
+  <h1 style="margin:0;">Shiny Skin Clinic</h1>
+  <p style="color:#777;font-size:12px;">Official Appointment System</p>
+</div>
+      <h2>Appointment Availability Update</h2>
 
-          <h2>Hello ${customerName} 💖</h2>
+<p>Dear ${customerName},</p>
 
-          <p>
-            Good news!
-          </p>
+<p>
+A time slot matching your waiting list request has become available at Shiny Skin Clinic.
+</p>
 
-          <p>
-            A slot matching your waiting list request is now available.
-          </p>
+<p>
+You may proceed with your booking using the link below.
+</p>
 
           <p>
             Click below to complete your booking.
@@ -444,10 +472,18 @@ export async function sendContactReplyEmail({
 
       html: `
         <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+<div style="text-align:center;margin-bottom:20px;">
+  <h1 style="margin:0;">Shiny Skin Clinic</h1>
+  <p style="color:#777;font-size:12px;">Official Appointment System</p>
+</div>
+         <h2>Response to Your Inquiry</h2>
 
-          <h2>Hello ${customerName} 💖</h2>
+<p>Dear ${customerName},</p>
 
-          <p>Thank you for contacting us.</p>
+<p>
+Thank you for contacting Shiny Skin Clinic.
+Please find our response below.
+</p>
 
           <div style="
             background:#f8f8f8;

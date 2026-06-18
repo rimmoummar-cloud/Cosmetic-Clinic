@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import ServiceForm from "../services/components/ServiceForm";
 import api from "../../../../lib/api.js";
+import { getMediaUrl } from "../../../../lib/mediaUrl.js";
 export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState(null);
   const [isActive, setIsActive] = useState(true);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -81,6 +83,7 @@ const fetchCategories = async () => {
     setName("");
     setDescription("");
     setImageUrl("");
+    setImageFile(null);
     setIsActive(true);
     setEditingCategoryId(null);
   };
@@ -94,6 +97,7 @@ const fetchCategories = async () => {
     setName(category.name || "");
     setDescription(category.description || "");
     setImageUrl(category.image_url || "");
+    setImageFile(null);
     setIsActive(Boolean(category.is_active));
     setEditingCategoryId(category.id);
     setShowModal(true);
@@ -139,7 +143,7 @@ const fetchCategories = async () => {
   // };
 const handleSubmit = async (e) => {
   e.preventDefault();
-  if (!name.trim() || !description.trim() || !imageUrl.trim()) {
+  if (!name.trim() || !description.trim() || (!imageUrl.trim() && !imageFile)) {
     setStatus({ type: "error", message: "Please fill all required fields" });
     return;
   }
@@ -154,17 +158,20 @@ const handleSubmit = async (e) => {
     : `/categorie`;
 
   const method = isEdit ? "put" : "post";
+  const payload = new FormData();
+  payload.append("name", name);
+  payload.append("description", description);
+  payload.append("image_url", imageUrl);
+
+  if (imageFile) {
+    payload.append("image", imageFile);
+  }
 
   try {
     const res = await api({
       url: endpoint,
       method: method,
-      data: {
-        name,
-        description,
-        image_url: imageUrl,
-        // is_active: isActive,
-      },
+      data: payload,
     });
 
     if (!res) throw new Error("Failed to save category");
@@ -262,16 +269,16 @@ const handleDelete = async (id) => {
     setServiceStatus("");
     setServiceLoading(true);
     const isEditingService = Boolean(editingServiceId);
-    const url = isEditingService ? `http://localhost:5000/api/services/${editingServiceId}` : "http://localhost:5000/api/services";
-    const method = isEditingService ? "PUT" : "POST";
+    const url = isEditingService ? `/services/${editingServiceId}` : "/services";
+    const method = isEditingService ? "put" : "post";
 
-    const res = await fetch(url, {
+    const res = await api({
+      url,
       method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      data: payload,
     });
 
-    if (!res.ok) {
+    if (!res) {
       setServiceLoading(false);
       setServiceStatus("Unable to save service. Please try again.");
       throw new Error("Request failed");
@@ -337,7 +344,7 @@ const handleDelete = async (id) => {
               <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center overflow-hidden">
                 {cat.image_url ? (
                   <img
-                    src={cat.image_url}
+                    src={getMediaUrl(cat.image_url)}
                     alt={cat.name}
                     className="w-full h-full object-cover"
                   />
@@ -417,13 +424,19 @@ const handleDelete = async (id) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  className="mb-3 w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors"
+                />
                 <input
                   type="text"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Or paste image URL"
                   className="w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors"
-                  required
                 />
               </div>
               <div>
@@ -501,7 +514,7 @@ const handleDelete = async (id) => {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-lg bg-accent overflow-hidden flex items-center justify-center">
                           {svc.image_url ? (
-                            <img src={svc.image_url} alt={svc.name} className="w-full h-full object-cover" />
+                            <img src={getMediaUrl(svc.image_url)} alt={svc.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="text-xs text-gray-400">No Image</div>
                           )}

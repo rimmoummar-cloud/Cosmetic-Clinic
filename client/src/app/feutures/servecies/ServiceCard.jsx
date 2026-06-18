@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import React from "react";
+import { getMediaUrl } from "../../../lib/mediaUrl";
 
 export function ServiceCard({
   title,
@@ -44,7 +45,7 @@ export function ServiceCard({
         <motion.img
           whileHover={{ scale: 1.1 }}
           transition={{ duration: 0.6 }}
-          src={resolvedImage}
+          src={getMediaUrl(resolvedImage)}
           alt={resolvedTitle}
           className="w-full h-full object-cover"
         />

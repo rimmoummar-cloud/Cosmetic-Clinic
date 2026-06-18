@@ -2,6 +2,7 @@
 
 import { SectionHeader } from "../../../../components/sectionHeader";
 import { FloatingElement } from "../../../../components/AnimatedElements";
+import { getMediaUrl } from "../../../../../lib/mediaUrl";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1508387026001-268e4f0e4748?auto=format&fit=crop&w=1600&q=80";
@@ -11,7 +12,7 @@ export default function CategoryHeader({ category }) {
   const description =
     category?.description ||
     "Discover treatments tailored to this category, crafted to deliver the best results for you.";
-  const background = category?.image_url || FALLBACK_IMAGE;
+  const background = getMediaUrl(category?.image_url || FALLBACK_IMAGE);
 
   return (
     <section className="relative py-24 md:py-28 px-4 sm:px-6 lg:px-8 overflow-hidden">

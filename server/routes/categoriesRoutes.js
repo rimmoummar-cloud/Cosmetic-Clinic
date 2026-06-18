@@ -10,15 +10,17 @@ import {
 } from "../controllers/categoriesController.js";
 
 import csrf from "csurf";
+import { createUpload } from "../middleware/upload.js";
 
 const router = express.Router();
 const csrfProtection = csrf({ cookie: true });
+const upload = createUpload("categories");
 
 
 router.get("/", getAllCategories);
 router.get("/:id", getCategoriesById);
-router.post("/", csrfProtection, authenticateAdmin, createCategories);
-router.put("/:id", csrfProtection, authenticateAdmin, updateCategories);
+router.post("/", csrfProtection, authenticateAdmin, upload.single("image"), createCategories);
+router.put("/:id", csrfProtection, authenticateAdmin, upload.single("image"), updateCategories);
 router.delete("/:id", csrfProtection, authenticateAdmin, deleteCategories);
 
 export default router;
