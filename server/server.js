@@ -27,6 +27,18 @@ import { restoreReminderJobs }from "./jobs/restoreReminderJobs.js";
 import { cleanupRefreshTokens } from "./models/cleanupRefreshTokens.js";
 import waitingListRoutes from "./routes/watinglistRoute.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+
+
+import serviceAggregateRoutes from "./routes/serviceAggregateRoutes.js";
+import relatedServiceRoutes from "./routes/relatedServiceRoutes.js";
+import suitableForRoutes from "./routes/suitableForRoutes.js";
+import contraindicationRoutes from "./routes/contraindicationRoutes.js";
+import serviceFaqRoutes from "./routes/serviceFaqRoutes.js";
+import serviceTipRoutes from "./routes/serviceTipRoutes.js";
+import beforeAfterImageRoutes from "./routes/beforeAfterImageRoutes.js";
+import serviceBenefitRoutes from "./routes/serviceBenefitRoutes.js";
+import serviceDetailRoutes from "./routes/serviceDetailRoutes.js";
+// import reviewsRoutes from "./routes/reviewsRoutes.js";
 import csrf from "csurf";
 
 dotenv.config();
@@ -51,7 +63,10 @@ app.use(cors({
 }));
 app.use(cookieParser());
 app.use(express.json());
-
+app.use(
+  "/uploads",
+  express.static("uploads")
+);
 // ✅ auth routes أولاً (login, logout, me, csrf-token)
 app.use("/api", authRoutes);
 
@@ -74,6 +89,16 @@ app.use("/api/section-content", sectionContentRoutes);
 app.use("/api/booking-reminders", bookingReminderRoutes);
 app.use("/api/waiting-list", waitingListRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/service-details", serviceDetailRoutes);
+app.use("/api/service-benefits", serviceBenefitRoutes);
+app.use("/api/before-after-images", beforeAfterImageRoutes);
+app.use("/api/service-tips", serviceTipRoutes);
+app.use("/api/service-faqs",serviceFaqRoutes);
+app.use("/api/suitable-for", suitableForRoutes);
+app.use("/api/contraindications", contraindicationRoutes);
+app.use("/api/related-services",relatedServiceRoutes);
+app.use("/api/services",serviceAggregateRoutes);
+// app.use("/api/reviews", reviewsRoutes);
 app.get("/test-db", async (req, res) => {
   const result = await db.query("SELECT NOW()");
   res.json(result.rows);

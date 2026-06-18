@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { services as seedServices, categories as seedCategories } from "../../../data/services";
 import ServiceForm from "./components/ServiceForm";
 import api from "../../../../lib/api.js";
+import Link from "next/link";
 export default function ServicesPage({ service, categories = seedCategories }) {
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -229,6 +230,24 @@ const handleDelete = async (id) => {
                       >
                         Delete
                       </button>
+
+  <Link
+    href={`/admin/services/service-details/${svc.id}`}
+    className="
+      px-3 py-1.5
+      text-xs
+      bg-emerald-50
+      text-emerald-700
+      rounded-lg
+      hover:bg-emerald-100
+      transition-colors
+    "
+  >
+    View Details
+  </Link>
+
+
+
                     </div>
                   </td>
                 </tr>

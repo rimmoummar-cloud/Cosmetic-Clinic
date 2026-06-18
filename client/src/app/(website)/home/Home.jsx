@@ -4,6 +4,7 @@ import { BookingForm } from "../../feutures/booking/BookingForm";
 import Hero from "./components/Hero";
 import ServicesPreview from "./components/ServicesPreview";
 import Benefits from "./components/Benefits";
+
 import Testimonials from "./components/Testimonials";
 import CTA from "./components/CTA";
 
@@ -68,7 +69,7 @@ const findSectionContent = (keys) => {
           // services={services}
         />
         <Benefits data={benefitsData} />
-        <Testimonials data={testimonialsData} />
+        {/* <Testimonials data={testimonialsData} /> */}
         <CTA data={ctaData} onBookingClick={setOpenBooking} />
       </div>
     </>

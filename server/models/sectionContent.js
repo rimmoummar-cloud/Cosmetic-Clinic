@@ -53,32 +53,17 @@ export const getContentBySectionId = async (sectionId) => {
  * @param {string} sectionId - The section UUID
  * Used by: Frontend to display current section content
  */
-// export const getLatestContentBySectionId = async (sectionId) => {
-//   const result = await db.query(
-//     `SELECT * FROM section_content 
-//      WHERE section_id = $1 
-//      ORDER BY version DESC 
-//      LIMIT 1`,
-//     [sectionId]
-//   );
-//   return result.rows[0];
-// };
-export const getLatestContentBySectionId = async (
-  sectionId
-) => {
+export const getLatestContentBySectionId = async (sectionId) => {
   const result = await db.query(
-    `
-    SELECT content
-    FROM section_content
-    WHERE section_id = $1
-    ORDER BY version DESC
-    LIMIT 1
-    `,
+    `SELECT * FROM section_content 
+     WHERE section_id = $1 
+     ORDER BY version DESC 
+     LIMIT 1`,
     [sectionId]
   );
-
-  return result.rows[0]?.content || null;
+  return result.rows[0];
 };
+
 /**
  * GET CONTENT BY ID
  * Retrieve a specific content entry by its UUID
