@@ -13,7 +13,7 @@ const navItems = [
   { href: "/admin/bookings", label: "Bookings", icon: "🗓️" },
   { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
   { href: "/admin/customers", label: "Customers", icon: "👥" },
-  { href: "/admin/reviews", label: "Reviews", icon: "⭐" },
+  // { href: "/admin/reviews", label: "Reviews", icon: "⭐" },
   { href: "/admin/messages", label: "Messages", icon: "💬" },
   { href: "/admin/cms", label: "CMS", icon: "📑" },
       { href: "/admin/working-hours", label: "Working Hours", icon: "⏰" },
@@ -228,14 +228,14 @@ if (checkingAuth) {
             </button>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold">
-                A
+               S
               </div>
-              <div className="hidden sm:block">
+              {/* <div className="hidden sm:block">
                 <p className="text-sm font-semibold">Admin</p>
                 <p className="text-xs text-gray-400">
                   admin@shinyskin.com
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
         </header>

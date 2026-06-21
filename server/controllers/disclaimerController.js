@@ -15,6 +15,10 @@ const disclaimers =
     token
   );
 
+
+
+
+  
       res.json(disclaimers);
 
     } catch (error) {

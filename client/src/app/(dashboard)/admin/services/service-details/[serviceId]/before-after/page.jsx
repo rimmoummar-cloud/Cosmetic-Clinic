@@ -95,7 +95,16 @@ export default function Page({ params }) {
   const handleSave = async () => {
     try {
       setLoading(true);
-
+if (
+  !editingId &&
+  (!form.before_image || !form.after_image)
+) {
+  setStatus(
+    "Please upload both Before and After images."
+  );
+  setLoading(false);
+  return;
+}
       const fd = new FormData();
 
       fd.append("service_id", serviceId);

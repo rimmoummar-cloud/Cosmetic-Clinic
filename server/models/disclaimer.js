@@ -64,6 +64,10 @@ export const createDisclaimer =
     );
 
     return result.rows[0];
+
+
+
+    
   };
 
 export const updateDisclaimer =

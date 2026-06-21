@@ -160,8 +160,7 @@ Please find your appointment details below.
           </p>
 
           <p>
-            You will also receive a reminder
-            24 hours before your appointment.
+          You may receive one or more reminders before your appointment.
           </p>
 
           <p style="

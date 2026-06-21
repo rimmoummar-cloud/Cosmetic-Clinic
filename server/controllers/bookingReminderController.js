@@ -1,7 +1,9 @@
 import * as Reminder from "../models/bookingReminder.js";
 import db from "../config/db.js";
 // import * as Booking from "../models/booking.js";
-
+import {
+  createNotification
+} from "../models/notification.js";
 export async function getBookingReminders(req, res) {
 
   try {
@@ -122,7 +124,15 @@ export async function confirmBookingFromReminder(
       reminderId,
       "confirmed"
     );
-
+await createNotification({
+  recipient_type: "admin",
+  recipient_id: 1,
+  booking_id: bookingId,
+  type: "booking_reminder_confirmed",
+  title: "Booking Confirmed",
+  message:
+    `Customer confirmed booking #${bookingId} from reminder email`
+});
     // =========================
     // SUCCESS PAGE
     // =========================
@@ -249,7 +259,15 @@ export async function cancelBookingFromReminder(
       reminderId,
       "cancelled"
     );
-
+await createNotification({
+  recipient_type: "admin",
+  recipient_id: 1,
+  booking_id: bookingId,
+  type: "booking_reminder_cancelled",
+  title: "Booking Cancelled",
+  message:
+    `Customer cancelled booking #${bookingId} from reminder email`
+});
     // =========================
     // SUCCESS PAGE
     // =========================

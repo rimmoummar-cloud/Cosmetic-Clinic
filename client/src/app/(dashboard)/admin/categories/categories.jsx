@@ -8,6 +8,7 @@ export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+    const [longdescription, setlongDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [isActive, setIsActive] = useState(true);
@@ -82,6 +83,7 @@ const fetchCategories = async () => {
   const resetForm = () => {
     setName("");
     setDescription("");
+   setlongDescription("");
     setImageUrl("");
     setImageFile(null);
     setIsActive(true);
@@ -96,6 +98,7 @@ const fetchCategories = async () => {
   const openEditModal = (category) => {
     setName(category.name || "");
     setDescription(category.description || "");
+    setlongDescription(category.long_description || "")
     setImageUrl(category.image_url || "");
     setImageFile(null);
     setIsActive(Boolean(category.is_active));
@@ -161,6 +164,8 @@ const handleSubmit = async (e) => {
   const payload = new FormData();
   payload.append("name", name);
   payload.append("description", description);
+    payload.append("long_description", longdescription);
+  
   payload.append("image_url", imageUrl);
 
   if (imageFile) {
@@ -442,13 +447,24 @@ const handleDelete = async (id) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors resize-none"
                   required
                 />
               </div>
+ <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Long Description</label>
+                <textarea
+                  rows={2}
+                  value={longdescription}
+                  onChange={(e) => setlongDescription(e.target.value)}
+                  className="w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors resize-none"
+                  required
+                />
+              </div>
+
               {/* <div className="flex items-center gap-3">
                 <input
                   id="isActive"

@@ -364,7 +364,7 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
-            <input
+            {/* <input
               type="password"
               value={reauthPassword}
               onChange={(e) => setReauthPassword(e.target.value)}
@@ -375,8 +375,16 @@ export default function AdminSettingsPage() {
                   handleReauthConfirm();
                 }
               }}
-            />
-
+            /> */}
+<input
+  type="password"
+  value={reauthPassword}
+  onChange={(e) => setReauthPassword(e.target.value)}
+  autoComplete="new-password"
+  name="new-password"
+  placeholder="Enter your password"
+  className="w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors mb-6"
+/>
             <div className="flex gap-3">
               <button
                 onClick={handleReauthCancel}

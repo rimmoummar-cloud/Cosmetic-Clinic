@@ -658,8 +658,10 @@ const [selectedReminders, setSelectedReminders] = useState(null);
                   <p className="text-xs font-semibold text-gray-600">
                     Scheduled At
                   </p>
-                  <p className="text-sm text-gray-700">
-                    {new Date(reminder.scheduled_at).toLocaleString("en-US", {
+                <p className="text-sm text-gray-700">
+  {new Date(
+    reminder.scheduled_at + "Z"
+  ).toLocaleString("en-US", {
                       timeZone: "America/Montreal",
                       dateStyle: "medium",
                       timeStyle: "short",

@@ -3,31 +3,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
-const faqs = [
-  {
-    question: "How long does the session take?",
-    answer:
-      "Most treatments take 60–75 minutes including consultation, prep, and post-care guidance tailored to your skin type.",
-  },
-  {
-    question: "When will I see results?",
-    answer:
-      "You'll notice immediate glow after one visit, with progressive refinement over 2–3 weeks as collagen activity improves.",
-  },
-  {
-    question: "Is there downtime?",
-    answer:
-      "Only mild warmth or pinkness for a few hours. You can resume daily activities the same day with simple aftercare.",
-  },
-  {
-    question: "How often should I book?",
-    answer:
-      "For best maintenance, we recommend a series of 3 sessions every 4–6 weeks, then seasonal refreshers.",
-  },
-];
-
-export default function ServiceFAQ() {
+export default function ServiceFAQ({ faqs = [] }) {
   const [activeFaq, setActiveFaq] = useState(null);
+  const items = Array.isArray(faqs) ? faqs : [];
 
   const toggleFaq = (index) => {
     setActiveFaq((prev) => (prev === index ? null : index));
@@ -43,11 +21,17 @@ export default function ServiceFAQ() {
       </div>
 
       <div className="space-y-3">
-        {faqs.map((item, idx) => {
+        {items.length === 0 && (
+          <div className="rounded-2xl bg-white/70 backdrop-blur-sm border border-white/60 shadow-[0_8px_28px_rgba(0,0,0,0.05)] px-5 py-6 text-[#6B6B6B]">
+            No FAQs available.
+          </div>
+        )}
+
+        {items.map((item, idx) => {
           const open = activeFaq === idx;
           return (
             <div
-              key={item.question}
+              key={item.id || item.question || idx}
               className="rounded-2xl bg-white/70 backdrop-blur-sm border border-white/60 shadow-[0_8px_28px_rgba(0,0,0,0.05)]"
             >
               <button
@@ -69,7 +53,7 @@ export default function ServiceFAQ() {
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.35 }}
-                    className="px-5 pb-5 text-[#4A4A4A]"
+                    className="overflow-hidden px-5 pb-5 text-[#4A4A4A]"
                   >
                     {item.answer}
                   </motion.div>

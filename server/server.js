@@ -97,7 +97,7 @@ app.use("/api/service-faqs",serviceFaqRoutes);
 app.use("/api/suitable-for", suitableForRoutes);
 app.use("/api/contraindications", contraindicationRoutes);
 app.use("/api/related-services",relatedServiceRoutes);
-app.use("/api/services",serviceAggregateRoutes);
+app.use("/api/service",serviceAggregateRoutes);
 app.use("/api/dashboard",dashboardRoutes);
 // app.use("/api/reviews", reviewsRoutes);
 app.get("/test-db", async (req, res) => {

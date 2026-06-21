@@ -80,20 +80,26 @@ export async function restoreReminderJobs() {
           return;
         }
 
-        await sendReminderEmail({
-          to: reminder.customer_email,
+const confirmUrl =
+`${process.env.BACKEND_URL}/api/booking-reminders/confirm/${reminder.booking_id}/${reminder.reminder_id}`;
 
-          customerName:
-            reminder.customer_name,
+const cancelUrl =
+`${process.env.BACKEND_URL}/api/booking-reminders/cancel/${reminder.booking_id}/${reminder.reminder_id}`;
 
-          bookingDate:
-            reminder.booking_datetime,
 
-          serviceName:
-            reminder.services
-              .map(s => s.name)
-              .join(", "),
-        });
+ await sendReminderEmail({
+  to: reminder.customer_email,
+  customerName:
+    reminder.customer_name,
+  bookingDate:
+    reminder.booking_datetime,
+  serviceName:
+    reminder.services
+      .map(s => s.name)
+      .join(", "),
+  confirmUrl,
+  cancelUrl
+});
 
         // mark as sent
         await db.query(

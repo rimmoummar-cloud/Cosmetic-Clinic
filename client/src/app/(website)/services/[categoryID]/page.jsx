@@ -46,6 +46,7 @@ export default async function Page({ params }) {
         categoryId={categoryID}
         initialServices={services}
         categoryName={category?.name}
+          categorydetails={category?.long_description}
       />
     </div>
   );

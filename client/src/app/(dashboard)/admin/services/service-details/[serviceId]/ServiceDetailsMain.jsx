@@ -22,7 +22,7 @@ export default function ServiceDetailsMain({
 
           const response =
            await api.get(
-  `/services/${serviceId}/full`
+  `/service/${serviceId}/full`
 );
 
           setService(
@@ -117,14 +117,14 @@ export default function ServiceDetailsMain({
         service.beforeAfterImages
           ?.length || 0,
     },
-    {
-      title: "Suitable For",
-      icon: "🎯",
-      href: "suitable-for",
-      count:
-        service.suitableFor?.length ||
-        0,
-    },
+    // {
+    //   title: "Suitable For",
+    //   icon: "🎯",
+    //   href: "suitable-for",
+    //   count:
+    //     service.suitableFor?.length ||
+    //     0,
+    // },
     {
       title: "Contraindications",
       icon: "⚠️",

@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { sendBookingEmail , sendBookingApprovedEmail , sendBookingCancelledEmail } from "../utils/sendEmail.js";
 import { getBookingDisclaimers } from "../utils/bookingEmailHelper.js";
 import { createReminder } from "../models/bookingReminder.js";
+  import schedule from "node-schedule";
 import {
   checkWaitingListForCancelledBooking
 } from "../utils/waitingListMatcher.js";
@@ -696,7 +697,12 @@ async (req, res) => {
     const { id } = req.params;
 
     const { status } = req.body;
-
+console.log(
+  "UPDATE STATUS HIT",
+  id,
+  status,
+  new Date()
+);
     if (!status) {
       return res.status(400).json({
         message: "Status is required",
@@ -740,8 +746,30 @@ const reminderBooking = {
     .join(", "),
 };
 
-// ⬇️ هون أهم سطر
-await scheduleReminders(reminderBooking);
+
+
+const existing =
+await db.query(
+`
+SELECT id
+FROM booking_reminders
+WHERE booking_id=$1
+AND status='scheduled'
+`,
+[id]
+);
+
+if (existing.rows.length === 0) {
+  await scheduleReminders(
+    reminderBooking
+  );
+}
+
+
+
+
+// // ⬇️ هون أهم سطر
+// await scheduleReminders(reminderBooking);
 
 
 
@@ -820,6 +848,23 @@ if (status === "cancelled") {
     });
 
   }
+
+
+
+
+
+schedule.cancelJob(
+  `booking:${id}:48`
+);
+
+schedule.cancelJob(
+  `booking:${id}:24`
+);
+
+schedule.cancelJob(
+  `booking:${id}:12`
+);
+
 
 
   await checkWaitingListForCancelledBooking(

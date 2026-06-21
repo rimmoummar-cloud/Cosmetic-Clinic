@@ -33,6 +33,26 @@ import {
   getWorkingHoursByDay,
 } from "./dataBooking";
 
+const validateName = (name) => {
+  if (!name.trim()) return "Name is required";
+  if (name.length < 2) return "Name is too short";
+  if (!/^[a-zA-Z\s\u0600-\u06FF]+$/.test(name))
+    return "Name cannot contain numbers or symbols";
+  return "";
+};
+
+const validateEmail = (email) => {
+  if (!email.trim()) return "Email is required";
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!regex.test(email)) return "Invalid email format";
+  return "";
+};
+
+const validatePhone = (phone) => {
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length < 5) return "Phone must be at least 5 digits";
+  return "";
+};
 
 const generateDates = (workingHourEnd = 18) => {
   const BUSINESS_TIME_ZONE = "America/Montreal";
@@ -58,6 +78,11 @@ const generateDates = (workingHourEnd = 18) => {
 
 
 export function BookingForm({ isOpen, onClose }) {
+  const [errors, setErrors] = useState({
+  name: "",
+  email: "",
+  phone: "",
+});
   //refreshing 
   
   // UI State
@@ -91,7 +116,11 @@ export function BookingForm({ isOpen, onClose }) {
 
   const availableDates = useMemo(() => generateDates(workingHourEnd), [workingHourEnd]);
   // Calculate totals
-  const totalPrice = selectedServices.reduce((sum, item) => sum + (item.price || 0), 0);
+  // const totalPrice = selectedServices.reduce((sum, item) => sum + (item.price || 0), 0);
+  const totalPrice = selectedServices.reduce(
+  (sum, item) => sum + (Number(item.price) || 0),
+  0
+);
   const totalDuration = getServicesDuration(selectedServices);
 
   // Fetch working hours on component mount
@@ -299,6 +328,24 @@ const endDt = DateTime.fromISO(
     setSelectedCategoryId(categoryId);
   };
 
+
+const handleUserInfoChange = (field, value) => {
+  const newData = { ...userInfo, [field]: value };
+  setUserInfo(newData);
+
+  let error = "";
+
+  if (field === "name") error = validateName(value);
+  if (field === "email") error = validateEmail(value);
+  if (field === "phone") error = validatePhone(value);
+
+  setErrors((prev) => ({
+    ...prev,
+    [field]: error,
+  }));
+};
+
+
   const handleNextFromServices = () => {
     if (!selectedServices.length) {
       toast.error("Please select at least one service.");
@@ -329,10 +376,23 @@ const endDt = DateTime.fromISO(
     return;
   }
 
-  if (!userInfo.name || !userInfo.email || !userInfo.phone) {
-    toast.error("Please fill your contact details.");
-    return;
-  }
+const nameError = validateName(userInfo.name);
+if (nameError) {
+  toast.error(nameError);
+  return;
+}
+
+const emailError = validateEmail(userInfo.email);
+if (emailError) {
+  toast.error(emailError);
+  return;
+}
+
+const phoneError = validatePhone(userInfo.phone);
+if (phoneError) {
+  toast.error(phoneError);
+  return;
+}
 
   setBookingLoading(true);
 
@@ -384,8 +444,14 @@ const booking_datetime = DateTime.fromISO(
 
 
 
-  const formatCurrency = (value) => `$${value}`;
-
+  // const formatCurrency = (value) => `$${value}`;
+const formatCurrency = (value) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
   // Get current category services
   const currentCategoryServices = selectedCategoryId ? categoryServices[selectedCategoryId] || [] : [];
 
@@ -640,17 +706,28 @@ const booking_datetime = DateTime.fromISO(
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="flex items-center gap-2 text-gray-800 mb-2 font-medium"><User className="w-4 h-4"/>Full Name *</label>
-                      <input type="text" value={userInfo.name} onChange={(e)=>setUserInfo({...userInfo,name:e.target.value})} required placeholder="Enter your full name" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/20"/>
+                     
+                      <input type="text" value={userInfo.name} onChange={(e)=>handleUserInfoChange("name", e.target.value)} required placeholder="Enter your full name" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/20"/>
+                  {errors.name && (
+  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+)}
                     </div>
                     <div>
                       <label className="flex items-center gap-2 text-gray-800 mb-2 font-medium"><Mail className="w-4 h-4"/>Email *</label>
-                      <input type="email" value={userInfo.email} onChange={(e)=>setUserInfo({...userInfo,email:e.target.value})} required placeholder="Enter your email" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/20"/>
+                    
+                      <input type="email" value={userInfo.email} onChange={(e)=>handleUserInfoChange("email", e.target.value)} required placeholder="Enter your email" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/20"/>
+                  {errors.email && (
+  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+)}
                     </div>
                   </div>
 
                   <div>
                     <label className="flex items-center gap-2 text-gray-800 mb-2 font-medium"><Phone className="w-4 h-4"/>Phone *</label>
-                    <input type="tel" value={userInfo.phone} onChange={(e)=>setUserInfo({...userInfo,phone:e.target.value})} required placeholder="Enter your phone number" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/20"/>
+                    <input type="tel" value={userInfo.phone} onChange={(e)=>handleUserInfoChange("phone", e.target.value)} required placeholder="Enter your phone number" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/20"/>
+                 {errors.phone && (
+  <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+)}
                   </div>
 
                   <div>
