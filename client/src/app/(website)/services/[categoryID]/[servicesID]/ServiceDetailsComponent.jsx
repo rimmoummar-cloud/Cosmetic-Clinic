@@ -14,9 +14,9 @@ import {
 import { ImageFallBack } from "../../../../components/EmageFullBack";
 import ServiceFAQ from "./components/ServiceFAQ";
 import ServiceCTA from "./components/ServiceCTA";
-
+import { getMediaUrl } from "../../../../../lib/mediaUrl";
 const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
+process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000/api"
 ).replace(/\/+$/, "");
 
@@ -147,12 +147,12 @@ try {
       </div>
     );
   }
+
 const heroImage =
   clean(service.image_url)
-    ? `${API_BASE_URL.replace("/api", "")}${clean(
-        service.image_url
-      )}`
+    ? getMediaUrl(clean(service.image_url))
     : FALLBACK_IMAGE;
+
   const shortDescription =
     clean(details.short_description) ||
     clean(service.description) ||
@@ -196,7 +196,8 @@ const doesNotTips = tips.filter(
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <ImageFallBack
-            src={heroImage}
+          
+             src={getMediaUrl(heroImage)}
             alt={service.name || "Service image"}
             className="h-full w-full object-cover"
           />
@@ -229,7 +230,8 @@ const doesNotTips = tips.filter(
 
           <div className="hidden overflow-hidden rounded-3xl border border-white/25 bg-white/15 shadow-2xl backdrop-blur-md lg:block">
             <ImageFallBack
-              src={heroImage}
+           
+                src={getMediaUrl(heroImage)}
               alt={service.name || "Service preview"}
               className="h-[410px] w-full object-cover"
             />
@@ -566,7 +568,8 @@ md:border-white/40
                       <div key={label} className="relative min-h-72 bg-[#F8F3EC]">
                         {image ? (
                           <ImageFallBack
-                            src={image}
+                          
+                               src={getMediaUrl(image)}
                             alt={`${label} ${item.title || service.name}`}
                             className="h-72 w-full object-cover"
                           />
@@ -661,7 +664,8 @@ md:border-white/40
                   <div className="h-52 bg-[#F8F3EC]">
                     {image ? (
                       <ImageFallBack
-                        src={image}
+                      
+                           src={getMediaUrl(image)}
                         alt={item.name || "Related service"}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />

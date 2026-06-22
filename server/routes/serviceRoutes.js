@@ -11,11 +11,13 @@ import {
   getActiveServices
 } from "../controllers/serviceController.js";
 import csrf from "csurf";
-import { createUpload } from "../middleware/upload.js";
+// import { createUpload } from "../middleware/upload.js";
+import upload from "../middleware/cloudUpload.js";
+
 
 const router = express.Router();
 const csrfProtection = csrf({ cookie: true });
-const upload = createUpload("services");
+
 
 
 router.get("/", getServices);

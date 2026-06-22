@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { GlowingButton } from "../../../../../components/GlowingButtom";
-
+import { getMediaUrl } from "../../../../../../lib/mediaUrl";
 const service = {
   title: "Signature Skin Rejuvenation",
   category: "Facial Aesthetics",
@@ -47,7 +47,8 @@ export default function ServiceHero({servicetitle}) {
         <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-5 flex items-center gap-4">
           <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 border border-slate-200">
             <img
-              src={service.image}
+           
+                    src={getMediaUrl(service.image)}
               alt={service.title}
               className="w-full h-full object-cover"
             />

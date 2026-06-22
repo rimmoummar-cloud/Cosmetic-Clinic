@@ -2,8 +2,8 @@
 import Home from "./home/Home";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.API_BASE_URL ||
+process.env.NEXT_PUBLIC_API_URL ||
+ process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000";
 
 async function fetchJson(url, init = {}) {
@@ -22,7 +22,7 @@ async function fetchJson(url, init = {}) {
 
 async function getHomeData() {
   // Step 1: load all active pages (SSR)
-  const pagesResponse = await fetchJson(`${API_BASE}/api/pages/active`);
+  const pagesResponse = await fetchJson(`${API_BASE}/pages/active`);
   const pages =
     Array.isArray(pagesResponse) ? pagesResponse : pagesResponse.data || [];
 
@@ -41,7 +41,7 @@ async function getHomeData() {
 
   // Step 3: fetch sections for the home page (published only)
   const sectionsResponse = await fetchJson(
-    `${API_BASE}/api/sections/page/${pageId}/active`
+    `${API_BASE}/sections/page/${pageId}/active`
   );
 
   const sectionsRaw = Array.isArray(sectionsResponse)
@@ -58,7 +58,7 @@ async function getHomeData() {
     sections.map(async (section) => {
       const sectionId = section.id || section._id;
       const contentResponse = await fetchJson(
-        `${API_BASE}/api/section-content/section/${sectionId}/latest`
+        `${API_BASE}/section-content/section/${sectionId}/latest`
       );
   //       console.log("SECTION:", section.name);
   // console.log("CONTENT:", contentResponse);
@@ -80,7 +80,7 @@ async function getHomeData() {
 }
 
 async function getCategories() {
-  const res = await fetch(`${API_BASE}/api/categorie`, {
+  const res = await fetch(`${API_BASE}/categorie`, {
    next: { revalidate: 60 },
   });
   if (!res.ok) throw new Error("Failed to fetch categories");

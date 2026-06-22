@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { ImageFallBack } from "../../../components/EmageFullBack";
 import { SectionHeader } from "../../../components/sectionHeader";
-
+import { getMediaUrl } from "../../../../lib/mediaUrl";
 export default function AboutTeam({ data = {} }) {
 
   const team =
@@ -45,7 +45,8 @@ export default function AboutTeam({ data = {} }) {
                 )} */}
                 {member?.image ? (
   <ImageFallBack
-    src={member.image}
+
+    src={getMediaUrl(member.image)}
     alt={member?.name || member?.role || ""}
     className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-500"
   />

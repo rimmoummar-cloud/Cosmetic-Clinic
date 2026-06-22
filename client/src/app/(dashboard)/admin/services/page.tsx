@@ -3,7 +3,7 @@ import ServicesPage from "./services"
 async function getservices() {
   const res = await fetch(
 
-     `http://localhost:5000/api/services`,
+     `${process.env.NEXT_PUBLIC_API_URL}/services`,
     {
     cache: "no-store"
     }
@@ -14,7 +14,7 @@ async function getservices() {
 
 async function getCategories() {
   const res = await fetch(
-    "http://localhost:5000/api/categorie",
+    `${process.env.NEXT_PUBLIC_API_URL}/categorie`,
     {
   cache: "no-store"
     }

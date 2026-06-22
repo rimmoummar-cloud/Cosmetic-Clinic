@@ -7,7 +7,7 @@ void motion;
 import { ImageFallBack } from "../../../components/EmageFullBack";
 import { FloatingElement } from "../../../components/AnimatedElements";
 import { SectionHeader } from "../../../components/sectionHeader";
-
+import { getMediaUrl } from "../../../../lib/mediaUrl";
 export default function ServicesGrid({ categories, data }) {
   const [openCategory, setOpenCategory] = useState(null);
   
@@ -17,9 +17,17 @@ const [loading, setLoading] = useState(false);
 async function fetchServicesByCategory(id) {
   try {
     setLoading(true);
+console.log(
+  "ENV:",
+  process.env.NEXT_PUBLIC_API_URL
+);
 
+console.log(
+  "CATEGORY:",
+  categoryId
+);
     const res = await fetch(
-      `http://localhost:5000/api/services/samecategories/${id}`
+      `${process.env.NEXT_PUBLIC_API_URL}/services/samecategories/${id}`
     );
 
     const data = await res.json();
@@ -223,7 +231,8 @@ console.log("STATE AFTER SET:", services);
                       transition={{ duration: 0.6 }}
                     >
                       <ImageFallBack
-                        src={category.image_url}
+                       
+                               src={getMediaUrl(category.image_url)}
                         alt={category.name}
                         className="w-full h-[400px] object-cover"
                       />

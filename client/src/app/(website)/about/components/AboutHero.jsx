@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { SectionHeader } from "../../../components/sectionHeader";
 import { FloatingElement } from "../../../components/AnimatedElements";
 import { ImageFallBack } from "../../../components/EmageFullBack";
+import { getMediaUrl } from "../../../../lib/mediaUrl";
 export default function AboutHero({ data = {} }) {
 
   const label =
@@ -21,7 +22,8 @@ export default function AboutHero({ data = {} }) {
    
    <section className="relative py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#FFD700]/20 via-[#E8DDD0]/30 to-[#E8C7C3]/20 overflow-hidden">
       <ImageFallBack
-            src={image}
+          
+            src={getMediaUrl(image)}
             alt={title || "Hero background"}
             className="absolute inset-0 w-full h-full object-cover object-center"
           />

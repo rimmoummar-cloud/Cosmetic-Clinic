@@ -4,7 +4,7 @@ import ServicesGrid from "./components/ServicesGrid";
 async function getCategory(categoryId) {
   try {
     const res = await fetch(
-      `http://localhost:5000/api/categorie/${categoryId}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/categorie/${categoryId}`,
       { next: { revalidate: 60 } }
     );
 
@@ -19,7 +19,7 @@ async function getCategory(categoryId) {
 async function getServices(categoryId) {
   try {
     const res = await fetch(
-      `http://localhost:5000/api/services/samecategories/${categoryId}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/services/samecategories/${categoryId}`,
       { next: { revalidate: 60 } }
     );
 

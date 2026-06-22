@@ -23,7 +23,7 @@ export default function ServicesPage({ service, categories = seedCategories }) {
 
   const fetchServices = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/services", { cache: "no-store" });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch services");
       const data = await res.json();
       setServiceList(Array.isArray(data) ? data : data?.services || []);
@@ -56,20 +56,7 @@ export default function ServicesPage({ service, categories = seedCategories }) {
     setShowModal(true);
   };
 
-  // const handleDelete = async (id) => {
-  //   const confirmed = window.confirm("Are you sure you want to delete this service?");
-  //   if (!confirmed) return;
-  //   setLoading(true);
-  //   try {
-  //     const res = await fetch(`http://localhost:5000/api/services/${id}`, { method: "DELETE" });
-  //     if (!res.ok) throw new Error("Delete failed");
-  //     await fetchServices();
-  //   } catch (error) {
-  //     setStatus("Unable to delete service. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  
 const handleDelete = async (id) => {
   const confirmed = window.confirm("Are you sure you want to delete this service?");
   if (!confirmed) return;
@@ -127,23 +114,7 @@ const handleDelete = async (id) => {
   }
 };
   // const handleFormSubmit = async (payload) => {
-  //   setStatus("");
-  //   setLoading(true);
-  //   const isEditing = Boolean(editingServiceId);
-  //   const url = isEditing ? `http://localhost:5000/api/services/${editingServiceId}` : "http://localhost:5000/api/services";
-  //   const method = isEditing ? "PUT" : "POST";
 
-  //   const res = await fetch(url, {
-  //     method,
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
-
-  //   if (!res.ok) {
-  //     setLoading(false);
-  //     setStatus("Unable to save service. Please try again.");
-  //     throw new Error("Request failed");
-  //   }
 
   //   await fetchServices();
   //   setShowModal(false);

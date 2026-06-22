@@ -23,7 +23,7 @@ export default function ServicesGrid({
       setError("");
       try {
         const res = await fetch(
-          `http://localhost:5000/api/services/samecategories/${categoryId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/services/samecategories/${categoryId}`,
           { cache: "no-store" }
         );
         if (!res.ok) {

@@ -1,8 +1,8 @@
 import ContactComponent from "./ContactComponent";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.API_BASE_URL ||
+process.env.NEXT_PUBLIC_API_URL ||
+process.env.NEXT_PUBLIC_API_URL||
   "http://localhost:5000";
 
 async function fetchJson(url) {
@@ -13,7 +13,7 @@ async function fetchJson(url) {
 
 async function getContactPageData() {
   // 1) pages
-  const pagesResponse = await fetchJson(`${API_BASE}/api/pages/active`);
+  const pagesResponse = await fetchJson(`${API_BASE}/pages/active`);
   const pages = Array.isArray(pagesResponse)
     ? pagesResponse
     : pagesResponse.data || [];
@@ -29,7 +29,7 @@ async function getContactPageData() {
 
   // 3) sections for contact page (active)
   const sectionsResponse = await fetchJson(
-    `${API_BASE}/api/sections/page/${pageId}/active`
+    `${API_BASE}/sections/page/${pageId}/active`
   );
   const sectionsRaw = Array.isArray(sectionsResponse)
     ? sectionsResponse
@@ -44,7 +44,7 @@ async function getContactPageData() {
     sections.map(async (section) => {
       const sectionId = section.id || section._id;
       const contentResponse = await fetchJson(
-        `${API_BASE}/api/section-content/section/${sectionId}/latest`
+        `${API_BASE}/section-content/section/${sectionId}/latest`
       );
       const contentEntry = contentResponse?.data ?? contentResponse;
       return {

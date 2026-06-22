@@ -34,17 +34,30 @@ export const getServiceByCategory = async (req, res) => {
 };
 
 
+// export const createService = async (req, res) => {
+//   // const imageUrl = req.file
+//   //   ? `/uploads/services/${req.file.filename}`
+//   //   : req.body.image_url;
+// image_url: req.file?.path || req.file?.secure_url || ""
+//   const service = await Service.createService({
+//     ...req.body,
+//     image_url: imageUrl,
+//   });
+//   res.json(service);
+// };
+
+
 export const createService = async (req, res) => {
-  const imageUrl = req.file
-    ? `/uploads/services/${req.file.filename}`
-    : req.body.image_url;
+  const imageUrl = req.file?.path || "";
 
   const service = await Service.createService({
     ...req.body,
     image_url: imageUrl,
   });
+
   res.json(service);
 };
+
 
 export const updateService = async (req, res) => {
   const oldService = await Service.getServiceById(req.params.id);
@@ -52,12 +65,7 @@ export const updateService = async (req, res) => {
     req.body,
     "image_url"
   );
-  const imageUrl = req.file
-    ? `/uploads/services/${req.file.filename}`
-    : hasImageUrl
-      ? req.body.image_url
-      : oldService?.image_url;
-
+ const imageUrl = req.file?.path || oldService?.image_url;
   const service = await Service.updateService(
     req.params.id,
     {

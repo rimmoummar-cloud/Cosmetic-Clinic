@@ -1,8 +1,8 @@
 import AboutComponent from "./AboutComponent";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.API_BASE_URL ||
+process.env.NEXT_PUBLIC_API_URL ||
+process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000";
 
 async function fetchJson(url) {
@@ -13,7 +13,7 @@ async function fetchJson(url) {
 
 async function getAboutPageData() {
   // 1) fetch pages
-  const pagesResponse = await fetchJson(`http://localhost:5000/api/pages/active`);
+  const pagesResponse = await fetchJson(`${process.env.NEXT_PUBLIC_API_URL}/pages/active`);
   const pages = Array.isArray(pagesResponse)
     ? pagesResponse
     : pagesResponse.data || [];
@@ -30,7 +30,7 @@ async function getAboutPageData() {
 
   // 3) fetch sections for about page
   const sectionsResponse = await fetchJson(
-    `http://localhost:5000/api/sections/page/${pageId}/active`
+    `${process.env.NEXT_PUBLIC_API_URL}/sections/page/${pageId}/active`
   );
   const sectionsRaw = Array.isArray(sectionsResponse)
     ? sectionsResponse
@@ -45,7 +45,7 @@ async function getAboutPageData() {
     sections.map(async (section) => {
       const sectionId = section.id || section._id;
       const contentResponse = await fetchJson(
-        `http://localhost:5000/api/section-content/section/${sectionId}/latest`
+        `${process.env.NEXT_PUBLIC_API_URL}/section-content/section/${sectionId}/latest`
       );
       const contentEntry = contentResponse?.data ?? contentResponse;
       return {

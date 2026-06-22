@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { ImageFallBack } from "../../../components/EmageFullBack";
 import { FloatingElement } from "../../../components/AnimatedElements";
-
+import { getMediaUrl } from "../../../../lib/mediaUrl";
 export default function AboutStory({ data = {} }) {
 
   const title = data?.title || data?.heading || "";
@@ -13,12 +13,14 @@ export default function AboutStory({ data = {} }) {
       : typeof data?.description === "string"
         ? [data.description]
         : [];
-  const image =
+const image =
+  getMediaUrl(
     data?.image ||
     data?.image_url ||
     data?.imageUrl ||
     data?.media ||
-    "";
+    ""
+  );
   const imageAlt = data?.imageAlt || data?.title || "";
 
   return (
@@ -56,7 +58,7 @@ export default function AboutStory({ data = {} }) {
             <div className="rounded-3xl overflow-hidden shadow-2xl shadow-[#D4AF7A]/20">
               {image && (
                 <ImageFallBack
-                  src={image}
+                     src={getMediaUrl(image)}
                   alt={imageAlt}
                   className="w-full h-[500px] object-cover"
                 />

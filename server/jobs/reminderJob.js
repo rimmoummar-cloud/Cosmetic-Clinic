@@ -175,12 +175,12 @@ await db.query(
 
 
 const confirmUrl =
-`${process.env.BACKEND_URL}/api/booking-reminders/confirm/${booking.id}/${reminder.id}`;
+`${BASE_URL}/api/booking-reminders/confirm/${booking.id}/${reminder.id}`;
 
   
 
 const cancelUrl =
-`${process.env.BACKEND_URL}/api/booking-reminders/cancel/${booking.id}/${reminder.id}`;
+`${BASE_URL}/api/booking-reminders/cancel/${booking.id}/${reminder.id}`;
 
 
 

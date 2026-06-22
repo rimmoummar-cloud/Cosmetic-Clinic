@@ -29,7 +29,7 @@ function Modal({ isOpen, onClose, title, children }) {
 }
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000/api";
+  "https://cosmetic-clinic.onrender.com/api";
 
 export default function AllBookingsPage() {
   const router = useRouter();

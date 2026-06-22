@@ -1,7 +1,7 @@
 "use client"
 import { motion } from "framer-motion";
 import { ImageFallBack } from "../../../../../components/EmageFullBack";
-
+import { getMediaUrl } from "../../../../../../lib/mediaUrl";
 const beforeAfterMedia = [
   {
     label: "Before",
@@ -36,7 +36,8 @@ export default function ServiceGallery() {
             whileHover={{ scale: 1.01 }}
           >
             <ImageFallBack
-              src={item.image}
+          
+                 src={getMediaUrl(item.image)}
               alt={`${item.label} treatment result`}
               className="w-full h-72 md:h-80 object-cover"
             />

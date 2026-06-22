@@ -42,15 +42,17 @@ export const create =
             display_order:
               req.body.display_order,
 
-            before_image:
-              before
-                ? `/uploads/before-after/${before.filename}`
-                : "",
+            // before_image:
+            //   before
+            //     ? `/uploads/before-after/${before.filename}`
+            //     : "",
 
-            after_image:
-              after
-                ? `/uploads/before-after/${after.filename}`
-                : "",
+            // after_image:
+            //   after
+            //     ? `/uploads/before-after/${after.filename}`
+            //     : "",
+          before_image: before?.path || "",
+after_image: after?.path || "",
           }
         );
 
@@ -94,15 +96,17 @@ export const update =
             display_order:
               req.body.display_order,
 
-            before_image:
-              before
-                ? `/uploads/before-after/${before.filename}`
-                : old.before_image,
+            // before_image:
+            //   before
+            //     ? `/uploads/before-after/${before.filename}`
+            //     : old.before_image,
 
-            after_image:
-              after
-                ? `/uploads/before-after/${after.filename}`
-                : old.after_image,
+            // after_image:
+            //   after
+            //     ? `/uploads/before-after/${after.filename}`
+            //     : old.after_image,
+            before_image: before?.path || old.before_image,
+after_image: after?.path || old.after_image,
           }
         );
 

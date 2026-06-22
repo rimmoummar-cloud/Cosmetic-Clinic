@@ -21,14 +21,12 @@ export function getMediaUrl(path) {
     return value;
   }
 
-  if (
-    value.startsWith("http://") ||
-    value.startsWith("https://")
-  ) {
-    const url = new URL(value);
-    url.pathname = normalizePath(url.pathname);
-    return url.toString();
-  }
+if (
+  value.startsWith("http://") ||
+  value.startsWith("https://")
+) {
+  return value;
+}
 
   const normalizedPath = normalizePath(value).replace(/^\/+/, "");
   return `${API_MEDIA_BASE}/${normalizedPath}`;

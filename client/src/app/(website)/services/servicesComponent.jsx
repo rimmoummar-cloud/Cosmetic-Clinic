@@ -5,7 +5,7 @@ import BookingSection from "./components/bookingSection";
 
 async function getCategories() {
   const res = await fetch(
-    "http://localhost:5000/api/categorie",
+    `${process.env.NEXT_PUBLIC_API_URL}/categorie`,
     {
    next: { revalidate: 60 }
     }

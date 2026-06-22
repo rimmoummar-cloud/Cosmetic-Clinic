@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { ArrowLeft, ImageOff } from "lucide-react";
 import { ImageFallBack } from "../../../../../components/EmageFullBack";
+import { getMediaUrl } from "../../../../../../lib/mediaUrl";
 
 const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
+process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000/api"
 ).replace(/\/+$/, "");
 
 function apiPath(path) {
-  const base = API_BASE_URL.endsWith("/api")
-    ? API_BASE_URL
-    : `${API_BASE_URL}/api`;
+  const base = API_BASE_URL
 
   return `${base}${path}`;
 }
@@ -55,18 +54,18 @@ console.log(
   }
 }
 
-function getImageUrl(path) {
-  if (!path) return "";
+// function getImageUrl(path) {
+//   if (!path) return "";
 
-  if (path.startsWith("http")) {
-    return path;
-  }
+//   if (path.startsWith("http")) {
+//     return path;
+//   }
 
-  return `${API_BASE_URL.replace(
-    "/api",
-    ""
-  )}${path}`;
-}
+//   return `${API_BASE_URL.replace(
+//     "/api",
+//     ""
+//   )}${path}`;
+// }
 
 
 
@@ -149,11 +148,13 @@ console.log(
 
             {images.map(
               (item, index) => {
-               const before = getImageUrl(
+
+
+      const before = getMediaUrl(
   clean(item.before_image)
 );
 
-const after = getImageUrl(
+const after = getMediaUrl(
   clean(item.after_image)
 );
 
@@ -198,9 +199,8 @@ const after = getImageUrl(
                           >
                             {image ? (
                               <ImageFallBack
-                                src={
-                                  image
-                                }
+                             
+                                  src={getMediaUrl(image)}
                                 alt={
                                   label
                                 }

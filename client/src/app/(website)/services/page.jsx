@@ -1,8 +1,8 @@
 import Services from "./servicesComponent";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.API_BASE_URL ||
+ process.env.NEXT_PUBLIC_API_URL||
+ process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000";
 
 async function fetchJson(url) {
@@ -13,7 +13,7 @@ async function fetchJson(url) {
 
 async function getServicesPageData() {
   // 1) pages
-  const pagesResponse = await fetchJson(`${API_BASE}/api/pages/active`);
+  const pagesResponse = await fetchJson(`${API_BASE}/pages/active`);
   const pages = Array.isArray(pagesResponse)
     ? pagesResponse
     : pagesResponse.data || [];
@@ -29,7 +29,7 @@ async function getServicesPageData() {
 
   // 3) sections for services page (active)
   const sectionsResponse = await fetchJson(
-    `${API_BASE}/api/sections/page/${pageId}/active`
+    `${API_BASE}/sections/page/${pageId}/active`
   );
   const sectionsRaw = Array.isArray(sectionsResponse)
     ? sectionsResponse
@@ -44,7 +44,7 @@ async function getServicesPageData() {
     sections.map(async (section) => {
       const sectionId = section.id || section._id;
       const contentResponse = await fetchJson(
-        `${API_BASE}/api/section-content/section/${sectionId}/latest`
+        `${API_BASE}/section-content/section/${sectionId}/latest`
       );
       const contentEntry = contentResponse?.data ?? contentResponse;
       return {
@@ -63,7 +63,7 @@ async function getServicesPageData() {
 }
 
 async function getCategories() {
-  return fetchJson(`${API_BASE}/api/categorie`);
+  return fetchJson(`${API_BASE}/categorie`);
 }
 
 export default async function Service() {

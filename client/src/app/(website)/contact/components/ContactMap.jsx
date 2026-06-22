@@ -46,7 +46,7 @@
 //   );
 // }"use client";
 import { motion } from "framer-motion";
-
+import { getMediaUrl } from "../../../../lib/mediaUrl";
 export default function ContactMap({ data = {} }) {
   const title = data?.title || data?.heading || "";
   const description = data?.description || data?.summary || "";
@@ -79,7 +79,8 @@ export default function ContactMap({ data = {} }) {
 
           {/* MAP */}
           <iframe
-            src={embedUrl}
+          
+                src={getMediaUrl(embedUrl)}
             className="w-full h-full border-0"
             loading="lazy"
           />

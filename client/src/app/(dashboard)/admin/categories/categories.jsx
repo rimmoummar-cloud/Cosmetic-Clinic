@@ -30,17 +30,7 @@ export default function CategoriesPage() {
     fetchCategories();
   }, []);
 
-  // const fetchCategories = async () => {
-  //   try {
-  //     const res = await fetch("http://localhost:5000/api/categorie", { cache: "no-store" });
-  //     if (!res.ok) throw new Error("Failed to fetch categories");
-  //     const data = await res.json();
-  //     const list = Array.isArray(data) ? data : data?.categories || [];
-  //     setCategoryList(list);
-  //   } catch (error) {
-  //     setStatus({ type: "error", message: error.message || "Unable to load categories" });
-  //   }
-  // };
+ 
 const fetchCategories = async () => {
   try {
     const res = await api.get("/categorie");
@@ -67,7 +57,7 @@ const fetchCategories = async () => {
     try {
       setServiceLoading(true);
           setServicesList([]);
-      const res = await fetch(`http://localhost:5000/api/services/samecategories/${categoryId}`, { cache: "no-store" });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/samecategories/${categoryId}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch services");
       const data = await res.json();
       const list = Array.isArray(data) ? data : data?.services || [];
@@ -116,9 +106,6 @@ const fetchCategories = async () => {
   //   setLoading(true);
   //   setStatus(null);
 
-  //   const isEdit = Boolean(editingCategoryId);
-  //   const endpoint = isEdit ? `http://localhost:5000/api/categorie/${editingCategoryId}` : "http://localhost:5000/api/categorie";
-  //   const method = isEdit ? "PUT" : "POST";
 
   //   try {
   //     const res = await fetch(endpoint, {
@@ -205,19 +192,7 @@ const handleSubmit = async (e) => {
   }
 };
 
-  // const handleDelete = async (id) => {
-  //   const confirmed = window.confirm("Are you sure you want to delete this category?");
-  //   if (!confirmed) return;
-
-  //   try {
-  //     const res = await fetch(`http://localhost:5000/api/categorie/${id}`, { method: "DELETE" });
-  //     if (!res.ok) throw new Error("Failed to delete category");
-  //     setStatus({ type: "success", message: "Category deleted successfully" });
-  //     await fetchCategories();
-  //   } catch (error) {
-  //     setStatus({ type: "error", message: error.message || "Unable to delete category" });
-  //   }
-  // };
+ 
 const handleDelete = async (id) => {
   const confirmed = window.confirm("Are you sure you want to delete this category?");
   if (!confirmed) return;
@@ -303,7 +278,7 @@ const handleDelete = async (id) => {
 
     try {
       setServiceLoading(true);
-      const res = await fetch(`http://localhost:5000/api/services/${id}`, { method: "DELETE" });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete service");
       await fetchServicesByCategory(selectedCategoryId);
     } catch (error) {

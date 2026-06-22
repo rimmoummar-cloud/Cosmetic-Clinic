@@ -3,7 +3,9 @@ import api from "../../../../lib/api.js";
 import { getMediaUrl } from "../../../../lib/mediaUrl.js";
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+const API_BASE = 
+process.env.NEXT_PUBLIC_API_URL
+ || "http://localhost:5000";
 
 const statusClasses = {
   success: "bg-green-50 text-green-800 border border-green-200",
@@ -277,7 +279,7 @@ export default function CmsDashboard() {
     const fetchPages = async () => {
       setLoadingPages(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/pages/`, { cache: "no-store" });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pages/`, { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load pages");
         const data = await res.json();
         setPages(Array.isArray(data) ? data : data?.pages || []);
@@ -298,7 +300,7 @@ export default function CmsDashboard() {
     setLoadingSections(true);
     try {
    
-      const res = await fetch(`http://localhost:5000/api/sections/page/${page._id || page.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sections/page/${page._id || page.id}`, {
         cache: "no-store",
       });
       if (!res.ok) throw new Error("Failed to load sections");
@@ -324,7 +326,7 @@ export default function CmsDashboard() {
     setSelectedSection(section);
     setLoadingContent(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/section-content/section/${section._id || section.id}/latest`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/section-content/section/${section._id || section.id}/latest`, {
         cache: "no-store",
       });
       if (!res.ok) throw new Error("Failed to load section content");
@@ -380,14 +382,7 @@ const handleSubmit = async (e) => {
     console.log("Section ID:", content.data.id);
     console.log("Sending content:", content.data.content);
 
-    // const res = await fetch(
-    //   `http://localhost:5000/api/section-content/${content.data.id}`,
-    //   {
-    //     method: "PUT",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(content.data.content), // فقط المحتوى
-    //   }
-    // );
+    
 try {
   const payload = new FormData();
   payload.append(

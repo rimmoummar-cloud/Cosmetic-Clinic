@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ImageFallBack } from "../../../../components/EmageFullBack";
-
+import { getMediaUrl } from "../../../../../lib/mediaUrl";
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1582719478248-54e9f2af439c?auto=format&fit=crop&w=1200&q=80",
   "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
@@ -35,7 +35,7 @@ export default function ServiceCard({ service, categoryId, index = 0 }) {
         <div className="relative h-56 overflow-hidden">
           <motion.div whileHover={{ scale: 1.05 }} className="h-full">
             <ImageFallBack
-              src={image}
+               src={getMediaUrl(image)}
               alt={service?.name || "Service image"}
               className="w-full h-full object-cover"
             />

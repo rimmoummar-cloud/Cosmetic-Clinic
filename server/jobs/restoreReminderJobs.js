@@ -81,10 +81,10 @@ export async function restoreReminderJobs() {
         }
 
 const confirmUrl =
-`${process.env.BACKEND_URL}/api/booking-reminders/confirm/${reminder.booking_id}/${reminder.reminder_id}`;
+`${BASE_URL}/api/booking-reminders/confirm/${reminder.booking_id}/${reminder.reminder_id}`;
 
 const cancelUrl =
-`${process.env.BACKEND_URL}/api/booking-reminders/cancel/${reminder.booking_id}/${reminder.reminder_id}`;
+`${BASE_URL}/api/booking-reminders/cancel/${reminder.booking_id}/${reminder.reminder_id}`;
 
 
  await sendReminderEmail({

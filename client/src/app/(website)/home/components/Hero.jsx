@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ImageFallBack } from "../../../components/EmageFullBack";
 import { GlowingButton } from "../../../components/GlowingButtom";
 import { FloatingElement } from "../../../components/AnimatedElements";
-
+import { getMediaUrl } from "../../../../lib/mediaUrl";
 export default function Hero({ onBookingClick, data }) {
 const badgeText = data?.content?.badge;
 
@@ -47,7 +47,8 @@ const phone = data?.content?.phone;
       />
       
       <ImageFallBack
-        src={backgroundImage}
+       
+           src={getMediaUrl(backgroundImage)}
         alt={title || "Hero background"}
         className="absolute inset-0 w-full h-full object-cover object-center"
       />

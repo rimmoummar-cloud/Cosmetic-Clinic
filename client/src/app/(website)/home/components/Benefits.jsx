@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Sparkles, CheckCircle2 } from "lucide-react";
 import { ImageFallBack } from "../../../components/EmageFullBack";
 import { FloatingElement } from "../../../components/AnimatedElements";
-
+import { getMediaUrl } from "../../../../lib/mediaUrl";
 export default function Benefits({ data }) {
   const label = data?.label || data?.eyebrow;
   const title = data?.title || data?.heading || "";
@@ -87,7 +87,8 @@ export default function Benefits({ data }) {
           >
             <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-[#D4AF7A]/20">
               <ImageFallBack
-                src={imageSrc}
+             
+                   src={getMediaUrl(imageSrc)}
                 alt={title || "Benefits"}
                 className="w-full h-[600px] object-cover"
               />
