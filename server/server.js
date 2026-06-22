@@ -65,7 +65,7 @@ app.use(
 // }));
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://YOUR-FRONTEND-DOMAIN.com"
+  "https://cosmetic-clinic-o6mk.vercel.app"
 ];
 
 app.use(cors({
