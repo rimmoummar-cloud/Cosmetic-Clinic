@@ -168,6 +168,12 @@ const handleSubmit = async (e) => {
 
     if (!res) throw new Error("Failed to save category");
 
+
+  console.log(error.res);
+  console.log(error.res?.data);
+  console.log(error.res?.status);
+
+
     setStatus({
       type: "success",
       message: isEdit

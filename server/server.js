@@ -50,6 +50,7 @@ if (!process.env.REFRESH_TOKEN_SECRET) {
   throw new Error("REFRESH_TOKEN_SECRET missing");
 }
 const app = express();
+app.set('trust proxy', 1);
 // app.use(helmet());
 app.use(
   helmet({
@@ -57,8 +58,24 @@ app.use(
   })
 );
 
+// app.use(cors({
+//   // origin: "http://localhost:3000",
+  
+//   credentials: true
+// }));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://YOUR-FRONTEND-DOMAIN.com"
+];
+
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true
 }));
 app.use(cookieParser());
