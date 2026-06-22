@@ -113,14 +113,15 @@ res.cookie(
 
         httpOnly: true,
 
-        secure:
-            process.env.NODE_ENV === "production",
+        // secure:
+        //     process.env.NODE_ENV === "production",
 
-        sameSite:
-            process.env.NODE_ENV === "production"
-                ? "none"
-                : "lax",
-
+        // sameSite:
+        //     process.env.NODE_ENV === "production"
+        //         ? "none"
+        //         : "lax",
+sameSite: "none",
+secure: true,
         maxAge:
             15 * 60 * 1000,
 
@@ -142,14 +143,15 @@ res.cookie(
 
         httpOnly: true,
 
-        secure:
-            process.env.NODE_ENV === "production",
+        // secure:
+        //     process.env.NODE_ENV === "production",
 
-        sameSite:
-            process.env.NODE_ENV === "production"
-                ? "none"
-                : "lax",
-
+        // sameSite:
+        //     process.env.NODE_ENV === "production"
+        //         ? "none"
+        //         : "lax",
+sameSite: "none",
+secure: true,
         maxAge:
             7 * 24 * 60 * 60 * 1000,
             path: "/",
@@ -222,13 +224,16 @@ export async function logout(req, res) {
 
   httpOnly: true,
 
-  secure:
-    process.env.NODE_ENV === "production",
+  // secure:
+  //   process.env.NODE_ENV === "production",
 
-  sameSite:
-    process.env.NODE_ENV === "production"
-      ? "none"
-      : "lax",
+  // sameSite:
+  //   process.env.NODE_ENV === "production"
+  //     ? "none"
+  //     : "lax",
+sameSite: "none",
+secure: true,
+
 
   path: "/"
 
@@ -238,14 +243,15 @@ export async function logout(req, res) {
 
       httpOnly: true,
 
-      secure:
-        process.env.NODE_ENV === "production",
+      // secure:
+      //   process.env.NODE_ENV === "production",
 
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? "none"
-          : "lax"
-
+      // sameSite:
+      //   process.env.NODE_ENV === "production"
+      //     ? "none"
+      //     : "lax"
+sameSite: "none",
+secure: true,
     });
 
     return res.json({
@@ -381,14 +387,15 @@ await saveRefreshToken(
 
                 httpOnly: true,
 
-                secure:
-                    process.env.NODE_ENV === "production",
+                // secure:
+                //     process.env.NODE_ENV === "production",
 
-                sameSite:
-                    process.env.NODE_ENV === "production"
-                        ? "none"
-                        : "lax",
-
+                // sameSite:
+                //     process.env.NODE_ENV === "production"
+                //         ? "none"
+                //         : "lax",
+sameSite: "none",
+secure: true,
                 maxAge:
                     15 * 60 * 1000,
                     path: "/",
@@ -409,14 +416,15 @@ priority: "high"
 
                 httpOnly: true,
 
-                secure:
-                    process.env.NODE_ENV === "production",
+                // secure:
+                //     process.env.NODE_ENV === "production",
 
-                sameSite:
-                    process.env.NODE_ENV === "production"
-                        ? "none"
-                        : "lax",
-
+                // sameSite:
+                //     process.env.NODE_ENV === "production"
+                //         ? "none"
+                //         : "lax",
+sameSite: "none",
+secure: true,
                 maxAge:
                     7 * 24 * 60 * 60 * 1000,
                     path: "/",
