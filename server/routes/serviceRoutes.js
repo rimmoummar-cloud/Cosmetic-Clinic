@@ -16,7 +16,13 @@ import upload from "../middleware/cloudUpload.js";
 
 
 const router = express.Router();
-const csrfProtection = csrf({ cookie: true });
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  }
+});
 
 
 

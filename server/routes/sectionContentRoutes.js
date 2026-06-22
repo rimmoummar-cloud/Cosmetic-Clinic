@@ -19,7 +19,13 @@ import csrf from "csurf";
 // import { createUpload } from "../middleware/upload.js";
 import cloudUpload from "../middleware/cloudUpload.js";
 const router = express.Router();
-const csrfProtection = csrf({ cookie: true });
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  }
+});
 const upload = cloudUpload;
 
 

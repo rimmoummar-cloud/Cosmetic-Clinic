@@ -34,7 +34,13 @@ from "../controllers/authController.js";
 import csrf from "csurf";
 
 const router = express.Router();
-const csrfProtection = csrf({ cookie: true });
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  }
+});
 const loginLimiter = rateLimit({
 
   windowMs: 15 * 60 * 1000,

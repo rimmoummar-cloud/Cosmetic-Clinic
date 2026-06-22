@@ -5,7 +5,13 @@ import * as controller from "../controllers/suitableForController.js";
 
 const router = express.Router();
 
-const csrfProtection = csrf({ cookie: true });
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  }
+});
 
 //
 // PUBLIC (Website)

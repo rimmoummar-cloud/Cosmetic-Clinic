@@ -99,9 +99,7 @@ app.use(
 // ✅ auth routes أولاً (login, logout, me, csrf-token)
 app.use("/api", authRoutes);
 
-// ✅ CSRF للـ routes الباقية فقط
-// const csrfProtection = csrf({ cookie: true });
-// app.use(csrfProtection);
+
 app.use( "/api/disclaimers",disclaimerRoutes);
 app.use("/api/acceptance",acceptanceRoutes);
 app.use("/api/bookings", bookingRoutes);

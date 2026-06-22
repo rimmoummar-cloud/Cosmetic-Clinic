@@ -8,7 +8,13 @@ import csrf from "csurf";
 import { authenticateAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-const csrfProtection = csrf({ cookie: true });
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  }
+});
 // جلب notifications (user/admin)
 router.get("/:recipient_type/:recipient_id",authenticateAdmin,csrfProtection, getUserNotifications);
 

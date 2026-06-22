@@ -10,7 +10,13 @@ import { authenticateAdmin } from "../middleware/authMiddleware.js";
 
 
 const router = express.Router();
-const csrfProtection = csrf({ cookie: true });
+const csrfProtection =csrf({
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  }
+});
 router.get(
   "/",csrfProtection,
   authenticateAdmin,

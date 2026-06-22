@@ -10,7 +10,13 @@ import { authenticateAdmin } from "../middleware/authMiddleware.js";
 import csrf from "csurf";
 
 const router = express.Router();
-const csrfProtection = csrf({ cookie: true });
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  }
+});
 
 
 router.get("/", getAllWorkingHour);
