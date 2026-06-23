@@ -1,16 +1,19 @@
 
 // import nodemailer from "nodemailer";
 import { DateTime } from "luxon";
-import * as brevo from "@getbrevo/brevo";
 
+import SibApiV3Sdk from "sib-api-v3-sdk";
+const defaultClient =
+  SibApiV3Sdk.ApiClient.instance;
 
-const apiInstance = new brevo.TransactionalEmailsApi();
+const apiKey =
+  defaultClient.authentications["api-key"];
 
-apiInstance.setApiKey(
-  brevo.TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY
-);
+apiKey.apiKey =
+  process.env.BREVO_API_KEY;
 
+const apiInstance =
+  new SibApiV3Sdk.TransactionalEmailsApi();
 
 // async function safeSendMail({
 //   to,
@@ -46,26 +49,33 @@ async function safeSendMail({
   html,
 }) {
   try {
-    await apiInstance.sendTransacEmail({
-      sender: {
-        name: "Shiny Skin Clinic",
-        email: "shinyskinlms@gmail.com",
+    const sendSmtpEmail =
+      new SibApiV3Sdk.SendSmtpEmail();
+
+    sendSmtpEmail.sender = {
+      name: "Shiny Skin Clinic",
+      email: "shinyskinlms@gmail.com",
+    };
+
+    sendSmtpEmail.to = [
+      {
+        email: to,
       },
+    ];
 
-      to: [
-        {
-          email: to,
-        },
-      ],
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = html;
 
-      subject,
-      htmlContent: html,
-    });
+    await apiInstance.sendTransacEmail(
+      sendSmtpEmail
+    );
 
     console.log("EMAIL SENT ✔️");
-
   } catch (err) {
-    console.error("EMAIL ERROR ❌", err);
+    console.error(
+      "EMAIL ERROR ❌",
+      err
+    );
     throw err;
   }
 }
