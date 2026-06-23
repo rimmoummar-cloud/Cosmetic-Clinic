@@ -2,19 +2,50 @@
 import nodemailer from "nodemailer";
 import { DateTime } from "luxon";
 
+async function safeSendMail(options) {
+  try {
+    return await Promise.race([
+      transporter.sendMail(options),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Email timeout")),
+          10000
+        )
+      ),
+    ]);
+  } catch (err) {
+    console.error("EMAIL ERROR:", err);
+    throw err;
+  }
+}
+
+
+
 const BUSINESS_TIME_ZONE =
   process.env.BUSINESS_TIME_ZONE || "America/Montreal";
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
+host: "smtp-relay.brevo.com",
+family: 4,
   port: Number(process.env.SMTP_PORT),
   secure: false,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
+transporter.verify()
+  .then(() => {
+    console.log("SMTP Ready ✔️");
+  })
+  .catch((err) => {
+    console.error("SMTP ERROR ❌", err);
+  });
 export async function sendBookingEmail({
   to,
   customerName,
@@ -34,7 +65,7 @@ export async function sendBookingEmail({
 
     const hasDisclaimers = !!acceptanceToken;
 
-    await transporter.sendMail({
+  await safeSendMail({
       from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
       subject: hasDisclaimers
@@ -112,7 +143,7 @@ export async function sendBookingApprovedEmail({
     const formattedTime =
       dt.toFormat("HH:mm");
 
-    await transporter.sendMail({
+   await safeSendMail({
       from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
 
@@ -212,7 +243,7 @@ export async function sendBookingCancelledEmail({
     const formattedTime =
       dt.toFormat("HH:mm");
 
-    await transporter.sendMail({
+    await safeSendMail({
 
       from:
         `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
@@ -327,7 +358,7 @@ console.log("Time:", dt.toFormat("HH:mm"));
     const formattedDate = dt.toFormat("yyyy-LL-dd");
     const formattedTime = dt.toFormat("HH:mm");
 
-    await transporter.sendMail({
+  await safeSendMail({
       from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
       subject: "Booking Reminder ✨",
@@ -391,7 +422,7 @@ export async function sendWaitingListApprovedEmail({
     const bookingLink =
       `${process.env.FRONTEND_URL}`;
 
-    await transporter.sendMail({
+   await safeSendMail({
       from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
 
@@ -464,7 +495,8 @@ export async function sendContactReplyEmail({
   replyMessage,
 }) {
   try {
-    await transporter.sendMail({
+   
+   await safeSendMail({
       from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
       subject: "Reply To Your Message ✨",
