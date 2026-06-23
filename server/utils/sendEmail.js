@@ -11,44 +11,40 @@ const apiKey =
 
 apiKey.apiKey =
   process.env.BREVO_API_KEY;
-
+  console.log(
+  "BREVO KEY:",
+  process.env.BREVO_API_KEY ? "FOUND" : "MISSING"
+);
+console.log(
+  "BREVO KEY EXISTS:",
+  !!process.env.BREVO_API_KEY
+);
 const apiInstance =
   new SibApiV3Sdk.TransactionalEmailsApi();
 
-// async function safeSendMail({
-//   to,
-//   subject,
-//   html,
-// }) {
-//   try {
-//     await apiInstance.sendTransacEmail({
-//       sender: {
-//         name: "Shiny Skin Clinic",
-//         email: "shinyskinlms@gmail.com",
-//       },
 
-//       to: [
-//         {
-//           email: to,
-//         },
-//       ],
 
-//       subject,
-//       htmlContent: html,
-//     });
 
-//     console.log("EMAIL SENT ✔️");
-//   } catch (err) {
-//     console.error("EMAIL ERROR ❌", err);
-//     throw err;
-//   }
-// }
-async function safeSendMail({
-  to,
-  subject,
-  html,
-}) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(async () => {
   try {
+    console.log("TEST EMAIL START");
+
     const sendSmtpEmail =
       new SibApiV3Sdk.SendSmtpEmail();
 
@@ -59,77 +55,75 @@ async function safeSendMail({
 
     sendSmtpEmail.to = [
       {
-        email: to,
+        email: "rimmoummar@gmail.com",
       },
     ];
 
+    sendSmtpEmail.subject =
+      "Brevo Test";
+
+    sendSmtpEmail.htmlContent =
+      "<h1>Brevo Test Success</h1>";
+
+    const result =
+      await apiInstance.sendTransacEmail(
+        sendSmtpEmail
+      );
+
+    console.log(
+      "BREVO SUCCESS:",
+      result
+    );
+  } catch (err) {
+    console.error(
+      "BREVO FAILED:",
+      err
+    );
+  }
+})();
+
+
+
+
+
+
+
+
+async function safeSendMail({ to, subject, html }) {
+  try {
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+    sendSmtpEmail.sender = {
+      name: "Shiny Skin Clinic",
+      email: "shinyskinlms@gmail.com",
+    };
+
+    sendSmtpEmail.to = [{ email: to }];
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = html;
 
-    await apiInstance.sendTransacEmail(
-      sendSmtpEmail
-    );
+    const result =
+      await apiInstance.sendTransacEmail(sendSmtpEmail);
 
     console.log("EMAIL SENT ✔️");
+    console.log("BREVO RESPONSE:", result); // 👈 مهم جدًا
+
+    return result;
   } catch (err) {
-    console.error(
-      "EMAIL ERROR ❌",
-      err
-    );
-    throw err;
+    console.log("❌ BREVO FAILED FULL ERROR:");
+    console.dir(err.response?.body || err, {
+      depth: null,
+    });
+
+    return null; // 👈 ما نكسر النظام
   }
 }
-// async function safeSendMail(options) {
-//   try {
-//     return await Promise.race([
-//       transporter.sendMail(options),
-//       new Promise((_, reject) =>
-//         setTimeout(
-//           () => reject(new Error("Email timeout")),
-//           10000
-//         )
-//       ),
-//     ]);
-//   } catch (err) {
-//     console.error("EMAIL ERROR:", err);
-//     throw err;
-//   }
-// }
 
 
 
 const BUSINESS_TIME_ZONE =
   process.env.BUSINESS_TIME_ZONE || "America/Montreal";
 
-// const transporter = nodemailer.createTransport({
-//   host: "smtp-relay.brevo.com",
-//   port: 587,
-//   secure: false,
-//   requireTLS: true,
-//   family: 4,
-
-//   auth: {
-//     user: process.env.SMTP_USER,
-//     pass: process.env.SMTP_PASS,
-//   },
-
-//   connectionTimeout: 10000,
-//   greetingTimeout: 10000,
-//   socketTimeout: 10000,
-
-//   tls: {
-//     family: 4,
-//     rejectUnauthorized: false,
-//   },
-// });
-
-// transporter.verify()
-//   .then(() => {
-//     console.log("SMTP Ready ✔️");
-//   })
-//   .catch((err) => {
-//     console.error("SMTP ERROR ❌", err);
-//   });
 export async function sendBookingEmail({
   to,
   customerName,
@@ -138,6 +132,7 @@ export async function sendBookingEmail({
   acceptanceToken, // ✅ FIX
 }) {
   try {
+    console.log("🚀 sendBookingEmail CALLED");
     const dt = DateTime
       .fromISO(bookingDate, { zone: "utc" })
       .setZone(BUSINESS_TIME_ZONE);
@@ -150,6 +145,7 @@ export async function sendBookingEmail({
     const hasDisclaimers = !!acceptanceToken;
 
   await safeSendMail({
+    
       // from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
       subject: hasDisclaimers
@@ -198,6 +194,7 @@ Our team will review it and notify you once it is confirmed.
 
         </div>
       `,
+      
     });
 
     console.log("Booking email sent ✔️");
