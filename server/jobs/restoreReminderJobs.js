@@ -87,7 +87,7 @@ const cancelUrl =
 `${BASE_URL}/api/booking-reminders/cancel/${reminder.booking_id}/${reminder.reminder_id}`;
 
 
- await sendReminderEmail({
+ sendReminderEmail({
   to: reminder.customer_email,
   customerName:
     reminder.customer_name,

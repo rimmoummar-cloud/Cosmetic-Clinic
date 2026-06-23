@@ -170,7 +170,7 @@ const serviceNames = servicesRes.rows
 if (disclaimers.length > 0) {
 
   // فيه مخاطر → ابعت review email
-  await sendBookingEmail({
+sendBookingEmail({  
     to: email,
     customerName: name,
     serviceName: serviceNames,
@@ -779,7 +779,7 @@ if (existing.rows.length === 0) {
         bookingDetails?.customer_email
       ) {
 
-        await sendBookingApprovedEmail({
+       sendBookingApprovedEmail({
 
           to:
             bookingDetails.customer_email,
@@ -829,7 +829,7 @@ if (status === "cancelled") {
     bookingDetails?.customer_email
   ) {
 
-    await sendBookingCancelledEmail({
+  sendBookingCancelledEmail({
 
       to:
         bookingDetails.customer_email,

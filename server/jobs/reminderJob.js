@@ -184,7 +184,7 @@ const cancelUrl =
 
 
 
-        await sendReminderEmail({
+        sendReminderEmail({
           to: booking.customer_email,
           customerName: booking.customer_name,
           bookingDate: booking.booking_datetime,

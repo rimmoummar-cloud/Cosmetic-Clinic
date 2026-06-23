@@ -93,7 +93,7 @@ export const approveWaitingListController =
         });
       }
 
-      await sendWaitingListApprovedEmail({
+      sendWaitingListApprovedEmail({
         to: waiting.customer_email,
         customerName:
           waiting.customer_name,

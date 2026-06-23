@@ -147,7 +147,7 @@ export const replyToMessage = async (
       });
     }
 
-    await sendContactReplyEmail({
+ sendContactReplyEmail({    
       to: message.email,
       customerName: message.name,
       replyMessage: reply,
