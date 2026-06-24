@@ -63,10 +63,7 @@ app.use(
   
 //   credentials: true
 // }));
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://cosmetic-clinic-o6mk.vercel.app"
-];
+
 
 // app.use(cors({
 //   origin: function (origin, callback) {
