@@ -17,7 +17,7 @@ import {
 import { authenticateAdmin } from "../middleware/authMiddleware.js";
 import csrf from "csurf";
 // import { createUpload } from "../middleware/upload.js";
-import cloudUpload from "../middleware/cloudUpload.js";
+import upload from "../middleware/cloudUpload.js";
 const router = express.Router();
 const csrfProtection = csrf({
   cookie: {
@@ -26,7 +26,7 @@ const csrfProtection = csrf({
     sameSite: "none"
   }
 });
-const upload = cloudUpload;
+
 
 
 router.get('/section/:sectionId/latest', getLatestContentBySectionId);
