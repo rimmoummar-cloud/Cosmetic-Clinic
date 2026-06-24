@@ -78,11 +78,16 @@ const allowedOrigins = [
 //   },
 //   credentials: true
 // }));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://cosmetic-clinic-o6mk.vercel.app"
+];
+
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
 
-    if (origin === "https://cosmetic-clinic-o6mk.vercel.app") {
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
@@ -90,6 +95,18 @@ app.use(cors({
   },
   credentials: true
 }));
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     if (!origin) return callback(null, true);
+
+//     if (origin === "https://cosmetic-clinic-o6mk.vercel.app") {
+//       return callback(null, true);
+//     }
+
+//     return callback(null, false);
+//   },
+//   credentials: true
+// }));
 app.use(cookieParser());
 app.use(express.json());
 app.use(
