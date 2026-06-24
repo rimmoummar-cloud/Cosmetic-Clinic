@@ -379,17 +379,18 @@ const handleSubmit = async (e) => {
   if (!selectedSection) return;
   setSaving(true);
   try {
-    console.log("Section ID:", content.data.id);
-    console.log("Sending content:", content.data.content);
-
+ console.log("Content object:", content);
     
 try {
   const payload = new FormData();
-  payload.append(
-    "content",
-    JSON.stringify(content.data.content)
-  );
-
+  // payload.append(
+  //   "content",
+  //   JSON.stringify(content.data.content)
+  // );
+payload.append(
+  "content",
+  JSON.stringify(content)
+);
   if (selectedImageFile?.file) {
     const contentPath =
       selectedImageFile.path[0] === "data" &&
@@ -401,11 +402,10 @@ try {
     payload.append("image_path", JSON.stringify(contentPath));
   }
 
-  await api.put(
-    `/section-content/${content.data.id}`,
-    payload
-  );
-
+await api.put(
+  `/section-content/${selectedSection._id || selectedSection.id}`,
+  payload
+);
   showToast("success", "Section content updated");
   setSelectedImageFile(null);
 } catch (err) {
