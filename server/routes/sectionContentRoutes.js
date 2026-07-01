@@ -39,7 +39,7 @@ router.get('/:id', getContentById);
 router.post('/', authenticateAdmin, csrfProtection, createContent);
 
 
- router.put('/:id', authenticateAdmin, csrfProtection, upload.single('image'), updateContent);
+ router.put('/:id', authenticateAdmin, upload.single('image'), updateContent);
 
 
 router.delete('/:id', authenticateAdmin, csrfProtection, deleteContent);

@@ -1,33 +1,3 @@
-/**
- * =====================================================
- * SECTION CONTENT MODEL
- * =====================================================
- * 
- * This file contains all database queries for the SECTION_CONTENT table.
- * 
- * "Section Content" is the actual data/content that fills a section.
- * It stores flexible JSON data that can represent any type of content.
- * 
- * Each section_content has:
- * - id: Unique identifier (UUID)
- * - section_id: Foreign key linking to the parent section
- * - content: JSONB column storing flexible data (title, description, images, etc.)
- * - version: Version number for content versioning/history
- * - created_at & updated_at: Timestamps
- * 
- * Example Hero Section Content (stored as JSON):
- * {
- *   "title": "Reveal Your Natural Glow",
- *   "subtitle": "Premium Beauty Treatments",
- *   "description": "Experience luxury beauty treatments...",
- *   "buttonText": "Book Now",
- *   "image": "https://example.com/image.jpg"
- * }
- * 
- * This flexible JSON approach allows any type of content without schema changes.
- * Hierarchy: Page → Sections → Section Content
- * =====================================================
- */
 
 import db from '../config/db.js';
 
