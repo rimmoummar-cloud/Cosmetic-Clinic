@@ -392,8 +392,8 @@ try {
   //   JSON.stringify(content.data.content)
   // );
 payload.append(
-  "content",
-  JSON.stringify(content)
+    "content",
+    JSON.stringify(content.content)
 );
   if (selectedImageFile?.file) {
     const contentPath =
@@ -410,8 +410,11 @@ payload.append(
 //   `/section-content/${selectedSection._id || selectedSection.id}`,
 //   payload
 // );
+console.log(content);
+console.log(content.id);
+console.log(content._id);
 await api.put(
-  `/section-content/${content._id}`,
+  `/section-content/${content.id || content._id}`,
   payload
 );
   showToast("success", "Section content updated");
