@@ -331,8 +331,12 @@ export default function CmsDashboard() {
       });
       if (!res.ok) throw new Error("Failed to load section content");
       const data = await res.json();
-      const contentObj = data?.content || data;
-      setContent(contentObj || {});
+      // const contentObj = data?.content || data;
+      // setContent(contentObj || {});
+const contentObj = data?.data || {};
+setContent(contentObj);
+
+
       setSelectedImageFile(null);
     } catch (err) {
       showToast("error", err.message);

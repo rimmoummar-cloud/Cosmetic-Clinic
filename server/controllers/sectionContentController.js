@@ -114,27 +114,100 @@ export const createContent = async (req, res) => {
   }
 };
 
+// export const updateContent = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { createNewVersion = true } = req.query;
+
+//     // Verify content exists
+//     const existingContent = await ContentModel.getContentById(id);
+//     if (!existingContent) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'Content not found'
+//       });
+//     }
+
+//     let contentPayload = parseContentBody(req.body);
+
+//     if (req.file) {
+//    const imagePath = req.file?.path;
+//       const imageFieldPath = req.body.image_path
+//         ? JSON.parse(req.body.image_path)
+//         : ['image'];
+
+//       contentPayload = setValueAtPath(
+//         contentPayload,
+//         imageFieldPath,
+//         imagePath
+//       );
+//     }
+
+//     const content = await ContentModel.updateContent(
+//       id,
+//       contentPayload,
+//       createNewVersion !== 'false'
+//     );
+
+//     res.json({
+//       success: true,
+//       data: content,
+//       message: 'Content updated successfully',
+//       newVersion: content.version,
+//       versionCreated: createNewVersion !== 'false'
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       error: error.message,
+//       message: 'Error updating content'
+//     });
+//   }
+// };
+
 export const updateContent = async (req, res) => {
   try {
     const { id } = req.params;
     const { createNewVersion = true } = req.query;
 
-    // Verify content exists
+    // 1. check existing content
     const existingContent = await ContentModel.getContentById(id);
+
     if (!existingContent) {
       return res.status(404).json({
         success: false,
-        error: 'Content not found'
+        error: "Content not found",
       });
     }
 
-    let contentPayload = parseContentBody(req.body);
+    // 2. parse content safely (FormData OR JSON)
+    let contentPayload;
 
+    try {
+      if (typeof req.body.content === "string") {
+        contentPayload = JSON.parse(req.body.content);
+      } else if (req.body.content) {
+        contentPayload = req.body.content;
+      } else {
+        contentPayload = req.body;
+      }
+    } catch (err) {
+      contentPayload = req.body;
+    }
+
+    // 3. handle uploaded image (Cloudinary via multer)
     if (req.file) {
-   const imagePath = req.file?.path;
-      const imageFieldPath = req.body.image_path
-        ? JSON.parse(req.body.image_path)
-        : ['image'];
+      const imagePath = req.file.path;
+
+      let imageFieldPath = ["image"];
+
+      if (req.body.image_path) {
+        try {
+          imageFieldPath = JSON.parse(req.body.image_path);
+        } catch (err) {
+          imageFieldPath = ["image"];
+        }
+      }
 
       contentPayload = setValueAtPath(
         contentPayload,
@@ -143,33 +216,35 @@ export const updateContent = async (req, res) => {
       );
     }
 
+    // 4. create new version or update
     const content = await ContentModel.updateContent(
       id,
       contentPayload,
-      createNewVersion !== 'false'
+      createNewVersion !== "false"
     );
 
-    res.json({
+    // 5. response
+    return res.json({
       success: true,
       data: content,
-      message: 'Content updated successfully',
+      message: "Content updated successfully",
       newVersion: content.version,
-      versionCreated: createNewVersion !== 'false'
+      versionCreated: createNewVersion !== "false",
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message,
-      message: 'Error updating content'
+      message: "Error updating content",
     });
   }
 };
-
 
 export const deleteContent = async (req, res) => {
   try {
     const { id } = req.params;
 
+    
     await ContentModel.deleteContent(id);
 
     res.json({
