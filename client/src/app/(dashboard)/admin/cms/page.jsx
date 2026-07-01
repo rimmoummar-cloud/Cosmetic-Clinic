@@ -406,8 +406,12 @@ payload.append(
     payload.append("image_path", JSON.stringify(contentPath));
   }
 
+// await api.put(
+//   `/section-content/${selectedSection._id || selectedSection.id}`,
+//   payload
+// );
 await api.put(
-  `/section-content/${selectedSection._id || selectedSection.id}`,
+  `/section-content/${content._id}`,
   payload
 );
   showToast("success", "Section content updated");
@@ -421,7 +425,7 @@ await api.put(
   );
 }
     // if (!res.ok) throw new Error("Failed to update content");
-    showToast("success", "Section content updated");
+    // showToast("success", "Section content updated");
   } catch (err) {
     showToast("error", err.message);
   } finally {
