@@ -445,7 +445,7 @@ await api.put(
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-gray-400">Content</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-gray-400">Contents</p>
           <h1 className="text-2xl font-semibold text-gray-800">CMS Dashboard</h1>
           <p className="text-sm text-gray-500">
             Manage page sections without leaving the dashboard. All data comes from your API.
