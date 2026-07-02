@@ -1,7 +1,9 @@
 import schedule from "node-schedule";
 import db from "../config/db.js";
 import { sendReminderEmail } from "../utils/sendEmail.js";
-
+const BASE_URL =
+  process.env.FRONTEND_URL ||
+  "http://localhost:3000";
 export async function restoreReminderJobs() {
 
   console.log("🔄 Restoring reminder jobs...");
@@ -46,7 +48,7 @@ export async function restoreReminderJobs() {
 
     WHERE
       br.status = 'scheduled'
-      AND br.scheduled_at > NOW()
+    
 
     GROUP BY
       br.id,
@@ -87,7 +89,7 @@ const cancelUrl =
 `${BASE_URL}/api/booking-reminders/cancel/${reminder.booking_id}/${reminder.reminder_id}`;
 
 
- sendReminderEmail({
+ await sendReminderEmail({
   to: reminder.customer_email,
   customerName:
     reminder.customer_name,

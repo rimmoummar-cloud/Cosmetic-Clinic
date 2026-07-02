@@ -7,7 +7,9 @@ import { createReminder } from "../models/bookingReminder.js";
 const TZ =
   process.env.BUSINESS_TIME_ZONE ||
   "America/Montreal";
-
+const BASE_URL =
+  process.env.FRONTEND_URL ||
+  "http://localhost:3000";
 export async function scheduleReminders(booking) {
   console.log("SCHEDULE REMINDERS HIT");
   // =========================
@@ -171,7 +173,19 @@ await db.query(
 
 
 
-   const reminder = reminderMap[hours];
+  const reminderRes = await db.query(
+  `SELECT id FROM booking_reminders
+   WHERE booking_id = $1
+   AND reminder_type = $2`,
+  [booking.id, `${hours}_hours_before`]
+);
+
+const reminder = reminderRes.rows[0];
+
+if (!reminder) {
+  console.log("Reminder not found in DB");
+  return;
+}
 
 
 const confirmUrl =
@@ -184,7 +198,7 @@ const cancelUrl =
 
 
 
-        sendReminderEmail({
+       await sendReminderEmail({
           to: booking.customer_email,
           customerName: booking.customer_name,
           bookingDate: booking.booking_datetime,
@@ -205,9 +219,9 @@ WHERE id=$1
 
         await redis.del(jobId);
 
-      } catch (error) {
-        console.log("REMINDER ERROR ❌", error.message);
-      }
+      }catch (error) {
+  console.error("REMINDER JOB FAILED ❌", error);
+}
     });
   });
 }
