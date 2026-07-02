@@ -162,12 +162,23 @@ setInterval(() => {
 
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+// app.listen(PORT, () => {
 
-await restoreReminderJobs();
-startCleanupJob();
+//   startCleanupJob();
 
-  console.log(
-    `Server running on port ${PORT}`
-  );
-});
+//   restoreReminderJobs();
+
+//   console.log(
+//     `Server running on port ${PORT}`
+//   );
+// });
+const startServer = async () => {
+  startCleanupJob();
+  await restoreReminderJobs();
+
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+startServer();
