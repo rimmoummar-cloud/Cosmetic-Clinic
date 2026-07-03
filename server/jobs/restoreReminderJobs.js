@@ -2,7 +2,7 @@ import schedule from "node-schedule";
 import db from "../config/db.js";
 import { sendReminderEmail } from "../utils/sendEmail.js";
 const BASE_URL =
-  process.env.FRONTEND_URL ||
+  process.env.BACKEND_URL ||
   "http://localhost:3000";
 export async function restoreReminderJobs() {
 
@@ -47,7 +47,8 @@ export async function restoreReminderJobs() {
       ON s.id = bs.service_id
 
     WHERE
-      br.status = 'scheduled'
+    br.status='scheduled'
+AND br.scheduled_at > NOW()
     
 
     GROUP BY
@@ -63,10 +64,11 @@ export async function restoreReminderJobs() {
     const jobId =
       `booking:${reminder.booking_id}:${reminder.reminder_type}`;
 
+
     schedule.scheduleJob(jobId, runAt, async () => {
 
       try {
-
+  console.log("🔥 JOB STARTED");
         // re-check booking status
         const check = await db.query(
           `SELECT status FROM bookings WHERE id = $1`,
@@ -106,9 +108,11 @@ const cancelUrl =
         // mark as sent
         await db.query(
           `
-          UPDATE booking_reminders
-          SET status = 'sent'
-          WHERE id = $1
+        UPDATE booking_reminders
+SET
+status='sent',
+sent_at=NOW()
+WHERE id=$1
           `,
           [reminder.reminder_id]
         );

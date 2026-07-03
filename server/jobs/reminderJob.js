@@ -8,7 +8,7 @@ const TZ =
   process.env.BUSINESS_TIME_ZONE ||
   "America/Montreal";
 const BASE_URL =
-  process.env.FRONTEND_URL ||
+  process.env.BACKEND_URL ||
   "http://localhost:3000";
 export async function scheduleReminders(booking) {
   console.log("SCHEDULE REMINDERS HIT");
@@ -90,15 +90,25 @@ for (let hours of reminders) {
   reminderMap[hours] = reminder;
 }
 
-  reminders.forEach((hours) => {
+  // reminders.forEach((hours) => {
 
-    const runAt = bookingTime
-      .minus({ hours })
-      .toJSDate();
+  //   const runAt = bookingTime
+  //     .minus({ hours })
+  //     .toJSDate();
+
+reminders.forEach((hours) => {
+
+    // للتجربة فقط
+    const runAt = new Date(Date.now() + 5000);
+
+    console.log("RUN AT:", runAt);
+
+
 
     if (runAt <= new Date()) return;
 
     const jobId = `booking:${booking.id}:${hours}`;
+
 
     redis.set(
       jobId,
@@ -110,7 +120,7 @@ for (let hours of reminders) {
     schedule.scheduleJob(jobId, runAt, async () => {
 
       try {
-
+  console.log("🔥 JOB STARTED");
 
     const check = await db.query(
       `SELECT status FROM bookings WHERE id = $1`,
