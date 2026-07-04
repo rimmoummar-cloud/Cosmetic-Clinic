@@ -116,7 +116,12 @@ reminders.forEach((hours) => {
       "EX",
       60 * 60 * 72
     );
+    console.log("BOOKING TIME", booking.booking_datetime);
+console.log("NOW:", new Date());
 
+console.log("RUN AT:", runAt);
+
+console.log("DIFF(ms):", runAt - new Date());
     schedule.scheduleJob(jobId, runAt, async () => {
 
       try {

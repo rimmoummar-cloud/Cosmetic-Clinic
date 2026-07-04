@@ -64,7 +64,11 @@ AND br.scheduled_at > NOW()
     const jobId =
       `booking:${reminder.booking_id}:${reminder.reminder_type}`;
 
+console.log("NOW:", new Date());
 
+console.log("RUN AT:", runAt);
+
+console.log("DIFF(ms):", runAt - new Date());
     schedule.scheduleJob(jobId, runAt, async () => {
 
       try {
