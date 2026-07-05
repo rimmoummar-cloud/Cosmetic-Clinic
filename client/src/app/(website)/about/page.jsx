@@ -1,9 +1,6 @@
 import AboutComponent from "./AboutComponent";
 
-const API_BASE =
-process.env.NEXT_PUBLIC_API_URL ||
-process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 async function fetchJson(url) {
   const res = await fetch(url, { cache: "no-store" });

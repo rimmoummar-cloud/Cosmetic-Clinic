@@ -3,9 +3,7 @@ import api from "../../../../lib/api.js";
 import { getMediaUrl } from "../../../../lib/mediaUrl.js";
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = 
-process.env.NEXT_PUBLIC_API_URL
- || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 const statusClasses = {
   success: "bg-green-50 text-green-800 border border-green-200",

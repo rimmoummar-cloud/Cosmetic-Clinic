@@ -170,7 +170,7 @@ Admin edits hero content
 
 **Request:**
 ```
-GET http://localhost:5000/api/pages/detailed/home
+
 ```
 
 **Express Router** (pageRoutes.js)

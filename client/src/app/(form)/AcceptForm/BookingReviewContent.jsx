@@ -6,9 +6,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 
-const API_BASE =
-process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, options);

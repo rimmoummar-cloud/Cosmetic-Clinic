@@ -16,8 +16,7 @@ import ServiceFAQ from "./components/ServiceFAQ";
 import ServiceCTA from "./components/ServiceCTA";
 import { getMediaUrl } from "../../../../../lib/mediaUrl";
 const API_BASE_URL = (
-process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000/api"
+process.env.NEXT_PUBLIC_API_URL 
 ).replace(/\/+$/, "");
 
 const FALLBACK_IMAGE =
