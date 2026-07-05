@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Sparkles, Instagram, Facebook, Twitter } from "lucide-react";
+import { Instagram } from "lucide-react";
 import { motion } from "framer-motion";
 console.log(
   "API_BASE:",
@@ -171,7 +171,7 @@ console.log("Footer:", Footer);
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          Brand
+  
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
