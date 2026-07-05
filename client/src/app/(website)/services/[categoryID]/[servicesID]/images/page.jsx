@@ -3,9 +3,13 @@ import { ArrowLeft, ImageOff } from "lucide-react";
 import { ImageFallBack } from "../../../../../components/EmageFullBack";
 import { getMediaUrl } from "../../../../../../lib/mediaUrl";
 
-const API_BASE_URL = (
-process.env.NEXT_PUBLIC_API_URL
-).replace(/\/+$/, "");
+const rawBase = process.env.NEXT_PUBLIC_API_URL;
+
+if (!rawBase) {
+  throw new Error("NEXT_PUBLIC_API_URL is missing in environment variables");
+}
+
+const API_BASE_URL = rawBase.replace(/\/+$/, "");
 
 function apiPath(path) {
   const base = API_BASE_URL
