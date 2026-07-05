@@ -75,6 +75,15 @@ import { getMediaUrl } from "../../../../../../lib/mediaUrl";
 export default async function ImagePage({
   params,
 }) {
+
+
+   return (
+    <div className="bg-[#FAF8F5] min-h-screen">
+      <div className="p-10 text-center">
+        Coming soon
+      </div>
+    </div>
+  );
 //   const {
 //     servicesID,
 //     categoryID,

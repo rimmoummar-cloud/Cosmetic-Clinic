@@ -15,9 +15,18 @@ import { ImageFallBack } from "../../../../components/EmageFullBack";
 import ServiceFAQ from "./components/ServiceFAQ";
 import ServiceCTA from "./components/ServiceCTA";
 import { getMediaUrl } from "../../../../../lib/mediaUrl";
-const API_BASE_URL = (
-process.env.NEXT_PUBLIC_API_URL 
-).replace(/\/+$/, "");
+// const API_BASE_URL = (
+// process.env.NEXT_PUBLIC_API_URL 
+// ).replace(/\/+$/, "");
+const raw = process.env.NEXT_PUBLIC_API_URL;
+
+if (!raw) {
+  throw new Error("NEXT_PUBLIC_API_URL is missing");
+}
+
+const API_BASE_URL = raw.replace(/\/+$/, "");
+
+
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1582719478248-54e9f2af439c?auto=format&fit=crop&w=1600&q=80";
@@ -518,7 +527,7 @@ md:border-white/40
 
  <div className="mb-10 flex items-center justify-between">
   <SectionHeader
-    title="Before & After"
+    title="Before & After ."
     // eyebrow="Transformation gallery"
   />
 
