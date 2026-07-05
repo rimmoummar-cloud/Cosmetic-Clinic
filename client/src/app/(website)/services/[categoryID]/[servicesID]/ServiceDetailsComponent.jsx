@@ -522,7 +522,7 @@ md:border-white/40
     // eyebrow="Transformation gallery"
   />
 
-  <Link
+  {/* <Link
     href={`/services/${categoryId}/${id}/images`}
     className="
       inline-flex
@@ -543,7 +543,7 @@ md:border-white/40
   >
     Show All Images
     <ArrowRight className="h-4 w-4" />
-  </Link>
+  </Link> */}
 </div>
 
         {beforeAfterImages.length === 0 ? (
