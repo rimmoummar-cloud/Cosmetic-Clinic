@@ -758,14 +758,14 @@ AND status='scheduled'
 `,
 [id]
 );
-
+console.log("BEFORE scheduleReminders");
 if (existing.rows.length === 0) {
   await scheduleReminders(
     reminderBooking
   );
 }
 
-
+console.log("AFTER scheduleReminders");
 
 
 // // ⬇️ هون أهم سطر

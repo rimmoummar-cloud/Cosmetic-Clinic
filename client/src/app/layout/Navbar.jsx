@@ -97,7 +97,7 @@ useEffect(() => {
                   Shiny Skin
                 </span>
               </div>
-              <div className="text-xs text-[#6B6B6B] -mt-1">Aesthetic & Beauty Clinic</div>
+              <div className="text-xs text-[#6B6B6B] -mt-1">Beauty Clinic</div>
             </div>
           </Link>
 
