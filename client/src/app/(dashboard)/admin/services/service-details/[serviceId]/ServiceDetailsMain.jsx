@@ -110,7 +110,7 @@ export default function ServiceDetailsMain({
         service.faqs?.length || 0,
     },
     {
-      title: "Before & After",
+      title: "Before & After .",
       icon: "📸",
       href: "before-after",
       count:

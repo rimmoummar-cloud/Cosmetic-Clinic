@@ -20,7 +20,7 @@ export default function ServiceGallery() {
     <section className="max-w-6xl mx-auto px-4 pb-16 md:pb-20">
       <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
         <h3 className="text-2xl md:text-3xl font-semibold" style={{ fontFamily: "var(--font-serif)" }}>
-          Before & After
+          Before & After .
         </h3>
         <span className="text-sm uppercase tracking-[0.15em] text-[#6B6B6B]">Real client journeys</span>
       </div>
