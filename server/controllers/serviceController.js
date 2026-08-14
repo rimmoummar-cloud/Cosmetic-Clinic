@@ -1,4 +1,5 @@
 import * as Service from '../models/services.js';
+import * as ServiceSections from '../models/serviceSections.js';
 
 export const getServices = async (req, res) => {
   try {
@@ -47,6 +48,16 @@ export const getServiceByCategory = async (req, res) => {
 // };
 
 
+// export const createService = async (req, res) => {
+//   const imageUrl = req.file?.path || "";
+
+//   const service = await Service.createService({
+//     ...req.body,
+//     image_url: imageUrl,
+//   });
+
+//   res.json(service);
+// };
 export const createService = async (req, res) => {
   const imageUrl = req.file?.path || "";
 
@@ -55,9 +66,10 @@ export const createService = async (req, res) => {
     image_url: imageUrl,
   });
 
+  await ServiceSections.createDefaultServiceSections(service.id);
+
   res.json(service);
 };
-
 
 export const updateService = async (req, res) => {
   const oldService = await Service.getServiceById(req.params.id);

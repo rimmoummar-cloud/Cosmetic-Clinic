@@ -26,7 +26,7 @@ import bookingReminderRoutes from "./routes/bookingReminderRoutes.js";import boo
 import { cleanupRefreshTokens } from "./models/cleanupRefreshTokens.js";
 import waitingListRoutes from "./routes/watinglistRoute.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
-
+import serviceSectionsRoutes from "./routes/serviceSectionsRoute.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import serviceAggregateRoutes from "./routes/serviceAggregateRoutes.js";
 import relatedServiceRoutes from "./routes/relatedServiceRoutes.js";
@@ -140,6 +140,7 @@ app.use("/api/contraindications", contraindicationRoutes);
 app.use("/api/related-services",relatedServiceRoutes);
 app.use("/api/service",serviceAggregateRoutes);
 app.use("/api/dashboard",dashboardRoutes);
+app.use("/service-sections", serviceSectionsRoutes);
 // app.use("/api/reviews", reviewsRoutes);
 app.get("/test-db", async (req, res) => {
   const result = await db.query("SELECT NOW()");
