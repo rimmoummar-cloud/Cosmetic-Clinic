@@ -11,6 +11,7 @@ const navItems = [
     { href: "/admin/service_disclaimers", label: "Service Disclaimers", icon: "📢" },
   { href: "/admin/categories", label: "Categories", icon: "🗂️" },
   { href: "/admin/bookings", label: "Bookings", icon: "🗓️" },
+  { href: "/admin/dashboard/calendar", label: "Calendar", icon: "📆" },
   { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
   { href: "/admin/customers", label: "Customers", icon: "👥" },
   // { href: "/admin/reviews", label: "Reviews", icon: "⭐" },
