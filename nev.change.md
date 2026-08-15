@@ -1,0 +1,1 @@
+BOOKING_NOTIFICATION_EMAIL=shinyskinlms@gmail.com

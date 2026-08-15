@@ -556,3 +556,134 @@ Please find our response below.
     );
   }
 }
+
+
+export async function sendNewBookingNotificationEmail({
+  customerName,
+  customerEmail,
+  customerPhone,
+  serviceName,
+  bookingDate,
+}) {
+  try {
+    const dt = DateTime
+      .fromISO(bookingDate, { zone: "utc" })
+      .setZone(BUSINESS_TIME_ZONE);
+
+    const formattedDate = dt.toFormat("yyyy-LL-dd");
+    const formattedTime = dt.toFormat("HH:mm");
+
+    const notificationEmail =
+      process.env.BOOKING_NOTIFICATION_EMAIL;
+
+    if (!notificationEmail) {
+      console.log(
+        "BOOKING_NOTIFICATION_EMAIL is not configured"
+      );
+      return null;
+    }
+
+    await safeSendMail({
+      to: notificationEmail,
+
+      subject: "New Booking Received ✨",
+
+      html: `
+        <div style="
+          font-family: Arial;
+          max-width: 600px;
+          margin: auto;
+          padding: 20px;
+        ">
+
+          <div style="
+            text-align: center;
+            margin-bottom: 20px;
+          ">
+            <h1 style="margin: 0;">
+              Shiny Skin Clinic
+            </h1>
+
+            <p style="
+              color: #777;
+              font-size: 12px;
+            ">
+              Official Appointment System
+            </p>
+          </div>
+
+          <h2>
+            New Booking Received
+          </h2>
+
+          <p>
+            A new booking has been created through
+            the website.
+          </p>
+
+          <div style="
+            background: #f8f8f8;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+          ">
+
+            <p>
+              <b>Patient Name:</b>
+              ${customerName}
+            </p>
+
+            <p>
+              <b>Email:</b>
+              ${customerEmail}
+            </p>
+
+            <p>
+              <b>Phone:</b>
+              ${customerPhone}
+            </p>
+
+            <p>
+              <b>Services:</b>
+              ${serviceName}
+            </p>
+
+            <p>
+              <b>Date:</b>
+              ${formattedDate}
+            </p>
+
+            <p>
+              <b>Time:</b>
+              ${formattedTime}
+            </p>
+
+          </div>
+
+          <p>
+            Please log in to the admin dashboard
+            to review the booking.
+          </p>
+
+          <p style="
+            margin-top: 30px;
+            color: #777;
+          ">
+            Shiny Skin Clinic ✨
+          </p>
+
+        </div>
+      `,
+    });
+
+    console.log(
+      "NEW BOOKING NOTIFICATION EMAIL SENT ✔️"
+    );
+
+  } catch (error) {
+    console.log(
+      "NEW BOOKING NOTIFICATION EMAIL ERROR ❌",
+      error.message
+    );
+  }
+}

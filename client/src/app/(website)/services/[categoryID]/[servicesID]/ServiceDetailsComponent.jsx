@@ -1,13 +1,13 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
-  BadgeCheck,
-  CheckCircle2,
   Clock,
   HeartPulse,
   ImageOff,
-  Info,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -15,28 +15,10 @@ import { ImageFallBack } from "../../../../components/EmageFullBack";
 import ServiceFAQ from "./components/ServiceFAQ";
 import ServiceCTA from "./components/ServiceCTA";
 import { getMediaUrl } from "../../../../../lib/mediaUrl";
-// const API_BASE_URL = (
-// process.env.NEXT_PUBLIC_API_URL 
-// ).replace(/\/+$/, "");
-const raw = process.env.NEXT_PUBLIC_API_URL;
-
-if (!raw) {
-  throw new Error("NEXT_PUBLIC_API_URL is missing");
-}
-
-const API_BASE_URL = raw.replace(/\/+$/, "");
-
-
+import api from "../../../../../lib/api";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1582719478248-54e9f2af439c?auto=format&fit=crop&w=1600&q=80";
-
-function apiPath(path) {
-  const base = API_BASE_URL.endsWith("/api")
-    ? API_BASE_URL
-    : `${API_BASE_URL}/api`;
-  return `${base}${path}`;
-}
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -88,49 +70,109 @@ function SectionHeader({ eyebrow, title }) {
   );
 }
 
-async function getServiceFull(id) {
-  try {
-    const res = await fetch(apiPath(`/service/${id}/full`), {
-      next: { revalidate: 60 },
-    });
+function getServiceSectionsUrl(serviceId) {
+  const rawBase = process.env.NEXT_PUBLIC_API_URL || "";
+  const rootBase = rawBase
+    .replace(/\/api\/?$/, "")
+    .replace(/\/+$/, "");
 
-if (!res.ok) {
-  console.warn("API failed:", res.status);
-  return {
-    service: null,
-    details: {},
-    benefits: [],
-    tips: [],
-    faqs: [],
-    beforeAfterImages: [],
-    suitableFor: [],
-    contraindications: [],
-    relatedServices: [],
-  };
+  return `${rootBase}/service-sections/${serviceId}`;
 }
 
-    const payload = await res.json();
-    return payload?.data || null;
-  } catch (error) {
-    console.error("Failed to fetch service details:", error);
-    return null;
-  }
+function getSectionMap(sections) {
+  return asArray(sections).reduce((acc, section) => {
+    acc[section.section_key] = section.is_enabled === true;
+    return acc;
+  }, {});
 }
 
-export default async function ServiceDetailsComponent({ id, categoryId }) {
- let data = null;
-
-try {
-  data = await getServiceFull(id);
-} catch (e) {
-  console.error("Service page crash safe:", e);
-  data = null;
-}
- const service = data?.service || {
-  name: "Loading...",
-  image_url: "",
-  price: 0,
+const defaultServiceData = {
+  service: null,
+  details: {},
+  benefits: [],
+  tips: [],
+  faqs: [],
+  beforeAfterImages: [],
+  suitableFor: [],
+  contraindications: [],
+  relatedServices: [],
 };
+
+export default function ServiceDetailsComponent({ id, categoryId }) {
+  const [data, setData] = useState(defaultServiceData);
+  const [sectionAvailability, setSectionAvailability] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let ignore = false;
+
+    const fetchServicePageData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const [serviceResult, sectionsResult] =
+          await Promise.allSettled([
+            api.get(`/service/${id}/full`),
+            api.get(getServiceSectionsUrl(id)),
+          ]);
+
+        if (ignore) return;
+
+        if (serviceResult.status === "fulfilled") {
+          setData(serviceResult.value?.data?.data || defaultServiceData);
+        } else {
+          throw serviceResult.reason;
+        }
+
+        if (sectionsResult.status === "fulfilled") {
+          setSectionAvailability(
+            getSectionMap(sectionsResult.value?.data?.data)
+          );
+        } else {
+          console.error(
+            "Failed to fetch service section availability:",
+            sectionsResult.reason
+          );
+          setSectionAvailability({});
+        }
+      } catch (e) {
+        console.error("Service page crash safe:", e);
+
+        if (!ignore) {
+          setData(defaultServiceData);
+          setSectionAvailability({});
+          setError("Unable to load this service right now.");
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    if (id) {
+      fetchServicePageData();
+    }
+
+    return () => {
+      ignore = true;
+    };
+  }, [id]);
+
+  const isSectionEnabled = (sectionKey) =>
+    sectionAvailability[sectionKey] !== false;
+
+  if (loading) {
+    return (
+      <div className="min-h-[55vh] bg-[#FAF8F5] px-4 py-24 text-center text-[#6B6B6B]">
+        Loading service...
+      </div>
+    );
+  }
+
+  const service = data?.service;
   const details = data?.details || {};
   const benefits = asArray(data?.benefits);
   const tips = asArray(data?.tips);
@@ -150,7 +192,7 @@ try {
           Service not found
         </h1>
         <p className="mt-3 text-[#6B6B6B]">
-          Unable to load this service right now.
+          {error || "Unable to load this service right now."}
         </p>
       </div>
     );
@@ -247,6 +289,7 @@ const doesNotTips = tips.filter(
         </div>
       </section>
 
+      {isSectionEnabled("service-detail") && (
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <SectionHeader title="Service Details" eyebrow="What to expect" />
         <div className="mb-10 space-y-6">
@@ -369,7 +412,9 @@ md:border-white/40
           </div>
         )}
       </section>
+      )}
 
+      {isSectionEnabled("benefits") && (
       <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
         <SectionHeader title="Benefits" eyebrow="Treatment value" />
         {benefits.length === 0 ? (
@@ -393,7 +438,9 @@ md:border-white/40
           </div>
         )}
       </section>
+      )}
 
+      {isSectionEnabled("tips") && (
       <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
         <SectionHeader title="Care Tips" eyebrow="Before and after" />
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -520,7 +567,9 @@ md:border-white/40
           ))}
         </div>
       </section>
+      )}
 
+      {isSectionEnabled("before-after") && (
       <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
        
 
@@ -610,6 +659,7 @@ md:border-white/40
           </div>
         )}
       </section>
+      )}
 
       {/* <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
         <SectionHeader title="Suitable For" eyebrow="Ideal candidates" />
@@ -630,6 +680,7 @@ md:border-white/40
         )}
       </section> */}
 
+      {isSectionEnabled("contraindications") && (
       <section className="mx-auto max-w-6xl px-4 pb-16 md:pb-20">
         <SectionHeader title="Contraindications" eyebrow="Please review" />
         {contraindications.length === 0 ? (
@@ -651,9 +702,13 @@ md:border-white/40
           </div>
         )}
       </section>
+      )}
 
+      {isSectionEnabled("faqs") && (
       <ServiceFAQ faqs={faqs} />
+      )}
 
+      {isSectionEnabled("related-services") && (
       <section className="mx-auto max-w-6xl px-4 pb-20">
         <SectionHeader title="Related Services" eyebrow="Continue exploring" />
         {relatedServices.length === 0 ? (
@@ -707,6 +762,7 @@ md:border-white/40
           </div>
         )}
       </section>
+      )}
 
       <ServiceCTA />
     </div>

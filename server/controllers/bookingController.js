@@ -2,7 +2,10 @@ import * as Booking from "../models/booking.js";
 import db from "../config/db.js";
 import { getWorkingHoursByDay } from "../models/workingHoure.js";
 import { DateTime } from "luxon";
-import { sendBookingEmail , sendBookingApprovedEmail , sendBookingCancelledEmail } from "../utils/sendEmail.js";
+import { sendBookingEmail , sendBookingApprovedEmail , sendBookingCancelledEmail ,sendNewBookingNotificationEmail }
+ from "../utils/sendEmail.js";
+
+
 import { getBookingDisclaimers } from "../utils/bookingEmailHelper.js";
 import { createReminder } from "../models/bookingReminder.js";
   import schedule from "node-schedule";
@@ -156,6 +159,13 @@ const serviceNames = servicesRes.rows
   .map(s => s.name)
   .join(", ");
 
+  await sendNewBookingNotificationEmail({
+  customerName: name,
+  customerEmail: email,
+  customerPhone: phone,
+  serviceName: serviceNames,
+  bookingDate: booking_datetime,
+});
   
 //   const reminderBooking = {
 //   id: booking.id,

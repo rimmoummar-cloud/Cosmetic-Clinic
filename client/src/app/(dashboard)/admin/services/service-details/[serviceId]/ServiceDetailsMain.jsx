@@ -141,6 +141,12 @@ export default function ServiceDetailsMain({
         service.relatedServices
           ?.length || 0,
     },
+    {
+      title: "Section Availability",
+      icon: "✓",
+      href: "section-availability",
+      count: 7,
+    },
   ];
 
   return (
