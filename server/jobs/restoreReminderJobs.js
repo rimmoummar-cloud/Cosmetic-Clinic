@@ -1,9 +1,17 @@
 import schedule from "node-schedule";
 import db from "../config/db.js";
 import { sendReminderEmail } from "../utils/sendEmail.js";
-const BASE_URL =
-  process.env.BACKEND_URL ||
-  "http://localhost:3000";
+
+const getReminderBaseUrl = () => {
+  const configuredBaseUrl =
+    process.env.BACKEND_URL ||
+    process.env.FRONTEND_URL ||
+    process.env.APP_URL ||
+    "http://localhost:5000";
+
+  return configuredBaseUrl.replace(/\/+$/, "");
+};
+
 export async function restoreReminderJobs() {
 
   console.log("🔄 Restoring reminder jobs...");
@@ -88,12 +96,16 @@ console.log("DIFF(ms):", runAt - new Date());
           return;
         }
 
-const confirmUrl =
-`${BASE_URL}/api/booking-reminders/confirm/${reminder.booking_id}/${reminder.reminder_id}`;
+const baseUrl = getReminderBaseUrl();
+const confirmUrl = new URL(
+  `/api/booking-reminders/confirm/${reminder.booking_id}/${reminder.reminder_id}`,
+  baseUrl
+).toString();
 
-const cancelUrl =
-`${BASE_URL}/api/booking-reminders/cancel/${reminder.booking_id}/${reminder.reminder_id}`;
-
+const cancelUrl = new URL(
+  `/api/booking-reminders/cancel/${reminder.booking_id}/${reminder.reminder_id}`,
+  baseUrl
+).toString();
 
  await sendReminderEmail({
   to: reminder.customer_email,

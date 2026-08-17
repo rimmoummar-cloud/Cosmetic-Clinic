@@ -7,9 +7,17 @@ import { createReminder } from "../models/bookingReminder.js";
 const TZ =
   process.env.BUSINESS_TIME_ZONE ||
   "America/Montreal";
-const BASE_URL =
-  process.env.BACKEND_URL ||
-  "http://localhost:3000";
+
+const getReminderBaseUrl = () => {
+  const configuredBaseUrl =
+    process.env.BACKEND_URL ||
+    process.env.FRONTEND_URL ||
+    process.env.APP_URL ||
+    "http://localhost:5000";
+
+  return configuredBaseUrl.replace(/\/+$/, "");
+};
+
 export async function scheduleReminders(booking) {
   console.log("SCHEDULE REMINDERS HIT");
   // =========================
@@ -98,17 +106,20 @@ for (let hours of reminders) {
 
 reminders.forEach((hours) => {
 
-    // للتجربة فقط
-    const runAt = new Date(Date.now() + 5000);
+    const runAt = bookingTime
+      .minus({ hours })
+      .toJSDate();
 
     console.log("RUN AT:", runAt);
 
-
-
-    if (runAt <= new Date()) return;
+    if (runAt <= new Date()) {
+      console.log(
+        `Skipping reminder ${hours} for booking ${booking.id} because it is already due or in the past.`
+      );
+      return;
+    }
 
     const jobId = `booking:${booking.id}:${hours}`;
-
 
     redis.set(
       jobId,
@@ -117,11 +128,10 @@ reminders.forEach((hours) => {
       60 * 60 * 72
     );
     console.log("BOOKING TIME", booking.booking_datetime);
-console.log("NOW:", new Date());
+    console.log("NOW:", new Date());
+    console.log("RUN AT:", runAt);
+    console.log("DIFF(ms):", runAt - new Date());
 
-console.log("RUN AT:", runAt);
-
-console.log("DIFF(ms):", runAt - new Date());
     schedule.scheduleJob(jobId, runAt, async () => {
 
       try {
@@ -203,15 +213,16 @@ if (!reminder) {
 }
 
 
-const confirmUrl =
-`${BASE_URL}/api/booking-reminders/confirm/${booking.id}/${reminder.id}`;
+const baseUrl = getReminderBaseUrl();
+const confirmUrl = new URL(
+  `/api/booking-reminders/confirm/${booking.id}/${reminder.id}`,
+  baseUrl
+).toString();
 
-  
-
-const cancelUrl =
-`${BASE_URL}/api/booking-reminders/cancel/${booking.id}/${reminder.id}`;
-
-
+const cancelUrl = new URL(
+  `/api/booking-reminders/cancel/${booking.id}/${reminder.id}`,
+  baseUrl
+).toString();
 
        await sendReminderEmail({
           to: booking.customer_email,
