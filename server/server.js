@@ -76,7 +76,7 @@ app.use(
 // }));
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://cosmetic-clinic-o6mk.vercel.app"
+  "https://shiny-skin-clinic.vercel.app"
 ];
 
 app.use(cors({
