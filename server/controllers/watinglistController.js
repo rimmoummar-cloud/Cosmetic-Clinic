@@ -2,7 +2,11 @@ import * as model from "../models/watinglist.js";
 
 import {
   sendWaitingListApprovedEmail,
+  sendWaitingListConfirmationEmail,
+  sendNewWaitingListNotificationEmail,
 } from "../utils/sendEmail.js";
+
+
 
 export const createWaitingList = async (req, res) => {
   try {
@@ -47,6 +51,24 @@ export const createWaitingList = async (req, res) => {
         notes,
         services,
       });
+
+
+
+
+await sendWaitingListConfirmationEmail({
+  to: customer_email,
+  customerName: customer_name,
+});
+
+await sendNewWaitingListNotificationEmail({
+  customerName: customer_name,
+  customerEmail: customer_email,
+  customerPhone: customer_phone,
+  serviceName: waitingList.service_name,
+  requestedDate: requested_date,
+  period: period,
+});
+
 
     res.status(201).json(waitingList);
   } catch (error) {

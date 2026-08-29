@@ -44,8 +44,8 @@ export default function WaitingListPage() {
 
   const statusColors = {
     pending: "bg-amber-100 text-amber-700",
-    approved: "bg-emerald-100 text-emerald-700",
-    rejected: "bg-red-100 text-red-700",
+    accepted: "bg-emerald-100 text-emerald-700",
+    cancelled: "bg-red-100 text-red-700",
     completed: "bg-blue-100 text-blue-700",
   };
 
@@ -267,7 +267,11 @@ export default function WaitingListPage() {
                               {approvingId === entry.id ? "Approving..." : "Approve"}
                             </button>
                           )}
-                          <button className="px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                          <button
+                            className="px-3 py-1 text-xs bg-red-50 text-red-600 rounded-lg opacity-50 cursor-not-allowed"
+                            disabled
+                            title="No waiting-list cancel endpoint exists in the backend API."
+                          >
                             Cancel
                           </button>
                         </div>

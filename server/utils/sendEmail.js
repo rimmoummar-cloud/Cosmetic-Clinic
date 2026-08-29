@@ -687,3 +687,161 @@ export async function sendNewBookingNotificationEmail({
     );
   }
 }
+
+
+export async function sendWaitingListConfirmationEmail({
+  to,
+  customerName,
+}) {
+  try {
+    await safeSendMail({
+      to,
+      subject: "Waiting List Request Received ✨",
+      html: `
+        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+          <div style="text-align:center;margin-bottom:20px;">
+            <h1 style="margin:0;">Shiny Skin Clinic</h1>
+            <p style="color:#777;font-size:12px;">
+              Official Appointment System
+            </p>
+          </div>
+
+          <h2>Waiting List Request Received</h2>
+
+          <p>Dear ${customerName},</p>
+
+          <p>
+            Thank you for choosing Shiny Skin Clinic.
+            We have successfully received your waiting list request.
+          </p>
+
+          <p>
+            Please note that this request does not confirm an appointment.
+            We will monitor availability based on your request and,
+            if a suitable time slot becomes available, we will contact
+            you by email with the details and next steps to complete
+            your appointment.
+          </p>
+
+          <p>
+            We appreciate your patience and look forward to welcoming
+            you to Shiny Skin Clinic.
+          </p>
+
+          <p style="margin-top:30px;color:#777;">
+            Shiny Skin Clinic ✨
+          </p>
+        </div>
+      `,
+    });
+
+    console.log("WAITING LIST CONFIRMATION EMAIL SENT ✔️");
+  } catch (error) {
+    console.log(
+      "WAITING LIST CONFIRMATION EMAIL ERROR ❌",
+      error.message
+    );
+  }
+}
+
+
+export async function sendNewWaitingListNotificationEmail({
+  customerName,
+  customerEmail,
+  customerPhone,
+  serviceName,
+  requestedDate,
+  period,
+}) {
+  try {
+    const notificationEmail =
+      process.env.BOOKING_NOTIFICATION_EMAIL;
+
+    if (!notificationEmail) {
+      console.log(
+        "BOOKING_NOTIFICATION_EMAIL is not configured"
+      );
+      return null;
+    }
+
+    await safeSendMail({
+      to: notificationEmail,
+      subject: "New Waiting List Request ✨",
+      html: `
+        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+          <div style="text-align:center;margin-bottom:20px;">
+            <h1 style="margin:0;">Shiny Skin Clinic</h1>
+            <p style="color:#777;font-size:12px;">
+              Official Appointment System
+            </p>
+          </div>
+
+          <h2>New Waiting List Request</h2>
+
+          <p>
+            A new customer has submitted a waiting list request
+            through the website.
+          </p>
+
+          <div style="
+            background:#f8f8f8;
+            padding:16px;
+            border-radius:12px;
+            margin:20px 0;
+          ">
+
+            <p>
+              <b>Customer Name:</b>
+              ${customerName}
+            </p>
+
+            <p>
+              <b>Email:</b>
+              ${customerEmail || "Not provided"}
+            </p>
+
+            <p>
+              <b>Phone:</b>
+              ${customerPhone}
+            </p>
+
+            <p>
+              <b>Service:</b>
+              ${serviceName}
+            </p>
+
+            <p>
+              <b>Requested Date:</b>
+              ${requestedDate}
+            </p>
+
+            <p>
+              <b>Preferred Period:</b>
+              ${period}
+            </p>
+
+          </div>
+
+          <p>
+            Please review this request from the admin dashboard
+            and take the appropriate action when a suitable slot
+            becomes available.
+          </p>
+
+          <p style="margin-top:30px;color:#777;">
+            Shiny Skin Clinic ✨
+          </p>
+        </div>
+      `,
+    });
+
+    console.log(
+      "NEW WAITING LIST NOTIFICATION EMAIL SENT ✔️"
+    );
+  } catch (error) {
+    console.log(
+      "NEW WAITING LIST NOTIFICATION EMAIL ERROR ❌",
+      error.message
+    );
+  }
+}
