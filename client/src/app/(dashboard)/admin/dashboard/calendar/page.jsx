@@ -569,7 +569,11 @@ export default function AdminCalendarPage() {
         </div>
       </div>
 
-      <div className="flex-1 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm overflow-hidden">
+      <div
+        className={`flex-1 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm ${
+          calendarMode === "waiting-list" ? "overflow-visible" : "overflow-hidden"
+        }`}
+      >
         {isCalendarLoading ? (
           <div className="flex h-full min-h-[500px] items-center justify-center text-gray-500">Loading calendar...</div>
         ) : calendarMode === "waiting-list" && view === "day" ? (
@@ -584,12 +588,12 @@ export default function AdminCalendarPage() {
               </button>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+            <div className="min-w-0 rounded-2xl border border-gray-200 bg-white overflow-hidden">
               <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
                 <h3 className="text-lg font-semibold text-gray-800">Morning</h3>
               </div>
-              <div className="p-3 space-y-3 min-h-[260px]">
+              <div className="waiting-list-period-scroll min-h-0 space-y-3 p-3">
                 {morningWaitingListEntries.length > 0 ? (
                   morningWaitingListEntries.map((entry) => {
                     const record = entry?.extendedProps?.record;
@@ -601,7 +605,7 @@ export default function AdminCalendarPage() {
                         key={entry.id}
                         type="button"
                         onClick={() => setSelectedWaitingList(record || null)}
-                        className="w-full rounded-2xl border p-3 text-left shadow-sm transition hover:bg-gray-50"
+                        className="w-full min-w-0 break-words rounded-2xl border p-3 text-left shadow-sm transition hover:bg-gray-50"
                         style={{
                           backgroundColor: palette.background,
                           borderColor: palette.border,
@@ -629,11 +633,11 @@ export default function AdminCalendarPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <div className="min-w-0 rounded-2xl border border-gray-200 bg-white overflow-hidden">
               <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
                 <h3 className="text-lg font-semibold text-gray-800">Evening</h3>
               </div>
-              <div className="p-3 space-y-3 min-h-[260px]">
+              <div className="waiting-list-period-scroll min-h-0 space-y-3 p-3">
                 {eveningWaitingListEntries.length > 0 ? (
                   eveningWaitingListEntries.map((entry) => {
                     const record = entry?.extendedProps?.record;
@@ -645,7 +649,7 @@ export default function AdminCalendarPage() {
                         key={entry.id}
                         type="button"
                         onClick={() => setSelectedWaitingList(record || null)}
-                        className="w-full rounded-2xl border p-3 text-left shadow-sm transition hover:bg-gray-50"
+                        className="w-full min-w-0 break-words rounded-2xl border p-3 text-left shadow-sm transition hover:bg-gray-50"
                         style={{
                           backgroundColor: palette.background,
                           borderColor: palette.border,
@@ -947,6 +951,81 @@ export default function AdminCalendarPage() {
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        .waiting-list-period-scroll {
+          height: min(55vh, 520px);
+          max-height: min(55vh, 520px);
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-y;
+          scrollbar-gutter: stable;
+        }
+
+        .fc-more-popover {
+          width: min(92vw, 420px) !important;
+          max-width: calc(100vw - 16px) !important;
+          max-height: min(72vh, 440px) !important;
+          overflow: hidden !important;
+          border-radius: 16px !important;
+          box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18) !important;
+          touch-action: pan-y !important;
+        }
+
+        .fc-more-popover .fc-popover-body {
+          height: min(68vh, 420px) !important;
+          max-height: min(68vh, 420px) !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          padding: 0.75rem !important;
+          overscroll-behavior: contain !important;
+          -webkit-overflow-scrolling: touch !important;
+          touch-action: pan-y !important;
+        }
+
+        .fc-more-popover .fc-popover-header {
+          position: sticky !important;
+          top: 0 !important;
+          z-index: 1 !important;
+        }
+
+        .fc-more-popover .fc-popover-body .fc-event {
+          max-width: 100% !important;
+          width: 100% !important;
+        }
+
+        .fc-more-popover .fc-event-main,
+        .fc-more-popover .fc-event-title,
+        .fc-more-popover .fc-event-time {
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: normal !important;
+          word-break: break-word !important;
+        }
+
+        @media (max-width: 640px) {
+          .fc-more-popover {
+            left: 8px !important;
+            right: 8px !important;
+            width: calc(100vw - 16px) !important;
+            max-width: calc(100vw - 16px) !important;
+            max-height: min(76vh, 520px) !important;
+          }
+
+          .fc-more-popover .fc-popover-body {
+            height: min(72vh, 480px) !important;
+            max-height: min(72vh, 480px) !important;
+            padding: 0.5rem !important;
+          }
+
+          .waiting-list-period-scroll {
+            height: min(52vh, 420px);
+            max-height: min(52vh, 420px);
+          }
+        }
+      `}</style>
     </div>
   );
 }
