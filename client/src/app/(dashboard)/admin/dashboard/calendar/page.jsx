@@ -570,14 +570,14 @@ export default function AdminCalendarPage() {
       </div>
 
       <div
-        className={`flex-1 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm ${
+        className={`min-h-0 flex-1 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm ${
           calendarMode === "waiting-list" ? "overflow-visible" : "overflow-hidden"
         }`}
       >
         {isCalendarLoading ? (
           <div className="flex h-full min-h-[500px] items-center justify-center text-gray-500">Loading calendar...</div>
         ) : calendarMode === "waiting-list" && view === "day" ? (
-          <div className="space-y-4">
+          <div className="waiting-list-day-view min-h-0 space-y-4">
             <div className="flex justify-start">
               <button
                 type="button"
@@ -679,6 +679,7 @@ export default function AdminCalendarPage() {
             </div>
           </div>
         ) : (
+          <div className={calendarMode === "waiting-list" ? "waiting-list-month-view" : "h-full"}>
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -733,6 +734,7 @@ export default function AdminCalendarPage() {
               );
             }}
           />
+          </div>
         )}
       </div>
 
@@ -953,6 +955,38 @@ export default function AdminCalendarPage() {
       )}
 
       <style jsx global>{`
+        .waiting-list-day-view {
+          max-height: calc(100dvh - 220px);
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior-y: contain;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-y;
+        }
+
+        .waiting-list-month-view {
+          min-width: 0;
+          min-height: 0;
+          height: 100%;
+          max-width: 100%;
+          overflow-y: auto;
+          overflow-x: hidden;
+          overscroll-behavior-y: contain;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-y;
+        }
+
+        .waiting-list-month-view .fc,
+        .waiting-list-month-view .fc-scroller {
+          min-width: 0 !important;
+          touch-action: pan-y !important;
+        }
+
+        .waiting-list-month-view .fc-scroller {
+          overflow-x: hidden !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+
         .waiting-list-period-scroll {
           height: min(55vh, 520px);
           max-height: min(55vh, 520px);
@@ -1006,6 +1040,10 @@ export default function AdminCalendarPage() {
         }
 
         @media (max-width: 640px) {
+          .waiting-list-day-view {
+            max-height: calc(100dvh - 190px);
+          }
+
           .fc-more-popover {
             left: 8px !important;
             right: 8px !important;
