@@ -362,10 +362,11 @@ export const updateDisclaimerStatus =
   const result = await db.query(`
     
     SELECT
-      bookings.id,
-      bookings.status,
-      bookings.note,
-      bookings.created_at,
+     bookings.id,
+bookings.customer_id,
+bookings.status,
+bookings.note,
+bookings.created_at,
       
       bookings.booking_datetime,
 
@@ -449,6 +450,7 @@ export const getAllBookingsWithFullDetailsModel = async () => {
 
     SELECT
       bookings.id,
+      bookings.customer_id,
       bookings.status,
       bookings.note,
       bookings.created_at,

@@ -2,7 +2,8 @@ import express from "express";
 import {
   getUserNotifications,
   addNotification,
-  readNotification
+  readNotification,
+    deleteAllNotification
 } from "../controllers/notificationController.js";
 import csrf from "csurf";
 import { authenticateAdmin } from "../middleware/authMiddleware.js";
@@ -23,5 +24,15 @@ router.post("/", authenticateAdmin,csrfProtection, addNotification);
 
 // mark as read
 router.put("/:id/read", authenticateAdmin,csrfProtection, readNotification);
+
+
+
+
+router.delete(
+  "/all",
+  authenticateAdmin,
+  csrfProtection,
+  deleteAllNotification
+);
 
 export default router;

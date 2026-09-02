@@ -166,3 +166,6 @@ CREATE TABLE section_content (
     REFERENCES sections(id)
     ON DELETE CASCADE
 );
+
+ALTER TABLE completed_forms ADD COLUMN IF NOT EXISTS signature TEXT;
+ALTER TABLE completed_forms ADD COLUMN IF NOT EXISTS signed_at TIMESTAMPTZ;

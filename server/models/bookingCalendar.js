@@ -124,10 +124,13 @@ export const getCalendarBookings = async ({ view = "month", date }) => {
     `
       SELECT
         b.id AS booking_id,
+        b.customer_id,
         b.booking_datetime,
         b.duration_minutes AS service_duration,
         b.status,
         c.name AS customer_name,
+        c.email AS customer_email,
+        c.phone AS customer_phone,
         COALESCE(
           string_agg(s.name, ', ' ORDER BY s.name),
           'Service'
@@ -155,13 +158,13 @@ export const getCalendarBookings = async ({ view = "month", date }) => {
 
     return {
       id: row.booking_id,
-      title: `${row.customer_name} - ${row.service_name}`,
+      customer_id: row.customer_id,
       customer_name: row.customer_name,
+      customer_email: row.customer_email,
+      customer_phone: row.customer_phone,
+      title: `${row.customer_name} - ${row.service_name}`,
       service_name: row.service_name,
-
-      // Important: send status to frontend
       status: row.status,
-
       start: startLocal.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
       end: endLocal.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
       duration: Number(row.service_duration || 0),

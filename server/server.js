@@ -37,6 +37,7 @@ import serviceTipRoutes from "./routes/serviceTipRoutes.js";
 import beforeAfterImageRoutes from "./routes/beforeAfterImageRoutes.js";
 import serviceBenefitRoutes from "./routes/serviceBenefitRoutes.js";
 import serviceDetailRoutes from "./routes/serviceDetailRoutes.js";
+import formsRoutes from "./routes/formsRoutes.js";
 // import reviewsRoutes from "./routes/reviewsRoutes.js";
 import csrf from "csurf";
 
@@ -140,6 +141,7 @@ app.use("/api/contraindications", contraindicationRoutes);
 app.use("/api/related-services",relatedServiceRoutes);
 app.use("/api/service",serviceAggregateRoutes);
 app.use("/api/dashboard",dashboardRoutes);
+app.use("/api/forms", formsRoutes);
 app.use("/service-sections", serviceSectionsRoutes);
 // app.use("/api/reviews", reviewsRoutes);
 app.get("/test-db", async (req, res) => {

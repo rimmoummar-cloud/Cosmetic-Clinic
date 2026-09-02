@@ -51,3 +51,11 @@ export async function markAsRead(id) {
 
   return result.rows[0];
 }
+
+
+// حذف جميع notifications من الجدول
+export async function deleteAllNotifications() {
+  await db.query(`
+    DELETE FROM notifications
+  `);
+}

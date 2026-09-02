@@ -177,20 +177,20 @@ const serviceNames = servicesRes.rows
 
 // scheduleReminders(reminderBooking);
 
-if (disclaimers.length > 0) {
+// if (disclaimers.length > 0) {
 
-  // فيه مخاطر → ابعت review email
-sendBookingEmail({  
-    to: email,
-    customerName: name,
-    serviceName: serviceNames,
-    bookingDate: booking_datetime,
-    bookingTime: booking_datetime,
-    // bookingId: booking.id,
-    acceptanceToken: booking.acceptance_token,
-  });
+//   // فيه مخاطر → ابعت review email
+// sendBookingEmail({  
+//     to: email,
+//     customerName: name,
+//     serviceName: serviceNames,
+//     bookingDate: booking_datetime,
+//     bookingTime: booking_datetime,
+//     // bookingId: booking.id,
+//     acceptanceToken: booking.acceptance_token,
+//   });
 
-} 
+// } 
 
 
     res.status(201).json(booking);
@@ -598,106 +598,6 @@ export const getBookingWithFullDetails = async (req, res) => {
     });
   }
 };
-// export const getBookingWithFullDetails = async (req, res) => {
-//   try {
-
-//     const result = await db.query(`
-//      SELECT
-//   bookings.id,
-//   bookings.status,
-//   bookings.note,
-//   bookings.created_at,
-  
-//   -- UTC محفوظ + نسخة للعرض
-//   bookings.booking_datetime,
-//   (bookings.booking_datetime AT TIME ZONE 'UTC' AT TIME ZONE 'America/Montreal') 
-//     AS booking_datetime_local,
-
-//   bookings.total_amount,
-//   bookings.disclaimer_status,
-
-//   customers.name AS customer_name,
-//   customers.email AS customer_email,
-//   customers.phone AS customer_phone,
-
-//   COALESCE(
-//     json_agg(
-//       json_build_object(
-//         'id', services.id,
-//         'name', services.name,
-//         'duration', services.duration_minutes,
-//         'price', services.price
-//       )
-//     ) FILTER (WHERE services.id IS NOT NULL),
-//     '[]'
-//   ) AS services
-
-// FROM bookings
-// JOIN customers ON bookings.customer_id = customers.id
-// LEFT JOIN booking_services ON bookings.id = booking_services.booking_id
-// LEFT JOIN services ON booking_services.service_id = services.id
-
-// WHERE
-//   bookings.status != 'cancel'
-//   AND bookings.booking_datetime >= 
-//       (NOW() AT TIME ZONE 'America/Montreal') AT TIME ZONE 'UTC'
-
-// GROUP BY bookings.id, customers.id
-// ORDER BY bookings.created_at DESC;
-//     `);
-
-//     const formattedBookings = result.rows.map((booking) => ({
-//       ...booking,
-//       disclaimer_status: booking.disclaimer_status || "no_disclaimers",
-//     }));
-
-//     res.json(formattedBookings);
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({
-//       message: "Error fetching bookings"
-//     });
-//   }
-// };
-
-
-
-// export const updateBookingStatus = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { status } = req.body;
-
-//     if (!status) {
-//       return res.status(400).json({
-//         message: "Status is required",
-//       });
-//     }
-
-//     const updated =
-//       await Booking.updateBookingStatus(
-//         id,
-//         status
-//       );
-
-//     if (!updated) {
-//       return res.status(404).json({
-//         message: "Booking not found",
-//       });
-//     }
-
-//     res.json(updated);
-//   } catch (error) {
-//     console.error(
-//       "Error updating booking status:",
-//       error
-//     );
-
-//     res.status(500).json({
-//       message: error.message,
-//     });
-//   }
-// };
 
 export const updateBookingStatus =
 async (req, res) => {

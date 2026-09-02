@@ -4,14 +4,6 @@ import api from "../../../../lib/api.js";
 import { useQuery } from "@tanstack/react-query";
 import CustomerDetails from "./components/CustomerDetails";
 
-export const getCustomers = async () => {
-  const res = await api.get("/customers");
-  return res.data;
-};
-export const getCustomerById = async (id) => {
-  const res = await api.get(`/customers/${id}`);
-  return res.data;
-};
 export default function AdminCustomersPage() {
   const [search, setSearch] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);

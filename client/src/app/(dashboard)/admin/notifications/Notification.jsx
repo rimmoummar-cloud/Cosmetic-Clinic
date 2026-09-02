@@ -7,6 +7,7 @@ export default function NotificationComponent() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [markingAsRead, setMarkingAsRead] = useState(null);
+const [deletingAll, setDeletingAll] = useState(false);
 
   // Fetch notifications on mount
   useEffect(() => {
@@ -61,13 +62,43 @@ await api.put(
     }
   };
 
+
+
+
+  // Delete all notifications
+  const handleDeleteAll = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete all notifications?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingAll(true);
+
+      await api.delete("/notifications/all");
+
+      setNotifications([]);
+    } catch (error) {
+      console.error("Failed to delete all notifications:", error);
+      alert(
+        error?.response?.data?.message ||
+        "Failed to delete all notifications. Please try again."
+      );
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
+
+
   // Calculate unread count
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <h1 className="text-2xl font-bold font-[var(--font-heading)]">
           Notifications
           {unreadCount > 0 && (
@@ -81,7 +112,35 @@ await api.put(
             ? "No notifications yet"
             : `You have ${unreadCount} unread notification${unreadCount !== 1 ? "s" : ""}`}
         </p>
-      </div>
+      </div> */}
+      <div className="mb-8 flex items-start justify-between gap-4">
+  <div>
+    <h1 className="text-2xl font-bold font-[var(--font-heading)]">
+      Notifications
+      {unreadCount > 0 && (
+        <span className="ml-3 text-lg font-normal text-gray-500">
+          ({unreadCount})
+        </span>
+      )}
+    </h1>
+
+    <p className="text-gray-500 text-sm mt-1">
+      {notifications.length === 0
+        ? "No notifications yet"
+        : `You have ${unreadCount} unread notification${unreadCount !== 1 ? "s" : ""}`}
+    </p>
+  </div>
+
+  {notifications.length > 0 && (
+    <button
+      onClick={handleDeleteAll}
+      disabled={deletingAll}
+      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {deletingAll ? "Deleting..." : "Delete All"}
+    </button>
+  )}
+</div>
 
       {/* Loading State */}
       {loading ? (

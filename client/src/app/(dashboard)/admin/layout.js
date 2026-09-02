@@ -14,6 +14,7 @@ const navItems = [
   { href: "/admin/dashboard/calendar", label: "Calendar", icon: "📆" },
   { href: "/admin/notifications", label: "Notifications", icon: "🔔" },
   { href: "/admin/customers", label: "Customers", icon: "👥" },
+  { href: "/admin/forms", label: "Forms", icon: "📝" },
   // { href: "/admin/reviews", label: "Reviews", icon: "⭐" },
   { href: "/admin/messages", label: "Messages", icon: "💬" },
   { href: "/admin/cms", label: "CMS", icon: "📑" },

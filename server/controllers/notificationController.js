@@ -1,7 +1,8 @@
 import {
   createNotification,
   getNotifications,
-  markAsRead
+  markAsRead,
+    deleteAllNotifications
 } from "../models/notification.js";
 
 // جلب notifications
@@ -38,5 +39,22 @@ export const readNotification = async (req, res) => {
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: "Error updating notification" });
+  }
+};
+
+// حذف جميع notifications
+export const deleteAllNotification = async (req, res) => {
+  try {
+    await deleteAllNotifications();
+
+    res.json({
+      message: "All notifications deleted successfully"
+    });
+  } catch (err) {
+    console.error("Error deleting all notifications:", err);
+
+    res.status(500).json({
+      message: "Error deleting all notifications"
+    });
   }
 };
