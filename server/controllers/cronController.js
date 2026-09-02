@@ -1,5 +1,5 @@
-import processReminderEmails from "../jobs/processReminderEmails.js";
 
+import { processReminderEmails } from "../jobs/processReminderEmails.js";
 export const processReminders = async (req, res) => {
   try {
     const cronSecret = process.env.CRON_SECRET;
