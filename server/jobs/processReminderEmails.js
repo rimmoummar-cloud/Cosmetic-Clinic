@@ -11,7 +11,7 @@ const getReminderBaseUrl = () => {
   return configuredBaseUrl.replace(/\/+$/, "");
 };
 
-async function processReminderEmails() {
+export async function processReminderEmails() {
   console.log("======================================");
   console.log("🔔 REMINDER CRON STARTED");
   console.log("TIME:", new Date());
@@ -334,4 +334,3 @@ async function processReminderEmails() {
 // Run worker
 // ======================================
 
-processReminderEmails();
