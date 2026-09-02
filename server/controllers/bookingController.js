@@ -8,7 +8,7 @@ import { sendBookingEmail , sendBookingApprovedEmail , sendBookingCancelledEmail
 
 import { getBookingDisclaimers } from "../utils/bookingEmailHelper.js";
 import { createReminder } from "../models/bookingReminder.js";
-  import schedule from "node-schedule";
+ 
 import {
   checkWaitingListForCancelledBooking
 } from "../utils/waitingListMatcher.js";
@@ -763,19 +763,27 @@ if (status === "cancelled") {
 
 
 
-schedule.cancelJob(
-  `booking:${id}:48`
+// schedule.cancelJob(
+//   `booking:${id}:48`
+// );
+
+// schedule.cancelJob(
+//   `booking:${id}:24`
+// );
+
+// schedule.cancelJob(
+//   `booking:${id}:12`
+// );
+
+await db.query(
+  `
+  UPDATE booking_reminders
+  SET status = 'cancelled'
+  WHERE booking_id = $1
+  AND status = 'scheduled'
+  `,
+  [id]
 );
-
-schedule.cancelJob(
-  `booking:${id}:24`
-);
-
-schedule.cancelJob(
-  `booking:${id}:12`
-);
-
-
 
   await checkWaitingListForCancelledBooking(
     id

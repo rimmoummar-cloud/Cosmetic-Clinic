@@ -22,7 +22,8 @@ import authRoutes from "./routes/authRoutes.js";
 import disclaimerRoutes from "./routes/disclaimerRoutes.js";
 import acceptanceRoutes from "./routes/acceptanceRoutes.js";
 import { startCleanupJob } from "./jobs/cleanupJob.js";
-import bookingReminderRoutes from "./routes/bookingReminderRoutes.js";import bookingCalendarRoutes from "./routes/bookingCalendarRoutes.js";import { restoreReminderJobs }from "./jobs/restoreReminderJobs.js";
+import bookingReminderRoutes from "./routes/bookingReminderRoutes.js";
+import bookingCalendarRoutes from "./routes/bookingCalendarRoutes.js";
 import { cleanupRefreshTokens } from "./models/cleanupRefreshTokens.js";
 import waitingListRoutes from "./routes/watinglistRoute.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
@@ -177,7 +178,6 @@ const PORT = process.env.PORT || 5000;
 // });
 const startServer = async () => {
   startCleanupJob();
-  await restoreReminderJobs();
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

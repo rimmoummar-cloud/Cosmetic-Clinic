@@ -373,7 +373,7 @@ console.log("Time:", dt.toFormat("HH:mm"));
     const formattedDate = dt.toFormat("yyyy-LL-dd");
     const formattedTime = dt.toFormat("HH:mm");
 
-  await safeSendMail({
+ const result = await safeSendMail({
       // from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
       subject: "Booking Reminder ✨",
@@ -415,11 +415,24 @@ Please find your appointment details below.
       `,
     });
 
-    console.log("Reminder email sent ✔️");
+if (!result) {
+  console.log("Reminder email failed ❌");
+  return null;
+}
+
+console.log("Reminder email sent ✔️");
+
+return result;
+
+  // } catch (error) {
+  //   console.log("Reminder email error ❌", error.message);
+  // }
+
 
   } catch (error) {
-    console.log("Reminder email error ❌", error.message);
-  }
+  console.log("Reminder email error ❌", error.message);
+  return null;
+}
 }
 
 // export default transporter;
