@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import api from "../../lib/api.js";
 
-export default function BookingActionPage() {
+function BookingActionContent() {
   const searchParams = useSearchParams();
 
   const bookingId = searchParams.get("bookingId");
@@ -39,9 +39,13 @@ export default function BookingActionPage() {
         setStatus("success");
 
         if (action === "confirm") {
-          setMessage("Your booking has been confirmed successfully.");
+          setMessage(
+            "Your booking has been confirmed successfully."
+          );
         } else {
-          setMessage("Your booking has been cancelled successfully.");
+          setMessage(
+            "Your booking has been cancelled successfully."
+          );
         }
       } catch (error) {
         console.error("Booking action error:", error);
@@ -111,5 +115,31 @@ export default function BookingActionPage() {
 
       </div>
     </div>
+  );
+}
+
+function BookingActionLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
+        <div className="text-4xl mb-4">⏳</div>
+
+        <h1 className="text-xl font-semibold text-gray-900">
+          Please wait...
+        </h1>
+
+        <p className="text-gray-500 text-sm mt-2">
+          We are processing your booking.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function BookingActionPage() {
+  return (
+    <Suspense fallback={<BookingActionLoading />}>
+      <BookingActionContent />
+    </Suspense>
   );
 }
