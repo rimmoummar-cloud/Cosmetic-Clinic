@@ -210,20 +210,22 @@ export async function processReminderEmails() {
       // Build confirmation/cancellation URLs
       // ======================================
 
-      const baseUrl =
-        getReminderBaseUrl();
 
-      const confirmUrl =
-        new URL(
-          `/api/booking-reminders/confirm/${reminder.booking_id}/${reminder.reminder_id}`,
-          baseUrl
-        ).toString();
+     const frontendBaseUrl =
+  process.env.FRONTEND_URL ||
+  "http://localhost:3000";
 
-      const cancelUrl =
-        new URL(
-          `/api/booking-reminders/cancel/${reminder.booking_id}/${reminder.reminder_id}`,
-          baseUrl
-        ).toString();
+const confirmUrl =
+  new URL(
+    `/booking-action?bookingId=${reminder.booking_id}&reminderId=${reminder.reminder_id}&action=confirm`,
+    frontendBaseUrl
+  ).toString();
+
+const cancelUrl =
+  new URL(
+    `/booking-action?bookingId=${reminder.booking_id}&reminderId=${reminder.reminder_id}&action=cancel`,
+    frontendBaseUrl
+  ).toString();
 
       console.log(
         "CONFIRM URL:",
@@ -293,14 +295,15 @@ export async function processReminderEmails() {
     );
     console.log("======================================");
 
-  } catch (error) {
-    console.error(
-      "❌ REMINDER CRON FATAL ERROR:"
-    );
+} catch (error) {
+  console.error(
+    "❌ REMINDER CRON FATAL ERROR:"
+  );
 
-    console.error(error);
+  console.error(error);
 
-  } finally {
+  throw error;
+}finally {
     // ======================================
     // Release PostgreSQL advisory lock
     // ======================================
