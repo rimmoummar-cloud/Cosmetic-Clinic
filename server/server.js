@@ -40,6 +40,7 @@ import serviceBenefitRoutes from "./routes/serviceBenefitRoutes.js";
 import serviceDetailRoutes from "./routes/serviceDetailRoutes.js";
 import formsRoutes from "./routes/formsRoutes.js";
 import cronRoutes from "./routes/cronRoutes.js";
+import noteRoute from "./routes/noteRoute.js";
 // import reviewsRoutes from "./routes/reviewsRoutes.js";
 import csrf from "csurf";
 
@@ -146,6 +147,8 @@ app.use("/api/dashboard",dashboardRoutes);
 app.use("/api/forms", formsRoutes);
 app.use("/service-sections", serviceSectionsRoutes);
 app.use("/api/cron", cronRoutes);
+app.use("/api/note", noteRoute);
+
 // app.use("/api/reviews", reviewsRoutes);
 app.get("/test-db", async (req, res) => {
   const result = await db.query("SELECT NOW()");
