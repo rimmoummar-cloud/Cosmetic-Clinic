@@ -1,6 +1,6 @@
 import db from '../config/db.js';
 
-const ALLOWED_QUESTION_TYPES = ['text', 'yes_no', 'multiple_choice', 'agreement'];
+const ALLOWED_QUESTION_TYPES = ['text', 'yes_no', 'multiple_choice', 'agreement','confirmation'];
 
 export const isValidQuestionType = (type) => {
   return ALLOWED_QUESTION_TYPES.includes(type);
