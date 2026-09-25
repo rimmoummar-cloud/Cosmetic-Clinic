@@ -90,15 +90,15 @@ console.log("============================");
     await client.query("LOCK TABLE bookings IN SHARE ROW EXCLUSIVE MODE");
 
     // Find or create customer
-    let customer = await Booking.findCustomerByPhone(client, phone);
+    let customer = await Booking.findCustomerByEmail(client, email);
 
     if (!customer) {
       customer = await Booking.createCustomer(client, name, email, phone);
     } else {
   // update email in case it changed
   await client.query(
-    `UPDATE customers SET email = $1, name = $2 WHERE id = $3`,
-    [email, name, customer.id]
+    `UPDATE customers SET phone = $1, name = $2 WHERE id = $3`,
+    [phone, name, customer.id]
   );
 }
 

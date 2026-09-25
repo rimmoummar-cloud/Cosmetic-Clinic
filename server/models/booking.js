@@ -5,14 +5,20 @@ import { DateTime } from "luxon";
 // ==========================
 // Customer functions
 // ==========================
-export const findCustomerByPhone = async (client = null, phone) => {
+
+
+export const findCustomerByEmail = async (client = null, email) => {
   const queryExecutor = client || db;
+
   const res = await queryExecutor.query(
-    "SELECT * FROM customers WHERE phone = $1",
-    [phone]
+    "SELECT * FROM customers WHERE email = $1",
+    [email]
   );
+
   return res.rows[0] || null;
 };
+
+
 
 export const getallbookings = async () => {
   const res = await db.query("SELECT * FROM bookings");
@@ -27,6 +33,12 @@ export const createCustomer = async (client = null, name, email, phone) => {
   );
   return res.rows[0];
 };
+
+
+
+
+
+
 
 // ==========================
 // Booking functions

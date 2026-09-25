@@ -21,25 +21,6 @@ export function getNowInUserTZ() {
 }
 
 
-
-// export function filterPastSlots(slots, selectedDate) {
-//   if (!slots || slots.length === 0) return [];
-
-//   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-//   const nowUser = DateTime.now().setZone(userTimeZone);
-//   const todayUser = nowUser.toFormat("yyyy-MM-dd");
-//   const currentTimeUser = nowUser.toFormat("HH:mm");
-
-//   // إذا التاريخ اليوم الحالي، فلتر الـ slots الماضية
-//   if (selectedDate === todayUser) {
-//     const filteredSlots = slots.filter(slot => slot > currentTimeUser);
-//     console.log(`[filterPastSlots] Today (${todayUser}) at ${currentTimeUser}: ${slots.length} slots -> ${filteredSlots.length} slots`);
-//     return filteredSlots;
-//   }
-
-//   // إذا مش اليوم، رجع كل الـ slots
-//   return slots;
-// }
 export function filterPastSlots(slots, selectedDate) {
   if (!slots || slots.length === 0) return [];
 
@@ -88,11 +69,7 @@ export async function getCategories() {
 
 
 
-/**
- * Get services for a specific category
- * @param {number|string} categoryId - The category ID
- * @returns {Promise<Array>} Array of services with id, name, description, price, duration_minutes, category_id
- */
+
 export async function getServices(categoryId) {
   try {
     const response = await fetch(`${API_BASE_URL}/services/samecategories/${categoryId}`);
@@ -108,12 +85,7 @@ export async function getServices(categoryId) {
   }
 }
 
-/**
- * Get available time slots for multiple services on a specific date
- * @param {Array<number>} serviceIds - Array of service IDs
- * @param {string} bookingDate - Date in YYYY-MM-DD format
- * @returns {Promise<Array>} Array of available time slots in HH:MM format
- */
+
 export async function getAvailableSlots(serviceIds, bookingDate) {
   try {
 
@@ -132,22 +104,6 @@ export async function getAvailableSlots(serviceIds, bookingDate) {
     const userTimeZone =
       Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    // const bookingDateTime = new Date(`${bookingDate}T12:00:00`);
-    // const booking_datetime = bookingDateTime.toISOString();
-
-// const BUSINESS_TIME_ZONE = "America/Edmonton";
-
-// const bookingDateTime = DateTime.fromISO(
-//   `${bookingDate}T12:00:00`,
-//   { zone: BUSINESS_TIME_ZONE }
-// );
-
-// const booking_datetime = bookingDateTime.toUTC().toISO();
-
-
-
-
-// const BUSINESS_TIME_ZONE = "America/Edmonton";
 
 const bookingDateTime = DateTime.fromISO(
   `${bookingDate}T12:00:00`,
@@ -204,25 +160,12 @@ const booking_datetime = bookingDateTime
 
 
 
-/**
- * Get total duration for a set of services
- * Calculates the sum of all service durations
- * @param {Array} services - Array of service objects with duration_minutes property
- * @returns {number} Total duration in minutes
- */
+
 export function getServicesDuration(services) {
   return services.reduce((sum, service) => sum + (service.duration_minutes || 0), 0);
 }
 
-/**
- * Validate if the total duration fits within working hours
- * @param {number} totalDuration - Total duration in minutes
- * @param {string} selectedTime - Selected start time (HH:MM format)
- * @param {Array} bookingServices - Array of booking service objects
- * @param {number} workingHourStart - Start hour (e.g., 9 for 9 AM)
- * @param {number} workingHourEnd - End hour (e.g., 18 for 6 PM)
- * @returns {Object} Validation result { isValid: boolean, message: string }
- */
+
 export function validateBookingDuration(
   totalDuration,
   selectedTime,
@@ -257,8 +200,7 @@ export function validateBookingDuration(
     return { isValid: false, message: "Select a start time" };
   }
 
-  // const startMinutes = timeToMinutes(selectedTime);
-  // const BUSINESS_TIME_ZONE = "America/Montreal";
+
   
 const dt = DateTime.fromFormat(selectedTime, "HH:mm", {
   zone: BUSINESS_TIME_ZONE,
@@ -299,20 +241,7 @@ const startMinutes = dt.hour * 60 + dt.minute;
 
 
 
-/**
- * Format time for display (e.g., "09:00" -> "9:00 AM")
- * @param {string} timeStr - Time in HH:MM format
- * @returns {string} Formatted time string
- */
-// export function formatTimeForDisplay(timeStr) {
-//   if (!timeStr) return "";
-  
-//   const [hours, minutes] = timeStr.split(":").map(Number);
-//   const period = hours >= 12 ? "PM" : "AM";
-//   const displayHours = hours % 12 || 12;
-  
-//   return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
-// }
+
 
 
 export const formatTimeForDisplay = (time) => {
@@ -323,12 +252,7 @@ export const formatTimeForDisplay = (time) => {
 };
 
 
-/**
- * Calculate end time based on start time and duration
- * @param {string} startTime - Start time in format "HH:MM" or "H:MM AM/PM"
- * @param {number} duration - Duration in minutes
- * @returns {string} End time in "H:MM AM/PM" format
- */
+
 export function calculateEndTime(startTime, duration) {
   const timeToMinutes = (timeStr) => {
     if (!timeStr) return null;
@@ -362,42 +286,14 @@ export function calculateEndTime(startTime, duration) {
   return minutesToTime(endMinutes);
 }
 
-/**
- * Format date for backend (YYYY-MM-DD -> display format)
- * @param {string} dateStr - Date in YYYY-MM-DD format
- * @returns {string} Formatted date string
- */
-// export function formatDateForDisplay(dateStr) {
-//   if (!dateStr) return "";
-//   const date = new Date(dateStr + "T00:00:00");
-//   return date.toLocaleDateString("en-US", {
-//     weekday: "short",
-//     month: "short",
-//     day: "numeric"
-//   });
-// }
 
-// export const formatDateForDisplay = (dateString) => {
-//   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-//   return new Date(dateString).toLocaleDateString("en-US", {
-//     weekday: "long",
-//     year: "numeric",
-//     month: "long",
-//     day: "numeric",
-//     timeZone: userTimeZone,
-//   });
-// };
 export const formatDateForDisplay = (dateString) => {
   return DateTime.fromISO(
     dateString,
     { zone: BUSINESS_TIME_ZONE }
   ).toFormat("cccc, LLLL d, yyyy");
 };
-/**
- * Get timezone offset from UTC
- * @returns {string} Timezone offset in format "+HH:00" or "-HH:00"
- */
+
 export function getTimezoneOffset() {
   const now = new Date();
   const offset = -now.getTimezoneOffset();
@@ -407,17 +303,7 @@ export function getTimezoneOffset() {
   return `${sign}${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 }
 
-/**
- * Create a booking on the backend
- * @param {Object} bookingData - Booking data object
- * @param {string} bookingData.name - Customer name
- * @param {string} bookingData.email - Customer email
- * @param {string} bookingData.phone - Customer phone
- * @param {Array<number>} bookingData.serviceIds - Array of service IDs
- * @param {string} bookingData.booking_datetime - ISO string in UTC
- * @param {string} bookingData.note - Optional booking note
- * @returns {Promise<Object>} Created booking object
- */
+
 export async function createBooking(bookingData) {
   try {
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -438,10 +324,7 @@ export async function createBooking(bookingData) {
       })
     });
 
-    // if (!response.ok) {
-    //   const errorData = await response.json();
-    //   throw new Error(errorData.message || `Booking failed: ${response.statusText}`);
-    // }
+   
 if (!response.ok) {
   let errorMessage = "Booking failed";
 
