@@ -5,6 +5,7 @@
  */
 
 import { DateTime } from "luxon";
+import api from "../../../lib/api.js";
   const BUSINESS_TIME_ZONE = "America/Montreal";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
 
@@ -86,7 +87,11 @@ export async function getServices(categoryId) {
 }
 
 
-export async function getAvailableSlots(serviceIds, bookingDate) {
+export async function getAvailableSlots(
+  serviceIds,
+  bookingDate,
+  { isAdmin = false } = {}
+) {
   try {
 
     // =========================
@@ -117,12 +122,6 @@ const booking_datetime = bookingDateTime
 
 
 
-    const url =
-      `${API_BASE_URL}/bookings/available-slots-multi` +
-      `?serviceIds=${encodeURIComponent(serviceIdsParam)}` +
-      `&booking_datetime=${encodeURIComponent(booking_datetime)}` +
-      `&timeZone=${encodeURIComponent(userTimeZone)}`;
-
     // IMPORTANT: timeZone param tells backend how to interpret "today" relative to user's timezone
     console.log("Fetching slots with:", {
       serviceIdsParam,
@@ -131,15 +130,37 @@ const booking_datetime = bookingDateTime
       userTimeZone
     });
 
-    const response = await fetch(url);
+    let data;
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch available slots: ${response.status}`
+    if (isAdmin) {
+      const response = await api.get(
+        "/flashbook/available-slots-multi",
+        {
+          params: {
+            serviceIds: serviceIdsParam,
+            booking_datetime,
+            timeZone: userTimeZone
+          }
+        }
       );
-    }
+      data = response.data;
+    } else {
+      const url =
+        `${API_BASE_URL}/bookings/available-slots-multi` +
+        `?serviceIds=${encodeURIComponent(serviceIdsParam)}` +
+        `&booking_datetime=${encodeURIComponent(booking_datetime)}` +
+        `&timeZone=${encodeURIComponent(userTimeZone)}`;
 
-    const data = await response.json();
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch available slots: ${response.status}`
+        );
+      }
+
+      data = await response.json();
+    }
 
     // Filter out past slots if the selected date is today
     const filteredSlots = filterPastSlots(data.availableSlots || [], bookingDate);
@@ -151,6 +172,12 @@ const booking_datetime = bookingDateTime
       "Error fetching available slots:",
       error
     );
+
+    if (isAdmin && error?.response?.status) {
+      throw new Error(
+        `Failed to fetch available slots: ${error.response.status}`
+      );
+    }
 
     throw error;
   }
@@ -304,24 +331,39 @@ export function getTimezoneOffset() {
 }
 
 
-export async function createBooking(bookingData) {
+export async function createBooking(
+  bookingData,
+  { isAdmin = false } = {}
+) {
   try {
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const payload = {
+      name: bookingData.name,
+      email: bookingData.email,
+      phone: bookingData.phone,
+      serviceIds: bookingData.serviceIds,
+      booking_datetime: bookingData.booking_datetime,
+      note: bookingData.note || "",
+      timeZone: userTimeZone
+    };
+
+    if (isAdmin) {
+      try {
+        const response = await api.post("/flashbook", payload);
+        return response.data;
+      } catch (error) {
+        const message = error?.response?.data?.message;
+        throw new Error(message || error.message);
+      }
+    }
 
     const response = await fetch(`${API_BASE_URL}/bookings`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        name: bookingData.name,
-        email: bookingData.email,
-        phone: bookingData.phone,
-        serviceIds: bookingData.serviceIds,
-        booking_datetime: bookingData.booking_datetime,
-        note: bookingData.note || "",
-        timeZone: userTimeZone
-      })
+      body: JSON.stringify(payload)
     });
 
    
@@ -360,4 +402,3 @@ export default {
   filterPastSlots,
   getWorkingHoursByDay
 };
-

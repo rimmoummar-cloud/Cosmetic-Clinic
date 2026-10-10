@@ -975,7 +975,11 @@ const endDt = DateTime.fromISO(
       try { 
         setLoadingSlots(true); 
         const serviceIds = selectedServices.map(s => s.id); 
-        const slots = await getAvailableSlots(serviceIds, selectedDate); 
+        const slots = await getAvailableSlots(
+          serviceIds,
+          selectedDate,
+          { isAdmin }
+        );
          
         // Track slots per date (filterPastSlots is already applied inside getAvailableSlots) 
         setSlotsByDate(prev => ({ ...prev, [selectedDate]: slots })); 
@@ -1097,7 +1101,7 @@ const booking_datetime = DateTime.fromISO(
       serviceIds: selectedServices.map((s) => s.id), 
       booking_datetime, 
       note: note, 
-    }); 
+    }, { isAdmin });
  
     toast.success( 
       "Your appointment has been booked! We'll send you a confirmation shortly." 
