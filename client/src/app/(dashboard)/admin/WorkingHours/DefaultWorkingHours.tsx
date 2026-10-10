@@ -8,12 +8,14 @@ type WorkingHourItem = {
   day_of_week: number;
   start_time: string;
   end_time: string;
+  is_day_off: boolean;
 };
 
 type FormState = {
   day_of_week: string;
   start_time: string;
   end_time: string;
+  is_day_off: boolean;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
@@ -29,6 +31,7 @@ export default function DefaultWorkingHours() {
     day_of_week: "0",
     start_time: "09:00",
     end_time: "17:00",
+    is_day_off: false,
   });
 
   const dayLabels = useMemo(
@@ -59,7 +62,7 @@ export default function DefaultWorkingHours() {
     fetchRows();
   }, []);
 
-  const onEditFormChange = (name: keyof FormState, value: string) => {
+  const onEditFormChange = (name: keyof FormState, value: string | boolean) => {
     setStatus("");
     setError("");
     setEditForm((prev) => ({ ...prev, [name]: value }));
@@ -127,11 +130,12 @@ const onEdit = (row: WorkingHourItem) => {
     start_time: row.start_time.slice(0, 5),
 
     end_time: row.end_time.slice(0, 5),
+    is_day_off: Boolean(row.is_day_off),
   });
 };
   const onCancelEdit = () => {
     setEditingId(null);
-    setEditForm({ day_of_week: "0", start_time: "09:00", end_time: "17:00" });
+    setEditForm({ day_of_week: "0", start_time: "09:00", end_time: "17:00", is_day_off: false });
   };
 
   const onSaveEdit = async (id: number) => {
@@ -154,6 +158,7 @@ const res = await api.put(
     day_of_week: Number(editForm.day_of_week),
     start_time: editForm.start_time,
     end_time: editForm.end_time,
+    is_day_off: editForm.is_day_off,
   },
   {
     headers: {

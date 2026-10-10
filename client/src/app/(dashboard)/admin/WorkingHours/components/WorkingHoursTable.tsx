@@ -7,12 +7,14 @@ type WorkingHourItem = {
   day_of_week: number;
   start_time: string;
   end_time: string;
+  is_day_off: boolean;
 };
 
 type FormState = {
   day_of_week: string;
   start_time: string;
   end_time: string;
+  is_day_off: boolean;
 };
 
 type Props = {
@@ -24,7 +26,7 @@ type Props = {
   editForm: FormState;
   editingId: number | null;
   actionLoadingId: number | null;
-  onEditFormChange: (name: keyof FormState, value: string) => void;
+  onEditFormChange: (name: keyof FormState, value: string | boolean) => void;
   onEdit: (row: WorkingHourItem) => void;
   onCancelEdit: () => void;
   onSaveEdit: (id: number) => void;
@@ -80,13 +82,14 @@ export default function WorkingHoursTable({
                   <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Day</th>
                   <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Start Time</th>
                   <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">End Time</th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Day Off</th>
                   <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {loading && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-sm text-gray-500">
+                    <td colSpan={5} className="px-6 py-10 text-center text-sm text-gray-500">
                       Loading working hours...
                     </td>
                   </tr>
@@ -94,7 +97,7 @@ export default function WorkingHoursTable({
 
                 {!loading && error && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-sm text-red-600">
+                    <td colSpan={5} className="px-6 py-10 text-center text-sm text-red-600">
                       {error}
                     </td>
                   </tr>
@@ -102,7 +105,7 @@ export default function WorkingHoursTable({
 
                 {!loading && !error && rows.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-sm text-gray-500">
+                    <td colSpan={5} className="px-6 py-10 text-center text-sm text-gray-500">
                       No default working hours found.
                     </td>
                   </tr>
@@ -122,6 +125,9 @@ export default function WorkingHoursTable({
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm text-gray-700">{row.end_time}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-700">{row.is_day_off ? "Yes" : "No"}</span>
                       </td>
                       <td className="px-6 py-4">
                         <button
@@ -199,6 +205,16 @@ export default function WorkingHoursTable({
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
+
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={editForm.is_day_off}
+                  onChange={(e) => onEditFormChange("is_day_off", e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                Day Off
+              </label>
             </div>
 
             {/* Modal Footer */}

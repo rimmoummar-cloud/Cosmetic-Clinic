@@ -306,6 +306,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
       }
 
       const mappedEvents = (response.data || [])
+        .filter((booking) => normalizeStatus(booking.status) !== "cancelled")
         .map(mapBookingToEvent)
         .filter(Boolean);
 
@@ -437,25 +438,33 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     );
 
     setEvents((currentEventsList) =>
-      currentEventsList.map((event) => {
-        if (String(event.id) !== `booking-${normalizedBookingId}`) {
-          return event;
-        }
+      currentEventsList
+        .filter((event) => {
+          if (String(event.id) !== `booking-${normalizedBookingId}`) {
+            return true;
+          }
 
-        const updatedBookingData = {
-          ...(event.extendedProps?.bookingData || {}),
-          status: nextStatus,
-        };
+          return normalizeStatus(nextStatus) !== "cancelled";
+        })
+        .map((event) => {
+          if (String(event.id) !== `booking-${normalizedBookingId}`) {
+            return event;
+          }
 
-        return {
-          ...event,
-          extendedProps: {
-            ...event.extendedProps,
+          const updatedBookingData = {
+            ...(event.extendedProps?.bookingData || {}),
             status: nextStatus,
-            bookingData: updatedBookingData,
-          },
-        };
-      })
+          };
+
+          return {
+            ...event,
+            extendedProps: {
+              ...event.extendedProps,
+              status: nextStatus,
+              bookingData: updatedBookingData,
+            },
+          };
+        })
     );
 
     setSelectedBooking((currentBooking) =>

@@ -228,6 +228,16 @@ const bookingDateTimeUTC = DateTime.fromISO(booking_datetime);
     throw new Error("Invalid booking_datetime: must be a valid ISO string");
   }
 
+// 2️⃣ Enforce minimum 24-hour booking lead time
+const minimumBookingTime = DateTime.now().plus({ hours: 24 });
+
+if (bookingDateTimeUTC < minimumBookingTime) {
+  throw new Error(
+    "Booking must be at least 24 hours in advance"
+  );
+}
+
+
   // 3️⃣ Check for time overlaps using proper overlap detection
   const newStart = bookingDateTimeUTC.toISO();
   const newEnd = bookingDateTimeUTC

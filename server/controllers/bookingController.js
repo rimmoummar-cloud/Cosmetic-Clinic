@@ -209,7 +209,8 @@ const serviceNames = servicesRes.rows
 
     if (
       error.message.includes("Invalid") ||
-      error.message.includes("required")
+  error.message.includes("required") ||
+  error.message.includes("24 hours")
     ) {
       return res.status(400).json({ message: error.message });
     }
@@ -227,6 +228,327 @@ const serviceNames = servicesRes.rows
 // ==========================
 // Get Available Slots for Multiple Services
 // ==========================
+
+// export async function getAvailableSlotsMulti(req, res) {
+
+//   try {
+   
+//     console.log(">>> getAvailableSlotsMulti HIT");
+//     let { serviceIds, booking_datetime, timeZone } = req.query;
+//     const userTimeZone = timeZone || "UTC";
+
+//     // Validate input
+//     if (!serviceIds || !booking_datetime) {
+//       return res.status(400).json({
+//         message: "Missing required fields: serviceIds, booking_datetime",
+//         availableSlots: [],
+//       });
+//     }
+
+//     // Convert serviceIds to array
+//     if (typeof serviceIds === "string") {
+//       serviceIds = serviceIds
+//         .split(",")
+//         .map((id) => parseInt(id, 10))
+//         .filter((id) => !isNaN(id));
+//     }
+
+//     if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
+//       return res.status(400).json({
+//         message: "serviceIds must be a non-empty array of valid numbers",
+//         availableSlots: [],
+//       });
+//     }
+
+// // const bookingDateTime = DateTime.fromISO(booking_datetime, {
+// //   zone: "utc"
+// // }).setZone(BUSINESS_TIME_ZONE);
+
+// const bookingDateTime = DateTime.fromISO(booking_datetime, {
+//   setZone: true
+// }).setZone(BUSINESS_TIME_ZONE);
+
+
+
+
+
+//     if (!bookingDateTime.isValid) {
+//       return res.status(400).json({
+//         message: "Invalid booking_datetime format",
+//         availableSlots: [],
+//       });
+//     }
+
+ 
+// const bookingDate = bookingDateTime
+//   .setZone(BUSINESS_TIME_ZONE)
+//   .toISODate();
+
+// const dayOfWeek = bookingDateTime.weekday % 7;
+// // ==========================
+// // 1. CHECK OVERRIDE (IMPORTANT)
+// // ==========================
+// const override = await getWorkingHoursOverrideByDate(bookingDate);
+
+
+
+// // 🔥 ADD SAFETY CHECK HERE (IMPORTANT EDGE CASE FIX)
+// if (override && !override.is_day_off) {
+//   if (!override.start_time || !override.end_time) {
+//     return res.status(500).json({
+//       message: "Invalid override configuration: missing working hours"
+//     });
+//   }
+// }
+
+// let startMinutes;
+// let endMinutes;
+
+// if (override) {
+
+//   if (override.is_day_off) {
+//     return res.json({ availableSlots: [] });
+//   }
+
+//   startMinutes = timeToMinutes(override.start_time);
+//   endMinutes = timeToMinutes(override.end_time);
+
+// } else {
+
+//   const workingHours = await getWorkingHoursByDay(null, dayOfWeek);
+
+//   if (!workingHours) {
+//     return res.status(400).json({
+//       message: "No working hours configured for this day",
+//       availableSlots: [],
+//     });
+//   }
+
+//   startMinutes = timeToMinutes(workingHours.start_time);
+//   endMinutes = timeToMinutes(workingHours.end_time);
+// }
+
+
+
+
+
+
+
+
+
+//     // Calculate total duration for all services
+//     let totalMinutes = 0;
+//     // for (let id of serviceIds) {
+//     //   const duration = await Booking.getServiceDuration(null, id);
+//     //   totalMinutes += duration;
+//     // }
+// const servicesRes = await db.query(
+//   `
+//   SELECT duration_minutes
+//   FROM services
+//   WHERE id = ANY($1)
+//   `,
+//   [serviceIds]
+// );
+
+// if (servicesRes.rows.length !== serviceIds.length) {
+//   return res.status(400).json({
+//     message: "One or more services not found",
+//     availableSlots: []
+//   });
+// }
+
+// for (let s of servicesRes.rows) {
+//   totalMinutes += Number(s.duration_minutes);
+// }
+//     // if (totalMinutes <= 0) {
+//     //   return res.status(400).json({
+//     //     message: "Invalid total service duration",
+//     //     availableSlots: [],
+//     //   });
+//     // }
+
+// if (totalMinutes <= 0) {
+//   return res.status(400).json({
+//     message: "Invalid total service duration",
+//     availableSlots: [],
+//   });
+// }
+// const CLEANING_BUFFER_MINUTES =
+//   Number(process.env.CLEANING_BUFFER_MINUTES) || 15;
+
+
+// // add buffer between clients
+// totalMinutes += CLEANING_BUFFER_MINUTES;
+
+
+
+//     // const slotDuration = 15;
+//     const slotDuration =
+//   Number(process.env.SLOT_DURATION) || 15;
+//     const slotsNeeded = Math.ceil(totalMinutes / slotDuration);
+
+//     // Get bookings for the selected date
+//     // const bookings = await Booking.getBookingsByDate(
+//     //   null,
+//     //   bookingDate,
+//     //   userTimeZone
+//     // );
+
+
+//  const bookings = await Booking.getBookingsByDate(
+//   null,
+//   bookingDate,
+//   BUSINESS_TIME_ZONE
+// );
+//     // Fetch working hours for the selected day
+//     // const dayOfWeek = bookingDateTime.weekday % 7;
+// //     const workingHours = await getWorkingHoursByDay(null, dayOfWeek);
+
+// //     if (!workingHours) {
+// //       return res.status(400).json({
+// //         message: "No working hours configured for this day",
+// //         availableSlots: [],
+// //       });
+// //     }
+
+   
+// // const startDateTime = DateTime.fromISO(
+// //   `${bookingDate}T${workingHours.start_time}`,
+// //   { zone: BUSINESS_TIME_ZONE }
+// // );
+
+// // const endDateTime = DateTime.fromISO(
+// //   `${bookingDate}T${workingHours.end_time}`,
+// //   { zone: BUSINESS_TIME_ZONE }
+// // );
+
+
+// //     if (!startDateTime.isValid || !endDateTime.isValid) {
+// //       return res.status(500).json({
+// //         message: "Invalid working hours format",
+// //         availableSlots: [],
+// //       });
+// //     }
+
+// // startMinutes = startDateTime.hour * 60 + startDateTime.minute;
+// // endMinutes = endDateTime.hour * 60 + endDateTime.minute;
+
+//     // Build list of blocked slots
+//     const blockedSlots = new Set();
+
+
+
+// // ==========================
+// // 2. ADD BREAKS TO BLOCKED SLOTS
+// // ==========================
+// const breaks = await getBreakHoursByDate(bookingDate);
+
+// breaks.forEach((b) => {
+//   const start = timeToMinutes(b.start_time);
+//   const end = timeToMinutes(b.end_time);
+
+//   for (let m = start; m < end; m += slotDuration) {
+//     blockedSlots.add(minutesToTime(m));
+//   }
+// });
+
+
+
+
+
+//     // const now = DateTime.now().setZone(userTimeZone);
+//     const now = DateTime.now().setZone(BUSINESS_TIME_ZONE);
+// //   console.log("========= TIME DEBUG =========");
+
+
+// // console.log("================================");
+//     const currentDateStr = now.toISODate();
+//     const currentMinutes = now.hour * 60 + now.minute;
+
+
+// bookings.forEach((b) => {
+//   // إذا كان الحجز ملغي أو منتهي → لا نحجز السلوت
+// if (!["pending", "approved"].includes(b.status)) {
+//   return;
+// }
+
+//   const bookingStart = DateTime
+//     .fromJSDate(b.booking_datetime)
+//     .setZone(BUSINESS_TIME_ZONE);
+// // const bookingStart = DateTime
+// //   .fromJSDate(new Date(b.booking_datetime))
+// //   .setZone(BUSINESS_TIME_ZONE);
+
+//   const startTime = bookingStart.toFormat("HH:mm");
+//   const start = timeToMinutes(startTime);
+
+//   const slots = Math.ceil(
+//     b.duration_minutes / slotDuration
+//   );
+
+//   for (let i = 0; i < slots; i++) {
+//     const slotTime = start + i * slotDuration;
+
+//     // Skip past slots on today
+//     if (
+//       bookingDate === currentDateStr &&
+//       slotTime < currentMinutes
+//     ) {
+//       continue;
+//     }
+
+//     blockedSlots.add(
+//       minutesToTime(slotTime)
+//     );
+//   }
+// });
+//     // Generate all available slots
+//     const allSlots = [];
+
+    
+
+//           for (let m = startMinutes; m + totalMinutes <= endMinutes; m += slotDuration) {
+//       allSlots.push(minutesToTime(m));
+//     }
+
+//     // Filter slots: keep only those with enough consecutive free slots
+//     const finalSlots = [];
+//     allSlots.forEach((slot) => {
+//       const start = timeToMinutes(slot);
+//       let canFit = true;
+
+//       for (let i = 0; i < slotsNeeded; i++) {
+//         const checkSlot = minutesToTime(start + i * slotDuration);
+//         if (blockedSlots.has(checkSlot)) {
+//           canFit = false;
+//           break;
+//         }
+//       }
+
+//       if (canFit) {
+//         finalSlots.push(slot);
+//       }
+//     });
+
+
+
+
+//     const convertedSlots = finalSlots.map((slot) => {
+//   const dt = DateTime.fromISO(
+//     `${bookingDate}T${slot}`,
+//     { zone: BUSINESS_TIME_ZONE }
+//   );
+
+//   return dt.toFormat("HH:mm");
+// });
+
+// res.json({ availableSlots: convertedSlots });
+//   } catch (error) {
+//    console.error("Available slots error FULL:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// }
 
 export async function getAvailableSlotsMulti(req, res) {
 
@@ -323,6 +645,12 @@ if (override) {
     });
   }
 
+ if (workingHours.is_day_off) {
+    return res.json({ availableSlots: [] });
+  }
+
+
+
   startMinutes = timeToMinutes(workingHours.start_time);
   endMinutes = timeToMinutes(workingHours.end_time);
 }
@@ -400,38 +728,8 @@ totalMinutes += CLEANING_BUFFER_MINUTES;
   bookingDate,
   BUSINESS_TIME_ZONE
 );
-    // Fetch working hours for the selected day
-    // const dayOfWeek = bookingDateTime.weekday % 7;
-//     const workingHours = await getWorkingHoursByDay(null, dayOfWeek);
-
-//     if (!workingHours) {
-//       return res.status(400).json({
-//         message: "No working hours configured for this day",
-//         availableSlots: [],
-//       });
-//     }
-
    
-// const startDateTime = DateTime.fromISO(
-//   `${bookingDate}T${workingHours.start_time}`,
-//   { zone: BUSINESS_TIME_ZONE }
-// );
-
-// const endDateTime = DateTime.fromISO(
-//   `${bookingDate}T${workingHours.end_time}`,
-//   { zone: BUSINESS_TIME_ZONE }
-// );
-
-
-//     if (!startDateTime.isValid || !endDateTime.isValid) {
-//       return res.status(500).json({
-//         message: "Invalid working hours format",
-//         availableSlots: [],
-//       });
-//     }
-
-// startMinutes = startDateTime.hour * 60 + startDateTime.minute;
-// endMinutes = endDateTime.hour * 60 + endDateTime.minute;
+ 
 
     // Build list of blocked slots
     const blockedSlots = new Set();
@@ -504,13 +802,23 @@ if (!["pending", "approved"].includes(b.status)) {
 });
     // Generate all available slots
     const allSlots = [];
-
+const minimumBookingTime = DateTime.now().plus({ hours: 24 });
     
 
-          for (let m = startMinutes; m + totalMinutes <= endMinutes; m += slotDuration) {
-      allSlots.push(minutesToTime(m));
-    }
+    for (let m = startMinutes; m + totalMinutes <= endMinutes; m += slotDuration) {
+  const slot = minutesToTime(m);
 
+  const slotDateTime = DateTime.fromISO(
+    `${bookingDate}T${slot}`,
+    { zone: BUSINESS_TIME_ZONE }
+  );
+
+  if (slotDateTime < minimumBookingTime) {
+    continue;
+  }
+
+  allSlots.push(slot);
+}
     // Filter slots: keep only those with enough consecutive free slots
     const finalSlots = [];
     allSlots.forEach((slot) => {
@@ -548,6 +856,15 @@ res.json({ availableSlots: convertedSlots });
     res.status(500).json({ message: "Server error" });
   }
 }
+
+
+
+
+
+
+
+
+
 
 // Helper function to convert time string to minutes
 function timeToMinutes(timeStr) {
