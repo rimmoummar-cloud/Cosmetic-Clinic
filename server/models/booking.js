@@ -164,8 +164,10 @@ export const createBookingMulti = async (
   serviceIds = [],
   booking_datetime,
   note = "",
-  token
+  token,
+  options = {}
 ) => {
+  const { enforceLeadTime = true } = options;
   const queryExecutor = client || db;
 
   // Input validation
@@ -228,13 +230,14 @@ const bookingDateTimeUTC = DateTime.fromISO(booking_datetime);
     throw new Error("Invalid booking_datetime: must be a valid ISO string");
   }
 
-// 2️⃣ Enforce minimum 24-hour booking lead time
-const minimumBookingTime = DateTime.now().plus({ hours: 24 });
+const now = DateTime.now();
 
-if (bookingDateTimeUTC < minimumBookingTime) {
-  throw new Error(
-    "Booking must be at least 24 hours in advance"
-  );
+if (bookingDateTimeUTC <= now) {
+  throw new Error("Booking must be in the future");
+}
+
+if (enforceLeadTime && bookingDateTimeUTC < now.plus({ hours: 24 })) {
+  throw new Error("Booking must be at least 24 hours in advance");
 }
 
 
@@ -585,7 +588,6 @@ async (id) => {
 
   return result.rows[0];
 };
-
 
 
 

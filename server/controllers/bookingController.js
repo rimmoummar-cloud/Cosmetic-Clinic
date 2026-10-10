@@ -105,13 +105,15 @@ console.log("============================");
     // Create multi-service booking
     // This function includes overlap detection inside the same transaction
     const token = crypto.randomUUID();
+    const enforceLeadTime = !req.admin;
     const booking = await Booking.createBookingMulti(
       client,
       customer.id,
       serviceIds,
       booking_datetime,
       note,
-      token
+      token,
+      { enforceLeadTime }
     );
 
 
@@ -210,7 +212,8 @@ const serviceNames = servicesRes.rows
     if (
       error.message.includes("Invalid") ||
   error.message.includes("required") ||
-  error.message.includes("24 hours")
+  error.message.includes("24 hours") ||
+  error.message.includes("future")
     ) {
       return res.status(400).json({ message: error.message });
     }
@@ -802,8 +805,8 @@ if (!["pending", "approved"].includes(b.status)) {
 });
     // Generate all available slots
     const allSlots = [];
-const minimumBookingTime = DateTime.now().plus({ hours: 24 });
-    
+const minimumBookingTime = now.plus({ hours: 24 });
+const enforceLeadTime = !req.admin;
 
     for (let m = startMinutes; m + totalMinutes <= endMinutes; m += slotDuration) {
   const slot = minutesToTime(m);
@@ -813,7 +816,10 @@ const minimumBookingTime = DateTime.now().plus({ hours: 24 });
     { zone: BUSINESS_TIME_ZONE }
   );
 
-  if (slotDateTime < minimumBookingTime) {
+  if (
+    slotDateTime <= now ||
+    (enforceLeadTime && slotDateTime < minimumBookingTime)
+  ) {
     continue;
   }
 
