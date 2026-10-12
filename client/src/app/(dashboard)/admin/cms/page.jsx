@@ -86,12 +86,22 @@ function setValueAtPath(data, pathArr, value) {
   return clone;
 }
 
+function containsBlobUrl(value) {
+  if (typeof value === "string") return value.trim().toLowerCase().startsWith("blob:");
+  if (Array.isArray(value)) return value.some(containsBlobUrl);
+  if (value && typeof value === "object") {
+    return Object.values(value).some(containsBlobUrl);
+  }
+  return false;
+}
+
 function FieldRenderer({
   label,
   value,
   path,
   onChange,
   onImageFile,
+  selectedImageFile,
   onAddItem,
   onRemoveItem,
 }) {
@@ -100,6 +110,11 @@ function FieldRenderer({
   const isImageField =
     typeof value === "string" &&
     /(image|img|photo|picture|background|banner|logo)/i.test(fieldKey);
+  const hasSelectedPreview =
+    isImageField && selectedImageFile?.path.join(".") === path.join(".");
+  const imageSrc = hasSelectedPreview
+    ? selectedImageFile.previewUrl
+    : getMediaUrl(isImageField ? value : "");
 
   if (Array.isArray(value)) {
     return (
@@ -137,6 +152,7 @@ function FieldRenderer({
                 path={[...path, idx]}
                 onChange={onChange}
                 onImageFile={onImageFile}
+                selectedImageFile={selectedImageFile}
                 onAddItem={onAddItem}
                 onRemoveItem={onRemoveItem}
               />
@@ -162,6 +178,7 @@ function FieldRenderer({
               path={[...path, key]}
               onChange={onChange}
               onImageFile={onImageFile}
+              selectedImageFile={selectedImageFile}
               onAddItem={onAddItem}
               onRemoveItem={onRemoveItem}
             />
@@ -196,10 +213,10 @@ function FieldRenderer({
         </div>
       ) : isImageField ? (
         <div className="space-y-3">
-          {value ? (
+          {imageSrc ? (
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
               <img
-                src={getMediaUrl(value)}
+                src={imageSrc}
                 alt={fieldKey}
                 className="h-40 w-full object-cover"
               />
@@ -217,8 +234,7 @@ function FieldRenderer({
                 const file = e.target.files?.[0];
                 if (!file) return;
                 const objectUrl = URL.createObjectURL(file);
-                onChange(path, objectUrl);
-                onImageFile(path, file);
+                onImageFile(path, file, objectUrl);
               }}
               className="w-full cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none transition file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary hover:border-primary"
             />
@@ -267,6 +283,14 @@ export default function CmsDashboard() {
   const [saving, setSaving] = useState(false);
 
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    return () => {
+      if (selectedImageFile?.previewUrl) {
+        URL.revokeObjectURL(selectedImageFile.previewUrl);
+      }
+    };
+  }, [selectedImageFile?.previewUrl]);
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -347,10 +371,11 @@ setContent(contentObj);
     setContent((prev) => setValueAtPath(prev, pathArr, value));
   };
 
-  const handleImageFile = (pathArr, file) => {
+  const handleImageFile = (pathArr, file, previewUrl) => {
     setSelectedImageFile({
       path: pathArr,
       file,
+      previewUrl,
     });
   };
 
@@ -377,46 +402,33 @@ setContent(contentObj);
 
 
 const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!selectedSection) return;
-  setSaving(true);
-  try {
- console.log("Content object:", content);
-    
+e.preventDefault();
+if (!selectedSection) return;
+setSaving(true);
 try {
-  const payload = new FormData();
-  // payload.append(
-  //   "content",
-  //   JSON.stringify(content.data.content)
-  // );
-payload.append(
-    "content",
-    JSON.stringify(content.content)
-);
-  if (selectedImageFile?.file) {
-    const contentPath =
-      selectedImageFile.path[0] === "data" &&
-      selectedImageFile.path[1] === "content"
-        ? selectedImageFile.path.slice(2)
-        : selectedImageFile.path;
+if (!selectedImageFile?.file && containsBlobUrl(content?.content)) {
+  throw new Error("A temporary image preview cannot be saved. Select and upload that image again.");
+}
 
-    payload.append("image", selectedImageFile.file);
-    payload.append("image_path", JSON.stringify(contentPath));
-  }
+const payload = new FormData();
+payload.append("content", JSON.stringify(content.content));
+if (selectedImageFile?.file) {
+  const contentPath = selectedImageFile.path[0] === "content"
+    ? selectedImageFile.path.slice(1)
+    : selectedImageFile.path;
 
-// await api.put(
-//   `/section-content/${selectedSection._id || selectedSection.id}`,
-//   payload
-// );
-console.log(content);
-console.log(content.id);
-console.log(content._id);
-await api.put(
+  payload.append("image", selectedImageFile.file);
+  payload.append("image_path", JSON.stringify(contentPath));
+}
+
+const response = await api.put(
   `/section-content/${content.id || content._id}`,
   payload
 );
-  showToast("success", "Section content updated");
-  setSelectedImageFile(null);
+const savedContent = response.data?.data;
+if (savedContent) setContent(savedContent);
+showToast("success", "Section content updated");
+setSelectedImageFile(null);
 } catch (err) {
   showToast(
     "error",
@@ -424,14 +436,9 @@ await api.put(
     err.message ||
     "Failed to update content"
   );
+} finally {
+  setSaving(false);
 }
-    // if (!res.ok) throw new Error("Failed to update content");
-    // showToast("success", "Section content updated");
-  } catch (err) {
-    showToast("error", err.message);
-  } finally {
-    setSaving(false);
-  }
 };
 
 
@@ -556,6 +563,7 @@ await api.put(
                 path={[]}
                 onChange={handleFieldChange}
                 onImageFile={handleImageFile}
+                selectedImageFile={selectedImageFile}
                 onAddItem={handleAddItem}
                 onRemoveItem={handleRemoveItem}
               />

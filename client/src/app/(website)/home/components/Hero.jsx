@@ -20,7 +20,11 @@ const primaryCta = data?.content?.buttonText;
 
 const primaryLink  = data?.content?.buttonLink;
 
-const backgroundImage = data?.content?.image; 
+const backgroundImage = [
+  data?.content?.image,
+  data?.content?.content?.image,
+  data?.image,
+].find((candidate) => getMediaUrl(candidate));
 
 const buttonTextBooking = data?.content?.buttonTextBooking;
 
@@ -48,7 +52,7 @@ const phone = data?.content?.phone;
       
       <ImageFallBack
        
-           src={getMediaUrl(backgroundImage)}
+          src={getMediaUrl(backgroundImage)}
         alt={title || "Hero background"}
         className="absolute inset-0 w-full h-full object-cover object-center"
       />

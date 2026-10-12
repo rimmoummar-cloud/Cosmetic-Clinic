@@ -15,7 +15,7 @@ export function ImageFallBack(props) {
   const { src, alt, style, className, ...rest } = props;
   const resolvedSrc = getMediaUrl(src);
 
-  return didError ? (
+  return didError || !resolvedSrc ? (
     <div
       className={`inline-block bg-gray-100 text-center align-middle ${className ?? ''}`}
       style={style}

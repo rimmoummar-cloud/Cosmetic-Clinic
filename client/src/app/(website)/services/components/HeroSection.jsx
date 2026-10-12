@@ -7,10 +7,15 @@ import { FloatingElement } from "../../../components/AnimatedElements";
 import { ImageFallBack } from "../../../components/EmageFullBack";
 import { getMediaUrl } from "../../../../lib/mediaUrl";
 export default function HeroSection({ data }) {
-  const label = data?.content.label || data?.content.eyebrow;
-  const title = data?.content.title || data?.content.heading || "";
-  const description = data?.content.description || data?.content.subtitle || "";
- const image = data?.content.image || "";
+  const content = data?.content || {};
+  const label = content.label || content.eyebrow;
+  const title = content.title || content.heading || "";
+  const description = content.description || content.subtitle || "";
+  const image = [
+    content.image,
+    content.content?.image,
+    data?.image,
+  ].map(getMediaUrl).find(Boolean) || "";
   return (
     <div className="w-full overflow-hidden">
       {/* Hero Section */}
@@ -18,7 +23,7 @@ export default function HeroSection({ data }) {
        
    <ImageFallBack
           
-             src={getMediaUrl(image)}
+            src={image}
             alt={title || "Hero background"}
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
@@ -51,6 +56,5 @@ export default function HeroSection({ data }) {
     </div>
   );
 }
-
 
 

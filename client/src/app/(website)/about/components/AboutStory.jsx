@@ -14,13 +14,14 @@ export default function AboutStory({ data = {} }) {
         ? [data.description]
         : [];
 const image =
-  getMediaUrl(
-    data?.image ||
-    data?.image_url ||
-    data?.imageUrl ||
-    data?.media ||
-    ""
-  );
+  [
+    data?.image,
+    data?.image_url,
+    data?.imageUrl,
+    data?.media,
+    data?.content?.image,
+    data?.content?.content?.image,
+  ].map(getMediaUrl).find(Boolean) || "";
   const imageAlt = data?.imageAlt || data?.title || "";
 
   return (
@@ -58,7 +59,7 @@ const image =
             <div className="rounded-3xl overflow-hidden shadow-2xl shadow-[#D4AF7A]/20">
               {image && (
                 <ImageFallBack
-                     src={getMediaUrl(image)}
+                  src={image}
                   alt={imageAlt}
                   className="w-full h-[500px] object-cover"
                 />

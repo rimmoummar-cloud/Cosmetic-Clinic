@@ -25,7 +25,15 @@ export default function AboutTeam({ data = {} }) {
         />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {team.map((member, index) => (
+          {team.map((member, index) => {
+            const image = [
+              member?.image,
+              member?.content?.image,
+              member?.content?.content?.image,
+              data?.content?.members?.[index]?.image,
+            ].map(getMediaUrl).find(Boolean);
+
+            return (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 50 }}
@@ -43,10 +51,10 @@ export default function AboutTeam({ data = {} }) {
                     className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 )} */}
-                {member?.image ? (
+                {image ? (
   <ImageFallBack
 
-    src={getMediaUrl(member.image)}
+    src={image}
     alt={member?.name || member?.role || ""}
     className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-500"
   />
@@ -68,7 +76,8 @@ export default function AboutTeam({ data = {} }) {
                 </div>
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

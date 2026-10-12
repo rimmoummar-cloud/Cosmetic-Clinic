@@ -23,6 +23,15 @@ const setValueAtPath = (data, path, value) => {
   return clone;
 };
 
+const containsBlobUrl = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase().startsWith("blob:");
+  if (Array.isArray(value)) return value.some(containsBlobUrl);
+  if (value && typeof value === "object") {
+    return Object.values(value).some(containsBlobUrl);
+  }
+  return false;
+};
+
 
 export const getContentBySectionId = async (req, res) => {
   try {
@@ -114,57 +123,6 @@ export const createContent = async (req, res) => {
   }
 };
 
-// export const updateContent = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { createNewVersion = true } = req.query;
-
-//     // Verify content exists
-//     const existingContent = await ContentModel.getContentById(id);
-//     if (!existingContent) {
-//       return res.status(404).json({
-//         success: false,
-//         error: 'Content not found'
-//       });
-//     }
-
-//     let contentPayload = parseContentBody(req.body);
-
-//     if (req.file) {
-//    const imagePath = req.file?.path;
-//       const imageFieldPath = req.body.image_path
-//         ? JSON.parse(req.body.image_path)
-//         : ['image'];
-
-//       contentPayload = setValueAtPath(
-//         contentPayload,
-//         imageFieldPath,
-//         imagePath
-//       );
-//     }
-
-//     const content = await ContentModel.updateContent(
-//       id,
-//       contentPayload,
-//       createNewVersion !== 'false'
-//     );
-
-//     res.json({
-//       success: true,
-//       data: content,
-//       message: 'Content updated successfully',
-//       newVersion: content.version,
-//       versionCreated: createNewVersion !== 'false'
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       error: error.message,
-//       message: 'Error updating content'
-//     });
-//   }
-// };
-
 export const updateContent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -182,31 +140,51 @@ export const updateContent = async (req, res) => {
 
     // 2. parse content safely (FormData OR JSON)
     let contentPayload;
-
     try {
-      if (typeof req.body.content === "string") {
-        contentPayload = JSON.parse(req.body.content);
-      } else if (req.body.content) {
-        contentPayload = req.body.content;
-      } else {
-        contentPayload = req.body;
-      }
-    } catch (err) {
-      contentPayload = req.body;
+      contentPayload = parseContentBody(req.body);
+    } catch {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid content JSON",
+      });
     }
 
     // 3. handle uploaded image (Cloudinary via multer)
     if (req.file) {
       const imagePath = req.file.path;
+      if (!/^https?:\/\//i.test(imagePath || "")) {
+        return res.status(502).json({
+          success: false,
+          message: "Image upload did not return a permanent URL",
+        });
+      }
 
       let imageFieldPath = ["image"];
 
       if (req.body.image_path) {
         try {
           imageFieldPath = JSON.parse(req.body.image_path);
-        } catch (err) {
-          imageFieldPath = ["image"];
+        } catch {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid image path",
+          });
         }
+      }
+
+      if (
+        !Array.isArray(imageFieldPath) ||
+        imageFieldPath.length === 0 ||
+        imageFieldPath.some(
+          (part) =>
+            !(typeof part === "string" || Number.isInteger(part)) ||
+            String(part).length === 0
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid image path",
+        });
       }
 
       contentPayload = setValueAtPath(
@@ -214,6 +192,13 @@ export const updateContent = async (req, res) => {
         imageFieldPath,
         imagePath
       );
+    }
+
+    if (containsBlobUrl(contentPayload)) {
+      return res.status(400).json({
+        success: false,
+        message: "Temporary image preview URLs cannot be saved. Upload the image again.",
+      });
     }
 
     // 4. create new version or update
