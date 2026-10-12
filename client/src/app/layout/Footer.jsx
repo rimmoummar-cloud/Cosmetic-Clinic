@@ -3,19 +3,63 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Instagram } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 import { motion } from "framer-motion";
+import { formatTimeForDisplay } from "../feutures/booking/dataBooking";
 console.log(
   "API_BASE:",
   process.env.NEXT_PUBLIC_API_URL
 );
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function BrandIcon({ name, className }) {
+  if (name === "TikTok") {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.54v13.67a2.9 2.9 0 0 1-2.9 2.9 2.9 2.9 0 1 1 2.9-2.9c0-.18-.02-.36-.05-.53V11.5a6.44 6.44 0 1 0 3.59 5.78V9.82a8.32 8.32 0 0 0 4.87 1.57V7.85a4.8 4.8 0 0 1-1.1-.16Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20.5 11.8a8.5 8.5 0 0 1-12.58 7.45L3 20.5l1.3-4.76A8.5 8.5 0 1 1 20.5 11.8Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.2 7.7c.2-.45.42-.46.67-.47h.57c.18 0 .42.07.54.4l.76 1.82c.1.24.08.43-.06.62l-.58.7c-.18.2-.13.4-.02.58.5.82 1.2 1.53 2.04 2.02.2.12.4.15.57-.05l.76-.9c.17-.2.37-.25.6-.15l1.73.82c.27.12.38.25.38.46 0 .33-.17 1.14-.84 1.63-.57.42-1.3.63-2.04.48-1.08-.22-2.45-.85-3.78-2.04-1.57-1.4-2.56-3.14-2.74-4.2-.15-.85.16-1.42.44-1.72.27-.3.6-.45.8-.5Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function isValidSocialUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return false;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
 
 async function fetchJson(url) {
-    console.log("FETCHING:", url);
-  const res = await fetch(url, { next: { revalidate: 60 } });
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.statusText}`);
-  return res.json();
+  if (!url || url.startsWith("undefined")) return null;
+
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 async function getFooterData() {
@@ -33,7 +77,7 @@ async function getFooterData() {
     return name === "footer" || slug === "footer";
   });
 
-  if (!footerPage) throw new Error("Footer page not found");
+  if (!footerPage) return { sections: [] };
 
   const pageId = footerPage.id || footerPage._id;
 
@@ -77,15 +121,74 @@ async function getFooterData() {
   };
 }
 
+async function getWorkingHours() {
+  const res = await fetch(`${API_BASE}/workingHours`, { cache: "no-store" });
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+function getDayIndex(dayOfWeek) {
+  const numericDay = Number(dayOfWeek);
+  if (Number.isInteger(numericDay) && numericDay >= 0 && numericDay <= 6) {
+    return numericDay;
+  }
+
+  return DAY_LABELS.findIndex(
+    (day) => day.toLowerCase() === String(dayOfWeek || "").toLowerCase()
+  );
+}
+
+function getDayLabel(dayOfWeek) {
+  const index = getDayIndex(dayOfWeek);
+  return index >= 0 ? DAY_LABELS[index] : dayOfWeek || "Unknown";
+}
+
+function formatWorkingHourTime(time) {
+  if (!time) return "";
+  return formatTimeForDisplay(String(time).slice(0, 5));
+}
+
+function formatWorkingHourRange(row) {
+  if (row?.is_day_off) return "Day Off";
+  if (!row?.start_time || !row?.end_time) return "Unavailable";
+  return `${formatWorkingHourTime(row?.start_time)} - ${formatWorkingHourTime(row?.end_time)}`;
+}
+
 export default function Footer() {
   const [data, setData] = useState(null);
+  const [workingHours, setWorkingHours] = useState([]);
+  const [workingHoursLoading, setWorkingHoursLoading] = useState(true);
+  const [workingHoursError, setWorkingHoursError] = useState("");
 
   useEffect(() => {
     getFooterData()
       .then(setData)
       .catch((err) => {
-        console.error("Footer load error:", err);
         setData({ sections: [] });
+      });
+
+    getWorkingHours()
+      .then((hours) => {
+        if (!hours) {
+          setWorkingHoursError("Working hours are currently unavailable.");
+          return;
+        }
+
+        setWorkingHours(
+          [...hours].sort((a, b) => {
+            const aIndex = getDayIndex(a?.day_of_week);
+            const bIndex = getDayIndex(b?.day_of_week);
+            return (aIndex === -1 ? 7 : aIndex) - (bIndex === -1 ? 7 : bIndex);
+          })
+        );
+      })
+      .catch(() => {
+        setWorkingHoursError("Working hours are currently unavailable.");
+      })
+      .finally(() => {
+        setWorkingHoursLoading(false);
       });
   }, []);
 
@@ -115,16 +218,20 @@ export default function Footer() {
       icon: Instagram,
       href: brandData?.socialLinks?.instagram || "#",
     },
-    // {
-    //   name: "Facebook",
-    //   icon: Facebook,
-    //   href: brandData?.socialLinks?.facebook || "#",
-    // },
-    // {
-    //   name: "Twitter",
-    //   icon: Twitter,
-    //   href: brandData?.socialLinks?.twitter || "#",
-    // },
+    {
+      name: "Facebook",
+      icon: Facebook,
+      href: brandData?.socialLinks?.facebook,
+    },
+    {
+      name: "TikTok",
+      href: brandData?.socialLinks?.tiktok,
+    },
+    {
+      name: "WhatsApp",
+      href: brandData?.socialLinks?.whatsapp,
+      target: "_blank",
+    },
   ];
 console.log("Footer:", Footer);
   return (
@@ -241,17 +348,42 @@ console.log("Footer:", Footer);
 </Link>
             {/* Social Links */}
             <div className="flex gap-3">
-              {socialLinks.map((social) => (
-                <motion.a
-                  key={social.name}
-                  href={social.href}
-                  whileHover={{ scale: 1.1, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-10 h-10 bg-gradient-to-br from-[#FFD700]/20 to-[#D4AF7A]/20 rounded-xl flex items-center justify-center text-[#D4AF7A] hover:from-[#FFD700]/30 hover:to-[#D4AF7A]/30 transition-all shadow-md hover:shadow-lg"
-                >
-                  <social.icon className="w-5 h-5" />
-                </motion.a>
-              ))}
+              {socialLinks.map((social) => {
+                const clickable =
+                  social.name === "Instagram" || isValidSocialUrl(social.href);
+                const Icon = social.icon;
+                const icon = Icon ? (
+                  <Icon className="w-5 h-5" />
+                ) : (
+                  <BrandIcon name={social.name} className="w-5 h-5" />
+                );
+                const className =
+                  "w-10 h-10 bg-gradient-to-br from-[#FFD700]/20 to-[#D4AF7A]/20 rounded-xl flex items-center justify-center text-[#D4AF7A] hover:from-[#FFD700]/30 hover:to-[#D4AF7A]/30 transition-all shadow-md hover:shadow-lg";
+
+                return clickable ? (
+                  <motion.a
+                    key={social.name}
+                    href={social.href}
+                    target={social.target}
+                    rel={social.target === "_blank" ? "noopener noreferrer" : undefined}
+                    aria-label={social.name}
+                    whileHover={{ scale: 1.1, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={className}
+                  >
+                    {icon}
+                  </motion.a>
+                ) : (
+                  <div
+                    key={social.name}
+                    aria-label={`${social.name} link unavailable`}
+                    aria-disabled="true"
+                    className={className}
+                  >
+                    {icon}
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
 
@@ -270,12 +402,27 @@ console.log("Footer:", Footer);
             </h4>
 
             <div className="flex flex-col gap-2 text-sm text-[#6B6B6B]">
-              <p>{brandData?.workingHours?.weekdays}</p>
-                  <p>Saturday : 10:00 AM - 3:00 PM</p>
-              <p>{brandData?.workingHours?.weekend}</p>
-              <p className="mt-2 text-[#D4AF7A]">
-                {brandData?.workingHours?.note}
-              </p>
+              {workingHoursLoading && <p>Loading working hours...</p>}
+
+              {!workingHoursLoading && workingHoursError && (
+                <p className="text-[#D4AF7A]">{workingHoursError}</p>
+              )}
+
+              {!workingHoursLoading && !workingHoursError && workingHours.length === 0 && (
+                <p>Working hours are currently unavailable.</p>
+              )}
+
+              {!workingHoursLoading &&
+                !workingHoursError &&
+                workingHours.map((row) => (
+                  <div
+                    key={row.id ?? row.day_of_week}
+                    className="flex items-center justify-between gap-4"
+                  >
+                    <span>{getDayLabel(row.day_of_week)}</span>
+                    <span className="text-right">{formatWorkingHourRange(row)}</span>
+                  </div>
+                ))}
             </div>
           </motion.div>
 
@@ -294,13 +441,15 @@ console.log("Footer:", Footer);
             </h4>
 
             <div className="flex flex-col gap-2 text-sm text-[#6B6B6B]">
-              <p>{brandData?.contact?.address}</p>
-              <p>{brandData?.contact?.city}</p>
-              <p className="mt-2 text-[#D4AF7A]">
-                {brandData?.contact?.email}
+              <p>
+                <span>Address:</span> {brandData?.contact?.address}
               </p>
-              <p className="text-[#D4AF7A]">
-                {brandData?.contact?.phone}
+              <p>{brandData?.contact?.city}</p>
+              <p className="mt-2">
+                <span>Email:</span> {brandData?.contact?.email}
+              </p>
+              <p>
+                <span>Phone:</span> {brandData?.contact?.phone}
               </p>
             </div>
           </motion.div>

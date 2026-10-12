@@ -51,7 +51,6 @@ const findSectionContent = (keys) => {
   const heroData = findSectionContent(["hero"]);
   const servicesData = findSectionContent(["services", "services-preview", "service"]);
   const benefitsData = findSectionContent(["benefits", "why-us", "why choose us"]);
-  const testimonialsData = findSectionContent(["testimonials", "reviews"]);
   const ctaData = findSectionContent(["cta", "call-to-action", "cta-section"]);
 
   return (
@@ -69,7 +68,7 @@ const findSectionContent = (keys) => {
           // services={services}
         />
         <Benefits data={benefitsData} />
-        {/* <Testimonials data={testimonialsData} /> */}
+        <Testimonials />
         <CTA data={ctaData} onBookingClick={setOpenBooking} />
       </div>
     </>

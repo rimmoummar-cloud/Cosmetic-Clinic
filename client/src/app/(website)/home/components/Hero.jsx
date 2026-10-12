@@ -136,7 +136,7 @@ const phone = data?.content?.phone;
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-5xl italic md:text-8xl mb-6 text-[#2C2C2C] leading-tight"
+            className="text-[2.75rem] italic md:text-[5.5rem] mb-6 text-[#2C2C2C] leading-tight"
             style={{ fontFamily: 'var(--font-serif)' }}
           >
             {title}

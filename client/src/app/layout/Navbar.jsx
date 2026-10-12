@@ -16,8 +16,9 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "home", path: "/" },
-    { name: "services", path: "/services" },
+    { name: "Home", path: "/" },
+    { name: "Services", path: "/services" },
+    { name: "Shop", path: "/shop" },
  
     { name: "About", path: "/about" },
     { name: "Contact", path: "/contact" },
