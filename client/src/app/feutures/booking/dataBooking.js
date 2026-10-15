@@ -345,6 +345,8 @@ export async function createBooking(
       serviceIds: bookingData.serviceIds,
       booking_datetime: bookingData.booking_datetime,
       note: bookingData.note || "",
+      acceptedCancellationPolicy:
+        bookingData.acceptedCancellationPolicy === true,
       timeZone: userTimeZone
     };
 

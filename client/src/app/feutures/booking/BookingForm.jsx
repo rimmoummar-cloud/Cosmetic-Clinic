@@ -799,6 +799,7 @@ export function BookingForm({ isOpen, onClose, isAdmin = false }) {
   const [selectedTime, setSelectedTime] = useState(""); 
   const [userInfo, setUserInfo] = useState({ name: "", email: "", phone: "" }); 
   const [note, setNote] = useState(""); 
+  const [cancellationPolicyAccepted, setCancellationPolicyAccepted] = useState(false);
  
   // API Data State 
   const [categories, setCategories] = useState([]); 
@@ -831,6 +832,19 @@ export function BookingForm({ isOpen, onClose, isAdmin = false }) {
   0 
 ); 
   const totalDuration = getServicesDuration(selectedServices); 
+  const canSubmitBooking =
+    selectedServices.length > 0 &&
+    Boolean(selectedDate) &&
+    Boolean(selectedTime) &&
+    !durationWarning &&
+    !validateName(userInfo.name) &&
+    !validateEmail(userInfo.email) &&
+    !validatePhone(userInfo.phone) &&
+    cancellationPolicyAccepted;
+
+  useEffect(() => {
+    setCancellationPolicyAccepted(false);
+  }, [isOpen]);
  
   // Fetch working hours on component mount 
 useEffect(() => { 
@@ -1056,8 +1070,13 @@ const handleUserInfoChange = (field, value) => {
  
   const handleSubmit = async (e) => { 
   e.preventDefault(); 
+
+    if (!isAdmin && !cancellationPolicyAccepted) {
+      toast.error("Please acknowledge the cancellation policy before booking.");
+      return;
+    }
  
-  if (!selectedServices.length || !selectedDate || !selectedTime) { 
+    if (!selectedServices.length || !selectedDate || !selectedTime) {
     toast.error("Please complete all steps before booking."); 
     return; 
   } 
@@ -1101,6 +1120,7 @@ const booking_datetime = DateTime.fromISO(
       serviceIds: selectedServices.map((s) => s.id), 
       booking_datetime, 
       note: note, 
+      acceptedCancellationPolicy: cancellationPolicyAccepted,
     }, { isAdmin });
  
     toast.success( 
@@ -1114,6 +1134,7 @@ const booking_datetime = DateTime.fromISO(
     setSelectedTime(""); 
     setUserInfo({ name: "", email: "", phone: "" }); 
     setNote(""); 
+    setCancellationPolicyAccepted(false);
     setDurationWarning(""); 
  
     setTimeout(() => { 
@@ -1478,10 +1499,28 @@ const formatCurrency = (value) =>
                     <label className="flex items-center gap-2 text-gray-800 mb-2 font-medium"><MessageSquare className="w-4 h-4"/>Notes (Optional)</label> 
                     <textarea rows={3} value={note} onChange={(e)=>setNote(e.target.value)} placeholder="Any special requests?" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/20 resize-none"/> 
                   </div> 
+
+                  {!isAdmin && (
+                    <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-700">
+                      <input
+                        type="checkbox"
+                        name="acceptedCancellationPolicy"
+                        checked={cancellationPolicyAccepted}
+                        onChange={(event) =>
+                          setCancellationPolicyAccepted(event.target.checked)
+                        }
+                        required
+                        className="mt-1 h-4 w-4 shrink-0 accent-black"
+                      />
+                      <span>
+                        I understand that cancellations made less than 24 hours before my scheduled appointment are subject to a $25 cancellation fee.
+                      </span>
+                    </label>
+                  )}
  
                   <div className="flex gap-3 pt-2"> 
                     <GlowingButton type="button" variant="outline" className="w-full" onClick={()=>setCurrentStep(2)} disabled={bookingLoading}>Back</GlowingButton> 
-                    <GlowingButton type="submit" variant="primary" className="w-full" disabled={bookingLoading}> 
+                    <GlowingButton type="submit" variant="primary" className="w-full disabled:cursor-not-allowed disabled:opacity-60" disabled={bookingLoading || (!isAdmin && !canSubmitBooking)}>
                       {bookingLoading ? ( 
                         <span className="flex items-center gap-2"> 
                           <Loader className="w-4 h-4 animate-spin" /> 

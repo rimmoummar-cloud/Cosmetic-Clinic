@@ -47,6 +47,12 @@ export const getallbookingss = async (req, res) => {
 // ==========================
 
 export const createBooking = async (req, res) => {
+  if (!req.admin && req.body?.acceptedCancellationPolicy !== true) {
+    return res.status(400).json({
+      message: "Cancellation policy acknowledgment is required.",
+    });
+  }
+
   const client = await db.connect();
 
   try {

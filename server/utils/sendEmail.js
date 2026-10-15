@@ -23,7 +23,7 @@ const apiInstance =
   new SibApiV3Sdk.TransactionalEmailsApi();
 
 
-async function safeSendMail({ to, subject, html }) {
+async function safeSendMail({ to, subject, html, text }) {
   try {
     const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
 
@@ -35,6 +35,9 @@ async function safeSendMail({ to, subject, html }) {
     sendSmtpEmail.to = [{ email: to }];
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = html;
+    if (text) {
+      sendSmtpEmail.textContent = text;
+    }
 
     const result =
       await apiInstance.sendTransacEmail(sendSmtpEmail);
@@ -343,6 +346,76 @@ Please review the details below.
 }
 
 
+const REMINDER_CANCELLATION_POLICY =
+  "Cancellation policy: Cancellations made less than 24 hours before your scheduled appointment are subject to a $25 cancellation fee.";
+
+export function buildReminderEmail({
+  customerName,
+  bookingDate,
+  serviceName,
+  confirmUrl,
+  cancelUrl,
+  reminderType,
+}) {
+  const dt = DateTime
+    .fromISO(bookingDate, { zone: "utc" })
+    .setZone(BUSINESS_TIME_ZONE);
+
+  const formattedDate = dt.toFormat("yyyy-LL-dd");
+  const formattedTime = dt.toFormat("HH:mm");
+  const includesCancellationPolicy = [
+    "24_hours_before",
+    "48_hours_before",
+  ].includes(reminderType);
+  const policyHtml = includesCancellationPolicy
+    ? `<p style="margin-top:20px;"><strong>${REMINDER_CANCELLATION_POLICY}</strong></p>`
+    : "";
+  const policyText = includesCancellationPolicy
+    ? `\n\n${REMINDER_CANCELLATION_POLICY}`
+    : "";
+
+  return {
+    subject: "Booking Reminder ✨",
+    text:
+      `Dear ${customerName},\n\n` +
+      "This is a reminder of your upcoming appointment at Shiny Skin Clinic.\n" +
+      "Please find your appointment details below.\n\n" +
+      `Services: ${serviceName}\n` +
+      `Date: ${formattedDate}\n` +
+      `Time: ${formattedTime}` +
+      policyText +
+      `\n\nConfirm: ${confirmUrl}\nCancel: ${cancelUrl}`,
+    html: `
+      <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <h1 style="margin:0;">Shiny Skin Clinic</h1>
+          <p style="color:#777;font-size:12px;">Official Appointment System</p>
+        </div>
+        <h2>Appointment Reminder</h2>
+        <p>Dear ${customerName},</p>
+        <p>
+          This is a reminder of your upcoming appointment at Shiny Skin Clinic.
+          Please find your appointment details below.
+        </p>
+        <p><b>Services:</b> ${serviceName}</p>
+        <p><b>Date:</b> ${formattedDate}</p>
+        <p><b>Time:</b> ${formattedTime}</p>
+        ${policyHtml}
+        <div style="margin-top:30px;">
+          <a href="${confirmUrl}"
+            style="padding:12px 20px;background:#7aa35a;color:white;text-decoration:none;border-radius:10px;margin-right:10px;">
+            Confirm
+          </a>
+          <a href="${cancelUrl}"
+            style="padding:12px 20px;background:#d9534f;color:white;text-decoration:none;border-radius:10px;">
+            Cancel
+          </a>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export async function sendReminderEmail({
   to,
   customerName,
@@ -350,89 +423,47 @@ export async function sendReminderEmail({
   serviceName,
   confirmUrl,
   cancelUrl,
+  reminderType,
 }) {
   try {
-console.log("RAW bookingDate 👉", bookingDate);
-console.log("TYPE 👉", typeof bookingDate);
-console.log("IS DATE? 👉", bookingDate instanceof Date);
+    console.log("RAW bookingDate 👉", bookingDate);
+    console.log("TYPE 👉", typeof bookingDate);
+    console.log("IS DATE? 👉", bookingDate instanceof Date);
 
-  //  const dt = DateTime
-  // .fromJSDate(new Date(bookingDate))
-  // .setZone(BUSINESS_TIME_ZONE);
-  const dt = DateTime
-  .fromISO(bookingDate, { zone: "utc" })
-  .setZone(BUSINESS_TIME_ZONE);
-console.log("Luxon parse:", dt.toString());
-console.log("Valid?", dt.isValid);
-console.log("Date:", dt.toFormat("yyyy-LL-dd"));
-console.log("Time:", dt.toFormat("HH:mm"));
+    const dt = DateTime
+      .fromISO(bookingDate, { zone: "utc" })
+      .setZone(BUSINESS_TIME_ZONE);
+    console.log("Luxon parse:", dt.toString());
+    console.log("Valid?", dt.isValid);
+    console.log("Date:", dt.toFormat("yyyy-LL-dd"));
+    console.log("Time:", dt.toFormat("HH:mm"));
 
-
-
-
-    const formattedDate = dt.toFormat("yyyy-LL-dd");
-    const formattedTime = dt.toFormat("HH:mm");
-
- const result = await safeSendMail({
-      // from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
+    const email = buildReminderEmail({
+      customerName,
+      bookingDate,
+      serviceName,
+      confirmUrl,
+      cancelUrl,
+      reminderType,
+    });
+    const result = await safeSendMail({
       to,
-      subject: "Booking Reminder ✨",
-
-      html: `
-        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
-<div style="text-align:center;margin-bottom:20px;">
-  <h1 style="margin:0;">Shiny Skin Clinic</h1>
-  <p style="color:#777;font-size:12px;">Official Appointment System</p>
-</div>
-        <h2>Appointment Reminder</h2>
-
-<p>Dear ${customerName},</p>
-
-<p>
-This is a reminder of your upcoming appointment at Shiny Skin Clinic.
-Please find your appointment details below.
-</p>
-
-          <p><b>Services:</b> ${serviceName}</p>
-          <p><b>Date:</b> ${formattedDate}</p>
-          <p><b>Time:</b> ${formattedTime}</p>
-
-          <div style="margin-top:30px;">
-
-            <a href="${confirmUrl}"
-              style="padding:12px 20px;background:#7aa35a;color:white;text-decoration:none;border-radius:10px;margin-right:10px;">
-              Confirm
-            </a>
-
-            <a href="${cancelUrl}"
-              style="padding:12px 20px;background:#d9534f;color:white;text-decoration:none;border-radius:10px;">
-              Cancel
-            </a>
-
-          </div>
-
-        </div>
-      `,
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
     });
 
-if (!result) {
-  console.log("Reminder email failed ❌");
-  return null;
-}
+    if (!result) {
+      console.log("Reminder email failed ❌");
+      return null;
+    }
 
-console.log("Reminder email sent ✔️");
-
-return result;
-
-  // } catch (error) {
-  //   console.log("Reminder email error ❌", error.message);
-  // }
-
-
+    console.log("Reminder email sent ✔️");
+    return result;
   } catch (error) {
-  console.log("Reminder email error ❌", error.message);
-  return null;
-}
+    console.log("Reminder email error ❌", error.message);
+    return null;
+  }
 }
 
 // export default transporter;

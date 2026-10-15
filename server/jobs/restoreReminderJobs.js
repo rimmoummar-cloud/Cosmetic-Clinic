@@ -118,7 +118,8 @@ const cancelUrl = new URL(
       .map(s => s.name)
       .join(", "),
   confirmUrl,
-  cancelUrl
+  cancelUrl,
+  reminderType: reminder.reminder_type,
 });
 
         // mark as sent

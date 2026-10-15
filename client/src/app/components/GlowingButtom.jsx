@@ -51,7 +51,8 @@ export function GlowingButton({
   onClick, 
   variant = "primary", 
   className = "",
-  type = "button"
+  type = "button",
+  disabled = false,
 }) {
   const variants = {
     // primary: "bg-gradient-to-r from-[#FFD700] via-[#D4AF7A] to-[#C9A66B] text-white shadow-lg shadow-[#D4AF7A]/40 hover:shadow-[0_0_30px_rgba(212,175,122,0.6)]",
@@ -63,8 +64,9 @@ export function GlowingButton({
   return (
     <motion.button
       type={type}
-      whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(212, 175, 122, 0.6)" }}
-      whileTap={{ scale: 0.95 }}
+      disabled={disabled}
+      whileHover={disabled ? undefined : { scale: 1.05, boxShadow: "0 0 30px rgba(212, 175, 122, 0.6)" }}
+      whileTap={disabled ? undefined : { scale: 0.95 }}
       onClick={onClick}
       className={`px-7 py-3 text-[0.9rem] rounded-full font-medium transition-all duration-300 relative overflow-hidden group hover:-translate-y-[2px] active:translate-y-0 ${variants[variant]} ${className}`}
     >
