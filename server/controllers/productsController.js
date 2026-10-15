@@ -27,6 +27,46 @@ const parseActive = (value) => {
   return null;
 };
 
+const parseImageUrls = (value) => {
+  let imageUrls = value;
+  if (typeof imageUrls === "string") {
+    try {
+      imageUrls = JSON.parse(imageUrls);
+    } catch {
+      return null;
+    }
+  }
+
+  if (
+    !Array.isArray(imageUrls) ||
+    imageUrls.some(
+      (url) =>
+        typeof url !== "string" ||
+        !url.trim() ||
+        url.trim().toLowerCase().startsWith("blob:")
+    )
+  ) {
+    return null;
+  }
+
+  return imageUrls.map((url) => url.trim());
+};
+
+const getStoredImageUrls = (product) => {
+  const imageUrls = Array.isArray(product.image_urls) ? product.image_urls : [];
+  const storedImageUrls =
+    imageUrls.length || !product.image_url ? imageUrls : [product.image_url];
+
+  return storedImageUrls
+    .filter(
+      (url) =>
+        typeof url === "string" &&
+        url.trim() &&
+        !url.trim().toLowerCase().startsWith("blob:")
+    )
+    .map((url) => url.trim());
+};
+
 const validateText = (value, field, maxLength) => {
   if (typeof value !== "string" || !value.trim()) {
     return `${field} is required.`;
@@ -90,7 +130,7 @@ export const createProduct = async (req, res) => {
       price,
       description: description.trim(),
       skin_type: skinType || null,
-      image_url: req.file?.path || null,
+      image_urls: (req.files || []).map((file) => file.path),
       is_active: isActive,
     });
 
@@ -129,6 +169,10 @@ export const updateProduct = async (req, res) => {
       req.body.is_active === undefined
         ? existing.is_active
         : parseActive(req.body.is_active);
+    const retainedImageUrls =
+      req.body.image_urls === undefined
+        ? getStoredImageUrls(existing)
+        : parseImageUrls(req.body.image_urls);
 
     const nameError = validateText(name, "Name", 200);
     const descriptionError = validateText(description, "Description");
@@ -138,7 +182,8 @@ export const updateProduct = async (req, res) => {
       price === null ||
       skinType === undefined ||
       (typeof skinType === "string" && skinType.length > 100) ||
-      isActive === null
+      isActive === null ||
+      retainedImageUrls === null
     ) {
       return res.status(400).json({
         message:
@@ -148,16 +193,19 @@ export const updateProduct = async (req, res) => {
             ? "Price must be a non-negative amount with up to two decimal places."
             : skinType === undefined || (typeof skinType === "string" && skinType.length > 100)
               ? "Skin type must be 100 characters or fewer."
-              : "Active status must be true or false."),
+              : isActive === null
+                ? "Active status must be true or false."
+                : "Image URLs must be an array of permanent URLs."),
       });
     }
 
+    const uploadedImageUrls = (req.files || []).map((file) => file.path);
     const updated = await Products.update(id, {
       name: name.trim(),
       price,
       description: description.trim(),
       skin_type: skinType,
-      image_url: req.file?.path || existing.image_url,
+      image_urls: [...retainedImageUrls, ...uploadedImageUrls],
       is_active: isActive,
     });
 

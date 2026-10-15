@@ -20,6 +20,275 @@ function formatPrice(price) {
   }).format(Number(price) || 0);
 }
 
+function getProductImageUrls(product) {
+  const images = Array.isArray(product?.image_urls)
+    ? product.image_urls.map(getMediaUrl).filter(Boolean)
+    : [];
+
+  return images.length || !product?.image_url
+    ? images
+    : [getMediaUrl(product.image_url)].filter(Boolean);
+}
+
+function getStoredProductImageUrls(product) {
+  const images = Array.isArray(product?.image_urls) ? product.image_urls : [];
+  const imageUrls =
+    images.length || !product?.image_url ? images : [product.image_url];
+
+  return imageUrls.filter(
+    (image) =>
+      typeof image === "string" &&
+      image.trim() &&
+      !image.trim().toLowerCase().startsWith("blob:")
+  );
+}
+
+function ProductImageGallery({ product, onClick }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const images = getProductImageUrls(product);
+  const imageIndex = images.length ? activeIndex % images.length : 0;
+
+  const showPrevious = (event) => {
+    event?.stopPropagation();
+    setActiveIndex((current) => (images.length ? (current - 1 + images.length) % images.length : 0));
+  };
+
+  const showNext = (event) => {
+    event?.stopPropagation();
+    setActiveIndex((current) => (images.length ? (current + 1) % images.length : 0));
+  };
+
+  const handleDotClick = (event, index) => {
+    event?.stopPropagation();
+    setActiveIndex(index);
+  };
+
+  return (
+    <div
+      className="group relative aspect-[4/3] overflow-hidden bg-[#FAF8F5]"
+      onClick={onClick}
+    >
+      {images.length > 0 ? (
+        <img
+          src={images[imageIndex]}
+          alt={product.name}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-gray-400">
+          No image
+        </div>
+      )}
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={showPrevious}
+            aria-label={`Previous image for ${product.name}`}
+            className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/70 text-[#5D5144] shadow-sm backdrop-blur-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A66B]"
+          >
+            <span aria-hidden="true">‹</span>
+          </button>
+          <button
+            type="button"
+            onClick={showNext}
+            aria-label={`Next image for ${product.name}`}
+            className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/70 text-[#5D5144] shadow-sm backdrop-blur-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A66B]"
+          >
+            <span aria-hidden="true">›</span>
+          </button>
+          <div className="absolute inset-x-0 bottom-2 z-10 flex items-center justify-center gap-1.5">
+            {images.map((image, index) => (
+              <button
+                key={`${image}-${index}`}
+                type="button"
+                onClick={(event) => handleDotClick(event, index)}
+                aria-label={`Show image ${index + 1} of ${images.length} for ${product.name}`}
+                className="flex h-5 w-5 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full transition ${
+                    imageIndex === index ? "bg-white" : "bg-white/55"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProductDescriptionPreview({ description, onOpen }) {
+  const content = description?.trim();
+  if (!content) {
+    return <p className="mt-3 text-sm leading-relaxed text-gray-600">No description available.</p>;
+  }
+
+  const preview = content.length > 120 ? `${content.slice(0, 120).trimEnd()}…` : content;
+  const hasMore = content.length > 120;
+
+  return (
+    <div className="mt-3">
+      <p
+        className="text-sm leading-relaxed text-gray-600"
+        style={{
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {preview}
+      </p>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="mt-2 inline-flex items-center text-xs font-medium text-[#8D6F4F] transition hover:text-[#6F563F]"
+        >
+          See more
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ProductDetailsModal({ product, isOpen, onClose }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const images = getProductImageUrls(product);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (images.length) {
+      setActiveIndex((current) => Math.min(current, images.length - 1));
+    }
+  }, [images.length]);
+
+  if (!isOpen || !product) return null;
+
+  const imageIndex = images.length ? activeIndex % images.length : 0;
+
+  const showPrevious = (event) => {
+    event?.stopPropagation();
+    setActiveIndex((current) => (images.length ? (current - 1 + images.length) % images.length : 0));
+  };
+
+  const showNext = (event) => {
+    event?.stopPropagation();
+    setActiveIndex((current) => (images.length ? (current + 1) % images.length : 0));
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-details-title"
+        onClick={(event) => event.stopPropagation()}
+        className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close product details"
+          className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-2xl text-gray-600 shadow-sm transition hover:bg-white"
+        >
+          ×
+        </button>
+        <div className="max-h-[90vh] overflow-y-auto">
+          <div className="group relative aspect-[4/3] overflow-hidden bg-[#FAF8F5]">
+            {images.length > 0 ? (
+              <img
+                src={images[imageIndex]}
+                alt={product.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                No image
+              </div>
+            )}
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={showPrevious}
+                  aria-label={`Previous image for ${product.name}`}
+                  className="absolute left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/70 text-[#5D5144] shadow-sm backdrop-blur-sm transition hover:bg-white/90"
+                >
+                  <span aria-hidden="true">‹</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={showNext}
+                  aria-label={`Next image for ${product.name}`}
+                  className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/70 text-[#5D5144] shadow-sm backdrop-blur-sm transition hover:bg-white/90"
+                >
+                  <span aria-hidden="true">›</span>
+                </button>
+                <div className="absolute inset-x-0 bottom-2 z-10 flex items-center justify-center gap-1.5">
+                  {images.map((image, index) => (
+                    <button
+                      key={`${image}-${index}`}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveIndex(index);
+                      }}
+                      aria-label={`Show image ${index + 1} of ${images.length} for ${product.name}`}
+                      className="flex h-5 w-5 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full transition ${
+                          imageIndex === index ? "bg-white" : "bg-white/55"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="p-5">
+            <div className="flex items-start justify-between gap-3">
+              <h3 id="product-details-title" className="font-[var(--font-heading)] text-xl font-semibold text-[#2C2C2C]">
+                {product.name}
+              </h3>
+              <span className="shrink-0 font-semibold text-primary">
+                {formatPrice(product.price)}
+              </span>
+            </div>
+            {product.skin_type && (
+              <span className="mt-3 inline-flex rounded-full bg-[#FAF8F5] px-3 py-1 text-xs text-gray-600">
+                {product.skin_type}
+              </span>
+            )}
+            <div className="mt-5 max-h-[36vh] overflow-y-auto rounded-2xl bg-[#FAF8F5] p-4">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+                {product.description || "No description available."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminItemsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,14 +296,15 @@ export default function AdminItemsPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [skinType, setSkinType] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [retainedImageUrls, setRetainedImageUrls] = useState([]);
   const [isActive, setIsActive] = useState(true);
 
   const loadProducts = useCallback(async (showLoading = true) => {
@@ -59,15 +329,10 @@ export default function AdminItemsPage() {
   }, [loadProducts]);
 
   useEffect(() => {
-    if (!imageFile) {
-      setImagePreview("");
-      return undefined;
-    }
-
-    const previewUrl = URL.createObjectURL(imageFile);
-    setImagePreview(previewUrl);
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [imageFile]);
+    const previewUrls = imageFiles.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previewUrls);
+    return () => previewUrls.forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
+  }, [imageFiles]);
 
   const resetForm = () => {
     setEditingProduct(null);
@@ -75,8 +340,9 @@ export default function AdminItemsPage() {
     setPrice("");
     setDescription("");
     setSkinType("");
-    setImageUrl("");
-    setImageFile(null);
+    setImageFiles([]);
+    setImagePreviews([]);
+    setRetainedImageUrls([]);
     setIsActive(true);
   };
 
@@ -92,8 +358,9 @@ export default function AdminItemsPage() {
     setPrice(String(product.price ?? ""));
     setDescription(product.description || "");
     setSkinType(product.skin_type || "");
-    setImageUrl(product.image_url || "");
-    setImageFile(null);
+    setImageFiles([]);
+    setImagePreviews([]);
+    setRetainedImageUrls(getStoredProductImageUrls(product));
     setIsActive(Boolean(product.is_active));
     setError("");
     setShowModal(true);
@@ -115,8 +382,10 @@ export default function AdminItemsPage() {
     formData.append("description", description.trim());
     formData.append("skin_type", skinType.trim());
     formData.append("is_active", String(isActive));
-    if (imageFile) {
-      formData.append("image", imageFile);
+    imageFiles.forEach((imageFile) => formData.append("images", imageFile));
+
+    if (editingProduct) {
+      formData.append("image_urls", JSON.stringify(retainedImageUrls));
     }
 
     setSaving(true);
@@ -135,6 +404,24 @@ export default function AdminItemsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleImageSelection = (event) => {
+    const selectedFiles = Array.from(event.currentTarget.files || []);
+    setImageFiles((currentFiles) => {
+      const nextFiles = [...currentFiles];
+      selectedFiles.forEach((file) => {
+        const alreadySelected = nextFiles.some(
+          (currentFile) =>
+            currentFile.name === file.name &&
+            currentFile.size === file.size &&
+            currentFile.lastModified === file.lastModified
+        );
+        if (!alreadySelected) nextFiles.push(file);
+      });
+      return nextFiles;
+    });
+    event.currentTarget.value = "";
   };
 
   const handleDelete = async (product) => {
@@ -205,19 +492,10 @@ export default function AdminItemsPage() {
               key={product.id}
               className="overflow-hidden rounded-2xl border border-gray-100 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
-              <div className="aspect-[4/3] overflow-hidden bg-[#FAF8F5]">
-                {product.image_url ? (
-                  <img
-                    src={getMediaUrl(product.image_url)}
-                    alt={product.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-gray-400">
-                    No image
-                  </div>
-                )}
-              </div>
+              <ProductImageGallery
+                product={product}
+                onClick={() => setSelectedProduct(product)}
+              />
               <div className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="font-[var(--font-heading)] text-lg font-semibold text-[#2C2C2C]">
@@ -227,9 +505,10 @@ export default function AdminItemsPage() {
                     {formatPrice(product.price)}
                   </span>
                 </div>
-                <p className="mt-3 min-h-12 whitespace-pre-wrap text-sm leading-relaxed text-gray-600">
-                  {product.description}
-                </p>
+                <ProductDescriptionPreview
+                  description={product.description}
+                  onOpen={() => setSelectedProduct(product)}
+                />
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-[#FAF8F5] px-3 py-1 text-xs text-gray-600">
@@ -268,6 +547,14 @@ export default function AdminItemsPage() {
             </article>
           ))}
         </div>
+      )}
+
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          isOpen={Boolean(selectedProduct)}
+          onClose={() => setSelectedProduct(null)}
+        />
       )}
 
       {showModal && (
@@ -355,26 +642,86 @@ export default function AdminItemsPage() {
                 />
               </div>
               <div>
-                <label htmlFor="product-image" className="mb-1 block text-sm font-medium text-gray-700">
-                  Product image
+                <label htmlFor="product-images" className="mb-1 block text-sm font-medium text-gray-700">
+                  Product images
                 </label>
                 <input
-                  id="product-image"
+                  id="product-images"
+                  name="images"
                   type="file"
-                  accept="image/*"
-                  onChange={(event) => setImageFile(event.target.files?.[0] || null)}
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={handleImageSelection}
                   className="w-full rounded-xl border border-gray-200 p-3 text-sm"
                 />
-                {(imagePreview || imageUrl) && (
-                  <img
-                    src={imagePreview || getMediaUrl(imageUrl)}
-                    alt="Product image preview"
-                    className="mt-3 h-36 w-full rounded-xl bg-[#FAF8F5] object-cover"
-                  />
+                {imageFiles.length > 0 && (
+                  <p className="mt-2 text-xs text-gray-600" role="status">
+                    {imageFiles.length} image{imageFiles.length === 1 ? "" : "s"} selected
+                  </p>
+                )}
+                {editingProduct && retainedImageUrls.length > 0 && (
+                  <div className="mt-3">
+                    <p className="mb-2 text-xs font-medium text-gray-600">
+                      Current images
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {retainedImageUrls.map((image, index) => (
+                        <div key={`${image}-${index}`} className="relative">
+                          <img
+                            src={getMediaUrl(image)}
+                            alt={`${editingProduct.name} current image ${index + 1}`}
+                            className="h-24 w-full rounded-xl bg-[#FAF8F5] object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRetainedImageUrls((currentImages) =>
+                                currentImages.filter((_, imageIndex) => imageIndex !== index)
+                              )
+                            }
+                            aria-label={`Remove current image ${index + 1}`}
+                            className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-sm text-white transition hover:bg-black"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {imagePreviews.length > 0 && (
+                  <div className="mt-3">
+                    <p className="mb-2 text-xs font-medium text-gray-600">
+                      Selected images to upload
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={`${preview}-${index}`} className="relative">
+                          <img
+                            src={preview}
+                            alt={`Selected product image ${index + 1}`}
+                            className="h-24 w-full rounded-xl bg-[#FAF8F5] object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setImageFiles((currentFiles) =>
+                                currentFiles.filter((_, fileIndex) => fileIndex !== index)
+                              )
+                            }
+                            aria-label={`Remove selected image ${index + 1}`}
+                            className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-sm text-white transition hover:bg-black"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {editingProduct && (
                   <p className="mt-2 text-xs text-gray-500">
-                    Leave empty to keep the current image.
+                    Saved images are kept unless removed. Newly selected images are added when you save.
                   </p>
                 )}
               </div>

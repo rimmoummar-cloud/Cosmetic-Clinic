@@ -24,14 +24,14 @@ router.post(
   "/",
   csrfProtection,
   authenticateAdmin,
-  upload.single("image"),
+  upload.array("images"),
   productsController.createProduct
 );
 router.put(
   "/:id",
   csrfProtection,
   authenticateAdmin,
-  upload.single("image"),
+  upload.array("images"),
   productsController.updateProduct
 );
 router.delete(

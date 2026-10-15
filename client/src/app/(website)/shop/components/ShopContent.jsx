@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FloatingElement } from "../../../components/AnimatedElements";
 import { SectionHeader } from "../../../components/sectionHeader";
 import { getMediaUrl } from "../../../../lib/mediaUrl";
@@ -22,10 +24,279 @@ function matchesSection(section, key) {
   );
 }
 
+function getProductImageUrls(product) {
+  const images = Array.isArray(product?.image_urls)
+    ? product.image_urls.map(getMediaUrl).filter(Boolean)
+    : [];
+
+  return images.length || !product?.image_url
+    ? images
+    : [getMediaUrl(product.image_url)].filter(Boolean);
+}
+
+function ProductImageCarousel({ product, onClick }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const images = getProductImageUrls(product);
+  const imageIndex = images.length ? activeIndex % images.length : 0;
+
+  const showPrevious = (event) => {
+    event?.stopPropagation();
+    setActiveIndex((current) => (images.length ? (current - 1 + images.length) % images.length : 0));
+  };
+
+  const showNext = (event) => {
+    event?.stopPropagation();
+    setActiveIndex((current) => (images.length ? (current + 1) % images.length : 0));
+  };
+
+  const handleDotClick = (event, index) => {
+    event?.stopPropagation();
+    setActiveIndex(index);
+  };
+
+  return (
+    <div
+      className="group relative aspect-[4/3] w-full overflow-hidden bg-[#F5F1ED]"
+      onClick={onClick}
+    >
+      {images.length > 0 ? (
+        <img
+          src={images[imageIndex]}
+          alt={product.name}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-gray-400">
+          No image available
+        </div>
+      )}
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={showPrevious}
+            aria-label={`Previous image for ${product.name}`}
+            className="absolute left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/70 text-[#5D5144] shadow-sm backdrop-blur-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A66B] sm:opacity-80 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+          >
+            <ChevronLeft aria-hidden="true" size={19} />
+          </button>
+          <button
+            type="button"
+            onClick={showNext}
+            aria-label={`Next image for ${product.name}`}
+            className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/70 text-[#5D5144] shadow-sm backdrop-blur-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A66B] sm:opacity-80 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+          >
+            <ChevronRight aria-hidden="true" size={19} />
+          </button>
+          <div className="absolute inset-x-0 bottom-2 z-10 flex items-center justify-center gap-1.5">
+            {images.map((image, index) => (
+              <button
+                key={`${image}-${index}`}
+                type="button"
+                onClick={(event) => handleDotClick(event, index)}
+                aria-label={`Show image ${index + 1} of ${images.length} for ${product.name}`}
+                aria-current={imageIndex === index ? "true" : undefined}
+                className="flex h-5 w-5 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full transition ${
+                    imageIndex === index ? "bg-white" : "bg-white/55"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProductDescriptionPreview({ description, onOpen }) {
+  if (!description) {
+    return <p className="mt-3 text-sm leading-relaxed text-[#2C2C2C]">No description available.</p>;
+  }
+
+  const preview = description.trim();
+  const hasMore = preview.length > 120;
+  const visiblePreview = hasMore ? `${preview.slice(0, 120).trimEnd()}…` : preview;
+
+  return (
+    <div className="mt-3">
+      <p
+        className="text-sm font-normal leading-relaxed text-[#2C2C2C]"
+        style={{
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {visiblePreview}
+      </p>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="mt-2 inline-flex items-center text-xs font-medium text-[#8D6F4F] transition hover:text-[#6F563F]"
+        >
+          See more
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ProductModal({ product, isOpen, onClose }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const images = getProductImageUrls(product);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (images.length) {
+      setActiveIndex((current) => Math.min(current, images.length - 1));
+    }
+  }, [images.length]);
+
+  if (!isOpen || !product) return null;
+
+  const imageIndex = images.length ? activeIndex % images.length : 0;
+
+  const showPrevious = (event) => {
+    event?.stopPropagation();
+    setActiveIndex((current) => (images.length ? (current - 1 + images.length) % images.length : 0));
+  };
+
+  const showNext = (event) => {
+    event?.stopPropagation();
+    setActiveIndex((current) => (images.length ? (current + 1) % images.length : 0));
+  };
+
+  if (typeof window === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[2147483647] flex items-center justify-center p-3 sm:p-6"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-modal-title"
+        onClick={(event) => event.stopPropagation()}
+        className="relative z-[2147483647] w-full max-w-xl overflow-hidden rounded-[28px] bg-white shadow-2xl"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close item details"
+          className="absolute right-4 top-4 z-[2147483647] flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/80 text-xl text-[#5D5144] shadow-sm transition hover:bg-white"
+        >
+          ×
+        </button>
+        <div className="max-h-[88vh] overflow-y-auto">
+          <div
+            className="group relative aspect-[4/3] w-full overflow-hidden bg-[#F5F1ED]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {images.length > 0 ? (
+              <img
+                src={images[imageIndex]}
+                alt={product.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-gray-400">
+                No image available
+              </div>
+            )}
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={showPrevious}
+                  aria-label={`Previous image for ${product.name}`}
+                  className="absolute left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/70 text-[#5D5144] shadow-sm backdrop-blur-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A66B] sm:opacity-80 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                >
+                  <ChevronLeft aria-hidden="true" size={19} />
+                </button>
+                <button
+                  type="button"
+                  onClick={showNext}
+                  aria-label={`Next image for ${product.name}`}
+                  className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/70 text-[#5D5144] shadow-sm backdrop-blur-sm transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A66B] sm:opacity-80 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                >
+                  <ChevronRight aria-hidden="true" size={19} />
+                </button>
+                <div className="absolute inset-x-0 bottom-2 z-10 flex items-center justify-center gap-1.5">
+                  {images.map((image, index) => (
+                    <button
+                      key={`${image}-${index}`}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveIndex(index);
+                      }}
+                      aria-label={`Show image ${index + 1} of ${images.length} for ${product.name}`}
+                      aria-current={imageIndex === index ? "true" : undefined}
+                      className="flex h-5 w-5 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full transition ${
+                          imageIndex === index ? "bg-white" : "bg-white/55"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <h3 id="product-modal-title" className="font-[var(--font-heading)] text-2xl font-semibold text-[#2C2C2C]">
+                {product.name}
+              </h3>
+              <span className="shrink-0 whitespace-nowrap font-semibold text-[#C9A66B]">
+                {formatPrice(product.price)}
+              </span>
+            </div>
+            {product.skin_type && (
+              <span className="mt-3 inline-flex rounded-full bg-[#FAF8F5] px-3 py-1 text-xs text-[#6B6B6B]">
+                Skin Type: {product.skin_type}
+              </span>
+            )}
+            <div className="mt-5 max-h-[32vh] overflow-y-auto rounded-2xl bg-[#FAF8F5] p-4">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#2C2C2C]">
+                {product.description || "No description available."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function ShopContent({ sections = [] }) {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const hero = sections.find((section) => matchesSection(section, "hero"));
   const intro = sections.find((section) =>
     matchesSection(section, "shop-intro")
@@ -132,6 +403,13 @@ export default function ShopContent({ sections = [] }) {
 
       <section className="relative overflow-hidden bg-[#FAF8F5] px-4 py-20 sm:px-6 lg:px-8">
         <div className="relative z-10 mx-auto max-w-7xl">
+          {selectedProduct && (
+            <ProductModal
+              product={selectedProduct}
+              isOpen={Boolean(selectedProduct)}
+              onClose={() => setSelectedProduct(null)}
+            />
+          )}
           {/* <div className="mb-10 text-center">
             <h2
               className="mb-3 text-3xl text-[#2C2C2C] sm:text-4xl"
@@ -172,19 +450,11 @@ export default function ShopContent({ sections = [] }) {
                   whileHover={{ y: -5 }}
                   className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#D4AF7A]/15 bg-white shadow-sm transition-shadow hover:shadow-lg"
                 >
-                  <div className="aspect-[4/3] w-full overflow-hidden bg-[#F5F1ED]">
-                    {product.image_url ? (
-                      <img
-                        src={getMediaUrl(product.image_url)}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-sm text-gray-400">
-                        No image available
-                      </div>
-                    )}
-                  </div>
+                  <ProductImageCarousel
+                    key={product.id}
+                    product={product}
+                    onClick={() => setSelectedProduct(product)}
+                  />
                   <div className="flex flex-1 flex-col p-5">
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="min-w-0 font-[var(--font-heading)] text-lg font-semibold text-[#2C2C2C]">
@@ -194,9 +464,10 @@ export default function ShopContent({ sections = [] }) {
                         {formatPrice(product.price)}
                       </span>
                     </div>
-                    <p className="mt-3 flex-1 whitespace-pre-wrap text-sm font-normal leading-relaxed text-[#2C2C2C]">
-                      {product.description}
-                    </p>
+                    <ProductDescriptionPreview
+                      description={product.description}
+                      onOpen={() => setSelectedProduct(product)}
+                    />
                     {product.skin_type && (
                       <span className="mt-4 self-start rounded-full bg-[#FAF8F5] px-3 py-1 text-xs text-[#6B6B6B]">
                         Skin Type: {product.skin_type}

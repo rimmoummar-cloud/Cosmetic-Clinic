@@ -25,6 +25,21 @@ CREATE TABLE services (
 );
 
 -- ==========================
+-- جدول المنتجات Products
+-- ==========================
+CREATE TABLE IF NOT EXISTS public.products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    price NUMERIC(10,2) NOT NULL,
+    description TEXT NOT NULL,
+    skin_type VARCHAR(100),
+    image_urls TEXT[] DEFAULT ARRAY[]::TEXT[],
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================
 -- جدول العملاء Customers
 -- ==========================
 CREATE TABLE customers (
