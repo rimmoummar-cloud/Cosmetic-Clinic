@@ -47,12 +47,13 @@ export default function ServicesPreview({ data, categories = []}) {
             <ServiceCard
               key={service.id || service.slug || index}
               title={service.title || service.name || ""}
-              description={service.description || service.summary || ""}
               image={service.image || service.image_url || service.thumbnail}
               link={
-                service.link ||
-                service.href ||
-                (service.slug ? `/services/${service.slug}` : ctaLink)
+                service.id
+                  ? `/services/${service.id}`
+                  : service.link ||
+                    service.href ||
+                    (service.slug ? `/services/${service.slug}` : ctaLink)
               }
               ctaLabel={
                 service.ctaLabel ||

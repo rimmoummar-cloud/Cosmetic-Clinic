@@ -1,11 +1,10 @@
-import CategoryHeader from "./components/CategoryHeader";
-import ServicesGrid from "./components/ServicesGrid";
+import CategoryPageContent from "./components/CategoryPageContent";
 
 async function getCategory(categoryId) {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/categorie/${categoryId}`,
-      { next: { revalidate: 60 } }
+      { cache: "no-store" }
     );
 
     if (!res.ok) return null;
@@ -20,7 +19,7 @@ async function getServices(categoryId) {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/services/samecategories/${categoryId}`,
-      { next: { revalidate: 60 } }
+      { cache: "no-store" }
     );
 
     if (!res.ok) return [];
@@ -41,12 +40,10 @@ export default async function Page({ params }) {
 
   return (
     <div className="bg-gradient-to-b from-[#FAF8F5] via-white to-[#FAF8F5] text-[#2C2C2C]">
-      <CategoryHeader category={category} />
-      <ServicesGrid
+      <CategoryPageContent
+        category={category}
         categoryId={categoryID}
-        initialServices={services}
-        categoryName={category?.name}
-          categorydetails={category?.long_description}
+        services={services}
       />
     </div>
   );

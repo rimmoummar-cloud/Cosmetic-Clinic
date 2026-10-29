@@ -301,6 +301,7 @@ export default function AdminItemsPage() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionFr, setDescriptionFr] = useState("");
   const [skinType, setSkinType] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
@@ -339,6 +340,7 @@ export default function AdminItemsPage() {
     setName("");
     setPrice("");
     setDescription("");
+    setDescriptionFr("");
     setSkinType("");
     setImageFiles([]);
     setImagePreviews([]);
@@ -357,6 +359,7 @@ export default function AdminItemsPage() {
     setName(product.name || "");
     setPrice(String(product.price ?? ""));
     setDescription(product.description || "");
+    setDescriptionFr(product.description_fr || "");
     setSkinType(product.skin_type || "");
     setImageFiles([]);
     setImagePreviews([]);
@@ -380,6 +383,7 @@ export default function AdminItemsPage() {
     formData.append("name", name.trim());
     formData.append("price", price);
     formData.append("description", description.trim());
+    formData.append("description_fr", descriptionFr.trim());
     formData.append("skin_type", skinType.trim());
     formData.append("is_active", String(isActive));
     imageFiles.forEach((imageFile) => formData.append("images", imageFile));
@@ -618,7 +622,7 @@ export default function AdminItemsPage() {
               </div>
               <div>
                 <label htmlFor="product-description" className="mb-1 block text-sm font-medium text-gray-700">
-                  Description
+                  Description (English)
                 </label>
                 <textarea
                   id="product-description"
@@ -626,6 +630,18 @@ export default function AdminItemsPage() {
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                   required
+                  className="w-full rounded-xl border border-gray-200 p-3 transition-colors focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="product-description-fr" className="mb-1 block text-sm font-medium text-gray-700">
+                  Description (French)
+                </label>
+                <textarea
+                  id="product-description-fr"
+                  rows={4}
+                  value={descriptionFr}
+                  onChange={(event) => setDescriptionFr(event.target.value)}
                   className="w-full rounded-xl border border-gray-200 p-3 transition-colors focus:border-primary focus:outline-none"
                 />
               </div>

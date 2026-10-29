@@ -63,6 +63,7 @@ export const createService = async (req, res) => {
 
   const service = await Service.createService({
     ...req.body,
+    description_fr: req.body.description_fr ?? null,
     image_url: imageUrl,
   });
 
@@ -73,15 +74,17 @@ export const createService = async (req, res) => {
 
 export const updateService = async (req, res) => {
   const oldService = await Service.getServiceById(req.params.id);
-  const hasImageUrl = Object.prototype.hasOwnProperty.call(
-    req.body,
-    "image_url"
-  );
- const imageUrl = req.file?.path || oldService?.image_url;
+  const imageUrl = req.file?.path || oldService?.image_url;
   const service = await Service.updateService(
     req.params.id,
     {
       ...req.body,
+      description_fr:
+        req.body.description_fr === undefined
+          ? oldService?.description_fr ?? null
+          : req.body.description_fr === ""
+            ? null
+            : req.body.description_fr,
       image_url: imageUrl,
     }
   );

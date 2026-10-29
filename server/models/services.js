@@ -38,14 +38,14 @@ export const getServiceByCategoryId = async (id) => {
 
 
 export const createService = async (data) => {
-  const { name, description, price, duration_minutes, category_id, image_url = null } = data;
+  const { name, description, description_fr, price, duration_minutes, category_id, image_url = null } = data;
 
   const result = await db.query(
     `INSERT INTO services 
-    (name, description, price, duration_minutes, category_id, image_url)
-    VALUES ($1,$2,$3,$4,$5,$6)
+    (name, description, description_fr, price, duration_minutes, category_id, image_url)
+    VALUES ($1,$2,$3,$4,$5,$6,$7)
     RETURNING *`,
-    [name, description, price, duration_minutes, category_id, image_url]
+    [name, description, description_fr ?? null, price, duration_minutes, category_id, image_url]
   );
 
   return result.rows[0];
@@ -56,6 +56,7 @@ export const updateService = async (id, data) => {
     category_id,
     name,
     description,
+    description_fr,
     price,
     duration_minutes,
     image_url,
@@ -68,16 +69,18 @@ export const updateService = async (id, data) => {
        category_id = $1,
        name = $2,
        description = $3,
-       price = $4,
-       duration_minutes = $5,
-       image_url = $6,
-       is_active = $7
-     WHERE id = $8
+       description_fr = $4,
+       price = $5,
+       duration_minutes = $6,
+       image_url = $7,
+       is_active = $8
+     WHERE id = $9
      RETURNING *`,
     [
       category_id,
       name,
       description,
+      description_fr ?? null,
       price,
       duration_minutes,
       image_url,

@@ -67,11 +67,11 @@ const getStoredImageUrls = (product) => {
     .map((url) => url.trim());
 };
 
-const validateText = (value, field, maxLength) => {
+const validateText = (value, field, maxLength = null) => {
   if (typeof value !== "string" || !value.trim()) {
     return `${field} is required.`;
   }
-  if (maxLength && value.trim().length > maxLength) {
+  if (typeof maxLength === "number" && value.trim().length > maxLength) {
     return `${field} must be ${maxLength} characters or fewer.`;
   }
   return null;
@@ -94,10 +94,26 @@ export const getAllProductsForAdmin = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-  const { name, price: rawPrice, description, skin_type: rawSkinType } = req.body;
+  const {
+    name,
+    price: rawPrice,
+    description,
+    description_fr: rawDescriptionFr,
+    skin_type: rawSkinType,
+  } = req.body;
   const nameError = validateText(name, "Name", 200);
   const descriptionError = validateText(description, "Description");
   const price = parsePrice(rawPrice);
+  const descriptionFr =
+    rawDescriptionFr === undefined || rawDescriptionFr === null
+      ? null
+      : typeof rawDescriptionFr === "string"
+        ? rawDescriptionFr.trim() || null
+        : "";
+  const invalidDescriptionFr =
+    rawDescriptionFr !== undefined &&
+    rawDescriptionFr !== null &&
+    typeof rawDescriptionFr !== "string";
   const skinType = typeof rawSkinType === "string" ? rawSkinType.trim() : "";
   const invalidSkinType =
     rawSkinType !== undefined && typeof rawSkinType !== "string";
@@ -107,6 +123,7 @@ export const createProduct = async (req, res) => {
   if (
     nameError ||
     descriptionError ||
+    invalidDescriptionFr ||
     price === null ||
     invalidSkinType ||
     skinType.length > 100 ||
@@ -116,11 +133,13 @@ export const createProduct = async (req, res) => {
       message:
         nameError ||
         descriptionError ||
-        (price === null
-          ? "Price must be a non-negative amount with up to two decimal places."
-          : invalidSkinType || skinType.length > 100
-            ? "Skin type must be 100 characters or fewer."
-            : "Active status must be true or false."),
+        (invalidDescriptionFr
+          ? "French description must be text or null."
+          : price === null
+            ? "Price must be a non-negative amount with up to two decimal places."
+            : invalidSkinType || skinType.length > 100
+              ? "Skin type must be 100 characters or fewer."
+              : "Active status must be true or false."),
     });
   }
 
@@ -129,6 +148,7 @@ export const createProduct = async (req, res) => {
       name: name.trim(),
       price,
       description: description.trim(),
+      description_fr: descriptionFr,
       skin_type: skinType || null,
       image_urls: (req.files || []).map((file) => file.path),
       is_active: isActive,
@@ -157,6 +177,14 @@ export const updateProduct = async (req, res) => {
       req.body.description === undefined
         ? existing.description
         : req.body.description;
+    const descriptionFr =
+      req.body.description_fr === undefined
+        ? existing.description_fr
+        : typeof req.body.description_fr === "string"
+          ? req.body.description_fr.trim() || null
+          : req.body.description_fr === null
+            ? null
+            : undefined;
     const price =
       req.body.price === undefined ? Number(existing.price) : parsePrice(req.body.price);
     const skinType =
@@ -179,6 +207,7 @@ export const updateProduct = async (req, res) => {
     if (
       nameError ||
       descriptionError ||
+      descriptionFr === undefined ||
       price === null ||
       skinType === undefined ||
       (typeof skinType === "string" && skinType.length > 100) ||
@@ -189,13 +218,15 @@ export const updateProduct = async (req, res) => {
         message:
           nameError ||
           descriptionError ||
-          (price === null
-            ? "Price must be a non-negative amount with up to two decimal places."
-            : skinType === undefined || (typeof skinType === "string" && skinType.length > 100)
-              ? "Skin type must be 100 characters or fewer."
-              : isActive === null
-                ? "Active status must be true or false."
-                : "Image URLs must be an array of permanent URLs."),
+          (descriptionFr === undefined
+            ? "French description must be text or null."
+            : price === null
+              ? "Price must be a non-negative amount with up to two decimal places."
+              : skinType === undefined || (typeof skinType === "string" && skinType.length > 100)
+                ? "Skin type must be 100 characters or fewer."
+                : isActive === null
+                  ? "Active status must be true or false."
+                  : "Image URLs must be an array of permanent URLs."),
       });
     }
 
@@ -204,6 +235,7 @@ export const updateProduct = async (req, res) => {
       name: name.trim(),
       price,
       description: description.trim(),
+      description_fr: descriptionFr,
       skin_type: skinType,
       image_urls: [...retainedImageUrls, ...uploadedImageUrls],
       is_active: isActive,

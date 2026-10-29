@@ -1513,7 +1513,7 @@ const formatCurrency = (value) =>
                         className="mt-1 h-4 w-4 shrink-0 accent-black"
                       />
                       <span>
-                        I understand that cancellations made less than 24 hours before my scheduled appointment are subject to a $25 cancellation fee.
+                        I understand that cancellations made less than 24 hours before my scheduled appointment are subject to a $40 cancellation fee.
                       </span>
                     </label>
                   )}

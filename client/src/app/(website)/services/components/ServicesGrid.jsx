@@ -8,11 +8,12 @@ import { ImageFallBack } from "../../../components/EmageFullBack";
 import { FloatingElement } from "../../../components/AnimatedElements";
 import { SectionHeader } from "../../../components/sectionHeader";
 import { getMediaUrl } from "../../../../lib/mediaUrl";
+import { DescriptionLanguageToggle, getLocalizedDescription } from "../../../../lib/localizedDescription";
 export default function ServicesGrid({ categories, data }) {
   const [openCategory, setOpenCategory] = useState(null);
-  
-const [services, setServices] = useState([]);
-const [loading, setLoading] = useState(false);
+  const [language, setLanguage] = useState("en");
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(false);
 
 async function fetchServicesByCategory(id) {
   try {
@@ -87,14 +88,12 @@ console.log("STATE AFTER SET:", services);
                   
                
                   </h2>
+                  <div className="mb-4 flex justify-start">
+                    <DescriptionLanguageToggle language={language} onChange={setLanguage} />
+                  </div>
                   <p className="text-xl text-[#6B6B6B] leading-relaxed">
-                    {category.description}
+                    {getLocalizedDescription(category, language)}
                   </p>
-
-
-
-
-
 
                   <div className="mt-6 flex flex-col gap-3">
                     {/* <link

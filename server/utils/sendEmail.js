@@ -347,7 +347,7 @@ Please review the details below.
 
 
 const REMINDER_CANCELLATION_POLICY =
-  "Cancellation policy: Cancellations made less than 24 hours before your scheduled appointment are subject to a $25 cancellation fee.";
+  "Cancellation policy: Cancellations made less than 24 hours before your scheduled appointment are subject to a $40 cancellation fee.";
 
 export function buildReminderEmail({
   customerName,

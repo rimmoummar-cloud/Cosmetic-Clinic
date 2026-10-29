@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ImageFallBack } from "../../../../components/EmageFullBack";
 import { getMediaUrl } from "../../../../../lib/mediaUrl";
+import { DescriptionLanguageToggle, getLocalizedDescription } from "../../../../../lib/localizedDescription";
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1582719478248-54e9f2af439c?auto=format&fit=crop&w=1200&q=80",
   "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
@@ -16,11 +17,20 @@ function formatPrice(value) {
   return `$${Number(value).toFixed(2)}`;
 }
 
-export default function ServiceCard({ service, categoryId, index = 0 }) {
+export default function ServiceCard({
+  service,
+  categoryId,
+  index = 0,
+  language = "en",
+  onLanguageChange = () => {},
+}) {
+  const currentLanguage = language === "fr" ? "fr" : "en";
   const image =
     service?.image_url ||
     FALLBACK_IMAGES[index % FALLBACK_IMAGES.length] ||
     FALLBACK_IMAGES[0];
+  const localizedDescription = getLocalizedDescription(service, currentLanguage) ||
+    "Learn more about this tailored treatment designed to help you look and feel your best.";
 
   return (
     <motion.div
@@ -62,6 +72,12 @@ export default function ServiceCard({ service, categoryId, index = 0 }) {
 
         <div className="p-6 relative">
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#FFD700]/10 to-transparent rounded-full blur-2xl" />
+          <div className="mb-3 flex justify-end">
+            <DescriptionLanguageToggle
+              language={currentLanguage}
+              onChange={onLanguageChange}
+            />
+          </div>
           <h3
             className="text-2xl mb-2 text-[#2C2C2C] relative z-10"
             style={{ fontFamily: "var(--font-serif)" }}
@@ -69,8 +85,7 @@ export default function ServiceCard({ service, categoryId, index = 0 }) {
             {service?.name || "Service"}
           </h3>
           <p className="text-[#6B6B6B] mb-4 leading-relaxed relative z-10 line-clamp-3">
-            {service?.description ||
-              "Learn more about this tailored treatment designed to help you look and feel your best."}
+            {localizedDescription}
           </p>
 
           <div className="relative z-10 flex items-center gap-2 text-[#D4AF7A] font-semibold group-hover:text-[#FFD700] transition-colors">

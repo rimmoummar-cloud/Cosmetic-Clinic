@@ -5,7 +5,8 @@ CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
-       image_url TEXT,
+    description_fr TEXT,
+    image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -17,6 +18,7 @@ CREATE TABLE services (
     category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
+    description_fr TEXT,
     price NUMERIC(10,2),
     duration_minutes INTEGER NOT NULL,
     image_url TEXT,
@@ -32,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     name VARCHAR(200) NOT NULL,
     price NUMERIC(10,2) NOT NULL,
     description TEXT NOT NULL,
+    description_fr TEXT,
     skin_type VARCHAR(100),
     image_urls TEXT[] DEFAULT ARRAY[]::TEXT[],
     is_active BOOLEAN NOT NULL DEFAULT TRUE,

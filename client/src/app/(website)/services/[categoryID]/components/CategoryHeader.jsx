@@ -3,14 +3,20 @@
 import { SectionHeader } from "../../../../components/sectionHeader";
 import { FloatingElement } from "../../../../components/AnimatedElements";
 import { getMediaUrl } from "../../../../../lib/mediaUrl";
+import { DescriptionLanguageToggle, getLocalizedDescription } from "../../../../../lib/localizedDescription";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1508387026001-268e4f0e4748?auto=format&fit=crop&w=1600&q=80";
 
-export default function CategoryHeader({ category }) {
+export default function CategoryHeader({
+  category,
+  language = "en",
+  onLanguageChange = () => {},
+}) {
+  const currentLanguage = language === "fr" ? "fr" : "en";
   const title = category?.name || "Our Services";
   const description =
-    category?.description ||
+    getLocalizedDescription(category, currentLanguage) ||
     "Discover treatments tailored to this category, crafted to deliver the best results for you.";
   const background = getMediaUrl(category?.image_url || FALLBACK_IMAGE);
 
@@ -30,6 +36,12 @@ export default function CategoryHeader({ category }) {
       </FloatingElement>
 
       <div className="relative max-w-6xl mx-auto text-center">
+        <div className="mb-4 flex justify-center">
+          <DescriptionLanguageToggle
+            language={currentLanguage}
+            onChange={onLanguageChange}
+          />
+        </div>
         <SectionHeader
           label="Category"
           title={title}

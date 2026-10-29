@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import React from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { getMediaUrl } from "../../../lib/mediaUrl";
+import { DescriptionLanguageToggle, getLocalizedDescription } from "../../../lib/localizedDescription";
 
 export function ServiceCard({
   title,
@@ -14,10 +16,12 @@ export function ServiceCard({
   services,
   delay = 0,
 }) {
+  const [language, setLanguage] = useState("en");
+  const router = useRouter();
   const source = service || category || {};
   const resolvedTitle = title ?? source.title ?? source.name ?? "";
   const resolvedDescription =
-    description ?? source.description ?? source.summary ?? "";
+    description ?? getLocalizedDescription(source, language) ?? source.summary ?? "";
   const resolvedImage =
     image ??
     source.image ??
@@ -30,6 +34,18 @@ export function ServiceCard({
     source.href ??
     (source.slug ? `/services/${source.slug}` : undefined) ??
     (source.id ? `/services/${source.id}` : undefined);
+  const navigateToCard = () => {
+    if (resolvedLink) router.push(resolvedLink);
+  };
+  const handleCardKeyDown = (event) => {
+    if (
+      event.target === event.currentTarget &&
+      (event.key === "Enter" || event.key === " ")
+    ) {
+      event.preventDefault();
+      navigateToCard();
+    }
+  };
 
   return (
     <motion.div
@@ -38,7 +54,11 @@ export function ServiceCard({
       viewport={{ once: true }}
       transition={{ delay, duration: 0.5 }}
       whileHover={{ y: -12 }}
-      className="group relative bg-white rounded-3xl overflow-hidden shadow-xl shadow-[#D4AF7A]/10 hover:shadow-2xl hover:shadow-[#D4AF7A]/20 transition-all duration-500 border border-[#D4AF7A]/10"
+      className={`group relative bg-white rounded-3xl overflow-hidden shadow-xl shadow-[#D4AF7A]/10 hover:shadow-2xl hover:shadow-[#D4AF7A]/20 transition-all duration-500 border border-[#D4AF7A]/10${resolvedLink ? " cursor-pointer" : ""}`}
+      role={resolvedLink ? "link" : undefined}
+      tabIndex={resolvedLink ? 0 : undefined}
+      onClick={navigateToCard}
+      onKeyDown={handleCardKeyDown}
     >
       {/* Image with overlay */}
       <div className="relative h-64 overflow-hidden">
@@ -63,6 +83,9 @@ export function ServiceCard({
       <div className="p-6 relative">
         <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#FFD700]/10 to-transparent rounded-full blur-2xl" />
 
+        <div className="mb-3 flex justify-end">
+          <DescriptionLanguageToggle language={language} onChange={setLanguage} />
+        </div>
         <h3
           className="text-2xl mb-2 text-[#2C2C2C] relative z-10"
           style={{ fontFamily: "var(--font-serif)" }}
@@ -76,6 +99,7 @@ export function ServiceCard({
         {ctaLabel && (
           <motion.a
             href={resolvedLink}
+            onClick={(event) => event.stopPropagation()}
             whileHover={{ x: 5 }}
             className="inline-flex items-center gap-2 text-[#D4AF7A] hover:text-[#FFD700] transition-colors relative z-10 font-medium"
           >

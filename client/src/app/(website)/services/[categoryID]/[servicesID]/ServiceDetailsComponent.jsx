@@ -16,6 +16,7 @@ import ServiceFAQ from "./components/ServiceFAQ";
 import ServiceCTA from "./components/ServiceCTA";
 import { getMediaUrl } from "../../../../../lib/mediaUrl";
 import api from "../../../../../lib/api";
+import { DescriptionLanguageToggle, getLocalizedDescription } from "../../../../../lib/localizedDescription";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1582719478248-54e9f2af439c?auto=format&fit=crop&w=1600&q=80";
@@ -101,6 +102,7 @@ const defaultServiceData = {
 export default function ServiceDetailsComponent({ id, categoryId }) {
   const [data, setData] = useState(defaultServiceData);
   const [sectionAvailability, setSectionAvailability] = useState({});
+  const [language, setLanguage] = useState("en");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -203,9 +205,10 @@ const heroImage =
     ? getMediaUrl(clean(service.image_url))
     : FALLBACK_IMAGE;
 
+  const localizedServiceDescription = getLocalizedDescription(service, language);
   const shortDescription =
     clean(details.short_description) ||
-    clean(service.description) ||
+    clean(localizedServiceDescription) ||
     "A personalized clinical treatment tailored to your goals.";
   const category =
     clean(service.category_name) ||
@@ -268,13 +271,14 @@ const doesNotTips = tips.filter(
             <p className="mt-5 max-w-2xl text-base leading-8 text-white/90 sm:text-lg">
               {shortDescription}
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-7 flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-white/25 bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur">
                 {formatPrice(service.price)}
               </span>
               <span className="rounded-full border border-white/25 bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur">
                 {formatDuration(service.duration_minutes)}
               </span>
+              <DescriptionLanguageToggle language={language} onChange={setLanguage} />
             </div>
           </div>
 

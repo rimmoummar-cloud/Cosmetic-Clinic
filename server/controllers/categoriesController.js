@@ -19,20 +19,12 @@ export const createCategories = async (req, res) => {
 
   const categories = await Categorie.createCategories({
     ...req.body,
+    description_fr: req.body.description_fr ?? null,
     image_url: imageUrl,
   });
 
   res.json(categories);
 };
-
-
-
-
-
-
-
-
-
 
 export const updateCategories = async (req, res) => {
   const oldCategory = await Categorie.getCategoriesById(req.params.id);
@@ -40,21 +32,22 @@ export const updateCategories = async (req, res) => {
     req.body,
     "image_url"
   );
-  // const imageUrl = req.file
-  //   ? `/uploads/categories/${req.file.filename}`
-  //   : hasImageUrl
-  //     ? req.body.image_url
-  //     : oldCategory?.image_url;
-const imageUrl =
-  req.file?.path ||
-  (hasImageUrl
-    ? req.body.image_url
-    : oldCategory?.image_url);
-    
+  const imageUrl =
+    req.file?.path ||
+    (hasImageUrl
+      ? req.body.image_url
+      : oldCategory?.image_url);
+
   const categories = await Categorie.updateCategories(
     req.params.id,
     {
       ...req.body,
+      description_fr:
+        req.body.description_fr === undefined
+          ? oldCategory?.description_fr ?? null
+          : req.body.description_fr === ""
+            ? null
+            : req.body.description_fr,
       image_url: imageUrl,
     }
   );

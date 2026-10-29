@@ -8,7 +8,8 @@ export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-    const [longdescription, setlongDescription] = useState("");
+  const [descriptionFr, setDescriptionFr] = useState("");
+  const [longdescription, setlongDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [isActive, setIsActive] = useState(true);
@@ -73,7 +74,8 @@ const fetchCategories = async () => {
   const resetForm = () => {
     setName("");
     setDescription("");
-   setlongDescription("");
+    setDescriptionFr("");
+    setlongDescription("");
     setImageUrl("");
     setImageFile(null);
     setIsActive(true);
@@ -88,6 +90,7 @@ const fetchCategories = async () => {
   const openEditModal = (category) => {
     setName(category.name || "");
     setDescription(category.description || "");
+    setDescriptionFr(category.description_fr || "");
     setlongDescription(category.long_description || "")
     setImageUrl(category.image_url || "");
     setImageFile(null);
@@ -151,8 +154,8 @@ const handleSubmit = async (e) => {
   const payload = new FormData();
   payload.append("name", name);
   payload.append("description", description);
-    payload.append("long_description", longdescription);
-  
+  payload.append("description_fr", descriptionFr || "");
+  payload.append("long_description", longdescription);
   payload.append("image_url", imageUrl);
 
   if (imageFile) {
@@ -423,7 +426,7 @@ const handleDelete = async (id) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description (English)</label>
                 <textarea
                   rows={2}
                   value={description}
@@ -432,7 +435,16 @@ const handleDelete = async (id) => {
                   required
                 />
               </div>
- <div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description (French)</label>
+                <textarea
+                  rows={2}
+                  value={descriptionFr}
+                  onChange={(e) => setDescriptionFr(e.target.value)}
+                  className="w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors resize-none"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Long Description</label>
                 <textarea
                   rows={2}

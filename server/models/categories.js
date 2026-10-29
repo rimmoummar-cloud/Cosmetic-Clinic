@@ -19,28 +19,28 @@ export const getCategoriesById = async (id) => {
 };
 
 export const createCategories = async (data) => {
-  const { name, description,long_description, image_url =null} = data;
+  const { name, description, description_fr, long_description, image_url = null } = data;
 
   const result = await db.query(
     `INSERT INTO categories 
-    (name, description, long_description, image_url)
-    VALUES ($1,$2,$3,$4)
+    (name, description, description_fr, long_description, image_url)
+    VALUES ($1,$2,$3,$4,$5)
     RETURNING *`,
-    [name, description, long_description, image_url]
+    [name, description, description_fr ?? null, long_description, image_url]
   );
 
   return result.rows[0];
 };
 
 export const updateCategories = async (id, data) => {
-  const { name, description, long_description, image_url } = data;
+  const { name, description, description_fr, long_description, image_url } = data;
 
   const result = await db.query(
     `UPDATE categories 
-     SET name=$1, description=$2, long_description=$3, image_url=$4
-     WHERE id=$5
+     SET name=$1, description=$2, description_fr=$3, long_description=$4, image_url=$5
+     WHERE id=$6
      RETURNING *`,
-    [name, description,long_description, image_url, id]
+    [name, description, description_fr ?? null, long_description, image_url, id]
   );
 
   return result.rows[0];

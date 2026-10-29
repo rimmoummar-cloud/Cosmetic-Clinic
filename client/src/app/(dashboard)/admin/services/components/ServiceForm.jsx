@@ -6,6 +6,7 @@ export default function ServiceForm({ onSubmit, loading = false, initialData = {
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [description, setDescription] = useState("");
+  const [descriptionFr, setDescriptionFr] = useState("");
   const [price, setPrice] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -17,6 +18,7 @@ export default function ServiceForm({ onSubmit, loading = false, initialData = {
     setName(initialData?.name ?? "");
     setCategoryId(initialData?.category_id ?? initialData?.categoryId ?? categories[0]?.id ?? "");
     setDescription(initialData?.description ?? "");
+    setDescriptionFr(initialData?.description_fr ?? "");
     setPrice(initialData?.price ?? "");
     setDurationMinutes(initialData?.duration_minutes ?? initialData?.duration ?? "");
     setImageUrl(initialData?.image_url ?? "");
@@ -38,6 +40,7 @@ export default function ServiceForm({ onSubmit, loading = false, initialData = {
     payload.append("category_id", Number(categoryId));
     payload.append("name", name);
     payload.append("description", description);
+    payload.append("description_fr", descriptionFr || "");
     payload.append("price", Number(price));
     payload.append("duration_minutes", Number(durationMinutes));
     payload.append("image_url", imageUrl);
@@ -101,11 +104,20 @@ export default function ServiceForm({ onSubmit, loading = false, initialData = {
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description (English)</label>
         <textarea
           rows={4}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          className="w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors resize-none"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description (French)</label>
+        <textarea
+          rows={4}
+          value={descriptionFr}
+          onChange={(e) => setDescriptionFr(e.target.value)}
           className="w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors resize-none"
         />
       </div>

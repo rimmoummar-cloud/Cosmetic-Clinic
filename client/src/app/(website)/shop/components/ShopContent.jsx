@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FloatingElement } from "../../../components/AnimatedElements";
 import { SectionHeader } from "../../../components/sectionHeader";
 import { getMediaUrl } from "../../../../lib/mediaUrl";
+import { DescriptionLanguageToggle, getLocalizedDescription } from "../../../../lib/localizedDescription";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -112,8 +113,9 @@ function ProductImageCarousel({ product, onClick }) {
   );
 }
 
-function ProductDescriptionPreview({ description, onOpen }) {
-  if (!description) {
+function ProductDescriptionPreview({ description, onOpen, language = "en", product }) {
+  const localizedDescription = description || getLocalizedDescription(product, language);
+  if (!localizedDescription) {
     return <p className="mt-3 text-sm leading-relaxed text-[#2C2C2C]">No description available.</p>;
   }
 
@@ -147,7 +149,7 @@ function ProductDescriptionPreview({ description, onOpen }) {
   );
 }
 
-function ProductModal({ product, isOpen, onClose }) {
+function ProductModal({ product, isOpen, onClose, language = "en", onLanguageChange }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const images = getProductImageUrls(product);
 
@@ -279,9 +281,12 @@ function ProductModal({ product, isOpen, onClose }) {
                 Skin Type: {product.skin_type}
               </span>
             )}
+            <div className="mt-4 flex justify-end">
+              <DescriptionLanguageToggle language={language} onChange={onLanguageChange} />
+            </div>
             <div className="mt-5 max-h-[32vh] overflow-y-auto rounded-2xl bg-[#FAF8F5] p-4">
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#2C2C2C]">
-                {product.description || "No description available."}
+                {getLocalizedDescription(product, language) || "No description available."}
               </p>
             </div>
           </div>
@@ -296,6 +301,7 @@ export default function ShopContent({ sections = [] }) {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState("");
+  const [productLanguage, setProductLanguage] = useState("en");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const hero = sections.find((section) => matchesSection(section, "hero"));
   const intro = sections.find((section) =>
@@ -408,6 +414,8 @@ export default function ShopContent({ sections = [] }) {
               product={selectedProduct}
               isOpen={Boolean(selectedProduct)}
               onClose={() => setSelectedProduct(null)}
+              language={productLanguage}
+              onLanguageChange={setProductLanguage}
             />
           )}
           {/* <div className="mb-10 text-center">
@@ -464,8 +472,13 @@ export default function ShopContent({ sections = [] }) {
                         {formatPrice(product.price)}
                       </span>
                     </div>
+                    <div className="mt-3 flex justify-end">
+                      <DescriptionLanguageToggle language={productLanguage} onChange={setProductLanguage} />
+                    </div>
                     <ProductDescriptionPreview
                       description={product.description}
+                      product={product}
+                      language={productLanguage}
                       onOpen={() => setSelectedProduct(product)}
                     />
                     {product.skin_type && (

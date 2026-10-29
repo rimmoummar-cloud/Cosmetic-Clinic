@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { FloatingElement } from "../../../../components/AnimatedElements";
+import { getLocalizedDescription } from "../../../../../lib/localizedDescription";
 import ServiceCard from "./ServiceCard";
 
 export default function ServicesGrid({
   categoryId,
   initialServices = [],
   categoryName,
-  categorydetails,
+  category,
+  language = "en",
+  onLanguageChange = () => {},
 }) {
   const [services, setServices] = useState(initialServices || []);
   const [loading, setLoading] = useState(!initialServices?.length);
@@ -55,6 +58,10 @@ export default function ServicesGrid({
   }, [categoryId]);
 
   const skeletonItems = useMemo(() => Array.from({ length: 6 }), []);
+  const localizedCategoryDescription =
+    getLocalizedDescription(category, language === "fr" ? "fr" : "en") ||
+    category?.long_description ||
+    "Browse the available treatments in this category and open a card to view full details.";
 
   const hasServices = services && services.length > 0;
 
@@ -80,12 +87,8 @@ export default function ServicesGrid({
               Select a treatment
             </h2>
              <p className="text-1xl mt-2 md:text-20 text-[#2C2C2C]">
-          {categorydetails}
-            </p>
-            <p className="text-[#6B6B6B] mt-2">
-              Browse the available treatments in this category and open a card
-              to view full details.
-            </p>
+               {localizedCategoryDescription}
+             </p>
           </div>
           {hasServices && (
             <div className="text-sm text-[#6B6B6B] md:text-right">
@@ -146,6 +149,8 @@ export default function ServicesGrid({
                 service={service}
                 categoryId={categoryId}
                 index={idx}
+                language={language}
+                onLanguageChange={onLanguageChange}
               />
             ))}
           </div>
