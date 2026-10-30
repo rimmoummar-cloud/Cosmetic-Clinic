@@ -291,6 +291,7 @@ function ProductDetailsModal({ product, isOpen, onClose }) {
 
 export default function AdminItemsPage() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -307,6 +308,7 @@ export default function AdminItemsPage() {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [retainedImageUrls, setRetainedImageUrls] = useState([]);
   const [isActive, setIsActive] = useState(true);
+  const [categoryId, setCategoryId] = useState("");
 
   const loadProducts = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -330,6 +332,12 @@ export default function AdminItemsPage() {
   }, [loadProducts]);
 
   useEffect(() => {
+    api.get("/category-items")
+      .then(({ data }) => setCategories(Array.isArray(data) ? data : []))
+      .catch((categoryError) => setError(getErrorMessage(categoryError, "Unable to load product categories.")));
+  }, []);
+
+  useEffect(() => {
     const previewUrls = imageFiles.map((file) => URL.createObjectURL(file));
     setImagePreviews(previewUrls);
     return () => previewUrls.forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
@@ -346,6 +354,7 @@ export default function AdminItemsPage() {
     setImagePreviews([]);
     setRetainedImageUrls([]);
     setIsActive(true);
+    setCategoryId("");
   };
 
   const openCreateModal = () => {
@@ -365,6 +374,7 @@ export default function AdminItemsPage() {
     setImagePreviews([]);
     setRetainedImageUrls(getStoredProductImageUrls(product));
     setIsActive(Boolean(product.is_active));
+    setCategoryId(product.category_id == null ? "" : String(product.category_id));
     setError("");
     setShowModal(true);
   };
@@ -386,6 +396,7 @@ export default function AdminItemsPage() {
     formData.append("description_fr", descriptionFr.trim());
     formData.append("skin_type", skinType.trim());
     formData.append("is_active", String(isActive));
+    formData.append("category_id", categoryId);
     imageFiles.forEach((imageFile) => formData.append("images", imageFile));
 
     if (editingProduct) {
@@ -656,6 +667,13 @@ export default function AdminItemsPage() {
                   maxLength={100}
                   className="w-full rounded-xl border border-gray-200 p-3 transition-colors focus:border-primary focus:outline-none"
                 />
+              </div>
+              <div>
+                <label htmlFor="product-category" className="mb-1 block text-sm font-medium text-gray-700">Category</label>
+                <select id="product-category" value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className="w-full rounded-xl border border-gray-200 bg-white p-3 transition-colors focus:border-primary focus:outline-none">
+                  <option value="">No category</option>
+                  {categories.map((category) => <option key={category.id} value={category.id}>{category.name}{category.name_fr ? ` / ${category.name_fr}` : ""}</option>)}
+                </select>
               </div>
               <div>
                 <label htmlFor="product-images" className="mb-1 block text-sm font-medium text-gray-700">

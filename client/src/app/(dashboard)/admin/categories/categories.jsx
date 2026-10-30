@@ -10,6 +10,7 @@ export default function CategoriesPage() {
   const [description, setDescription] = useState("");
   const [descriptionFr, setDescriptionFr] = useState("");
   const [longdescription, setlongDescription] = useState("");
+  const [displayOrder, setDisplayOrder] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [isActive, setIsActive] = useState(true);
@@ -76,6 +77,7 @@ const fetchCategories = async () => {
     setDescription("");
     setDescriptionFr("");
     setlongDescription("");
+    setDisplayOrder("");
     setImageUrl("");
     setImageFile(null);
     setIsActive(true);
@@ -92,6 +94,7 @@ const fetchCategories = async () => {
     setDescription(category.description || "");
     setDescriptionFr(category.description_fr || "");
     setlongDescription(category.long_description || "")
+    setDisplayOrder(category.order == null ? "" : String(category.order));
     setImageUrl(category.image_url || "");
     setImageFile(null);
     setIsActive(Boolean(category.is_active));
@@ -156,6 +159,7 @@ const handleSubmit = async (e) => {
   payload.append("description", description);
   payload.append("description_fr", descriptionFr || "");
   payload.append("long_description", longdescription);
+  payload.append("order", displayOrder.trim());
   payload.append("image_url", imageUrl);
 
   if (imageFile) {
@@ -380,9 +384,9 @@ const handleDelete = async (id) => {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-scaleIn"
+            className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-scaleIn"
           >
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-6">
               <h2 className="text-xl font-bold font-[var(--font-heading)]">
                 {editingCategoryId ? "Edit Category" : "Add Category"}
               </h2>
@@ -396,7 +400,8 @@ const handleDelete = async (id) => {
                 x
               </button>
             </div>
-            <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+            <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Category Name
@@ -454,6 +459,18 @@ const handleDelete = async (id) => {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="category-display-order">Display Order</label>
+                <input
+                  id="category-display-order"
+                  type="number"
+                  step="1"
+                  value={displayOrder}
+                  onChange={(e) => setDisplayOrder(e.target.value)}
+                  placeholder="Leave empty for no assigned order"
+                  className="w-full p-3 border border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-colors"
+                />
+              </div>
 
               {/* <div className="flex items-center gap-3">
                 <input
@@ -467,7 +484,8 @@ const handleDelete = async (id) => {
                   Active
                 </label>
               </div> */}
-              <div className="flex gap-3 pt-2">
+              </div>
+              <div className="flex shrink-0 gap-3 border-t border-gray-100 bg-white p-6 pt-4">
                 <button
                   type="button"
                   onClick={() => {

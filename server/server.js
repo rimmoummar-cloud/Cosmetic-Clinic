@@ -44,6 +44,7 @@ import cronRoutes from "./routes/cronRoutes.js";
 import noteRoute from "./routes/noteRoute.js";
 import reviewsRoutes from "./routes/reviewsRoutes.js";
 import productsRoutes from "./routes/productsRoutes.js";
+import categoryItemsRoutes from "./routes/categoryItemsRoutes.js";
 import csrf from "csurf";
 
 dotenv.config();
@@ -154,6 +155,7 @@ app.use("/api/note", noteRoute);
 
 app.use("/api/reviews", reviewsRoutes);
 app.use("/api/products", productsRoutes);
+app.use("/api/category-items", categoryItemsRoutes);
 app.get("/test-db", async (req, res) => {
   const result = await db.query("SELECT NOW()");
   res.json(result.rows);

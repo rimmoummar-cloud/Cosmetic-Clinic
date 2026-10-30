@@ -299,6 +299,9 @@ function ProductModal({ product, isOpen, onClose, language = "en", onLanguageCha
 
 export default function ShopContent({ sections = [] }) {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [categoriesError, setCategoriesError] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState("");
   const [productLanguage, setProductLanguage] = useState("en");
@@ -346,6 +349,29 @@ export default function ShopContent({ sections = [] }) {
   useEffect(() => {
     void loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    if (!API_BASE_URL) return;
+    fetch(`${API_BASE_URL}/category-items`, { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Unable to load categories (${response.status}).`);
+        return response.json();
+      })
+      .then((data) => {
+        if (!Array.isArray(data)) throw new Error("The categories service returned an unexpected response.");
+        setCategories(data);
+      })
+      .catch((error) => setCategoriesError(error instanceof Error ? error.message : "Unable to load categories."));
+  }, []);
+
+  const visibleProducts = selectedCategoryId === null
+    ? products
+    : products.filter((product) => Number(product.category_id) === selectedCategoryId);
+  const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? null;
+  const categoryName = (category) => {
+    if (productLanguage === "fr") return category.name_fr?.trim() || category.name?.trim() || "";
+    return category.name?.trim() || category.name_fr?.trim() || "";
+  };
 
   return (
     <div className="w-full overflow-hidden">
@@ -407,6 +433,24 @@ export default function ShopContent({ sections = [] }) {
         </motion.div>
       </section>
 
+      <section aria-label="Shop categories" className="border-b border-[#D4AF7A]/15 bg-white px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-[var(--font-heading)] text-xl font-semibold text-[#2C2C2C]">{productLanguage === "fr" ? "Catégories" : "Categories"}</h2>
+            <DescriptionLanguageToggle language={productLanguage} onChange={setProductLanguage} />
+          </div>
+          {categoriesError ? <p role="status" className="mb-3 text-sm text-amber-700">{categoriesError}</p> : null}
+          <div className="flex gap-3 overflow-x-auto pb-2" role="group" aria-label={productLanguage === "fr" ? "Filtrer par catégorie" : "Filter by category"}>
+            <button type="button" onClick={() => setSelectedCategoryId(null)} aria-pressed={selectedCategoryId === null} className={`shrink-0 rounded-full border px-5 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A66B] ${selectedCategoryId === null ? "border-[#C9A66B] bg-[#C9A66B] text-white shadow-sm" : "border-[#D4AF7A]/30 bg-[#FAF8F5] text-[#5D5144] hover:border-[#C9A66B] hover:bg-[#f5eee5]"}`}>
+              {productLanguage === "fr" ? "Tous les produits" : "All Products"}
+            </button>
+            {categories.map((category) => <button key={category.id} type="button" onClick={() => setSelectedCategoryId(category.id)} aria-pressed={selectedCategoryId === category.id} className={`shrink-0 rounded-full border px-5 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A66B] ${selectedCategoryId === category.id ? "border-[#C9A66B] bg-[#C9A66B] text-white shadow-sm" : "border-[#D4AF7A]/30 bg-[#FAF8F5] text-[#5D5144] hover:border-[#C9A66B] hover:bg-[#f5eee5]"}`}>
+              {categoryName(category)}
+            </button>)}
+          </div>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden bg-[#FAF8F5] px-4 py-20 sm:px-6 lg:px-8">
         <div className="relative z-10 mx-auto max-w-7xl">
           {selectedProduct && (
@@ -417,6 +461,11 @@ export default function ShopContent({ sections = [] }) {
               language={productLanguage}
               onLanguageChange={setProductLanguage}
             />
+          )}
+          {selectedCategory && (selectedCategory.description?.trim() || selectedCategory.description_fr?.trim()) && (
+            <p className="mx-auto mb-14 max-w-3xl text-center text-base leading-8 text-[#5D5144] sm:text-lg">
+              {getLocalizedDescription(selectedCategory, productLanguage)}
+            </p>
           )}
           {/* <div className="mb-10 text-center">
             <h2
@@ -443,13 +492,15 @@ export default function ShopContent({ sections = [] }) {
                 Try again
               </button>
             </div>
-          ) : products.length === 0 ? (
+          ) : visibleProducts.length === 0 ? (
             <p className="py-10 text-center text-gray-500">
-              No products are available right now.
+              {selectedCategoryId === null
+                ? "No products are available right now."
+                : productLanguage === "fr" ? "Aucun produit dans cette catégorie pour le moment." : "No products in this category right now."}
             </p>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
+              {visibleProducts.map((product) => (
                 <motion.article
                   key={product.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -471,9 +522,6 @@ export default function ShopContent({ sections = [] }) {
                       <span className="shrink-0 whitespace-nowrap font-semibold text-[#C9A66B]">
                         {formatPrice(product.price)}
                       </span>
-                    </div>
-                    <div className="mt-3 flex justify-end">
-                      <DescriptionLanguageToggle language={productLanguage} onChange={setProductLanguage} />
                     </div>
                     <ProductDescriptionPreview
                       description={product.description}

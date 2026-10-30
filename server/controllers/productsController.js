@@ -1,4 +1,5 @@
 import Products from "../models/products.js";
+import CategoryItems from "../models/categoryItems.js";
 
 const parseId = (value) => {
   if (typeof value !== "string" || !/^\d+$/.test(value)) {
@@ -52,6 +53,18 @@ const parseImageUrls = (value) => {
   return imageUrls.map((url) => url.trim());
 };
 
+const parseCategoryId = (value) => {
+  if (value === undefined) return { valid: true, value: null };
+  if (value === null || value === "") return { valid: true, value: null };
+  if (typeof value !== "string" && typeof value !== "number") return { valid: false };
+  const text = String(value);
+  if (!/^\d+$/.test(text)) return { valid: false };
+  const id = Number(text);
+  return Number.isSafeInteger(id) && id > 0
+    ? { valid: true, value: id }
+    : { valid: false };
+};
+
 const getStoredImageUrls = (product) => {
   const imageUrls = Array.isArray(product.image_urls) ? product.image_urls : [];
   const storedImageUrls =
@@ -100,6 +113,7 @@ export const createProduct = async (req, res) => {
     description,
     description_fr: rawDescriptionFr,
     skin_type: rawSkinType,
+    category_id: rawCategoryId,
   } = req.body;
   const nameError = validateText(name, "Name", 200);
   const descriptionError = validateText(description, "Description");
@@ -119,6 +133,7 @@ export const createProduct = async (req, res) => {
     rawSkinType !== undefined && typeof rawSkinType !== "string";
   const isActive =
     req.body.is_active === undefined ? true : parseActive(req.body.is_active);
+  const category = parseCategoryId(rawCategoryId);
 
   if (
     nameError ||
@@ -126,6 +141,7 @@ export const createProduct = async (req, res) => {
     invalidDescriptionFr ||
     price === null ||
     invalidSkinType ||
+    !category.valid ||
     skinType.length > 100 ||
     isActive === null
   ) {
@@ -137,13 +153,18 @@ export const createProduct = async (req, res) => {
           ? "French description must be text or null."
           : price === null
             ? "Price must be a non-negative amount with up to two decimal places."
-            : invalidSkinType || skinType.length > 100
-              ? "Skin type must be 100 characters or fewer."
-              : "Active status must be true or false."),
+            : !category.valid
+              ? "Category must be a valid category ID or empty."
+              : invalidSkinType || skinType.length > 100
+                ? "Skin type must be 100 characters or fewer."
+                : "Active status must be true or false."),
     });
   }
 
   try {
+    if (category.value !== null && !(await CategoryItems.getById(category.value))) {
+      return res.status(400).json({ message: "Category not found." });
+    }
     const product = await Products.create({
       name: name.trim(),
       price,
@@ -152,9 +173,10 @@ export const createProduct = async (req, res) => {
       skin_type: skinType || null,
       image_urls: (req.files || []).map((file) => file.path),
       is_active: isActive,
+      category_id: category.value,
     });
 
-    return res.status(201).json(product);
+    return res.status(201).json(await Products.getById(product.id));
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -201,6 +223,10 @@ export const updateProduct = async (req, res) => {
       req.body.image_urls === undefined
         ? getStoredImageUrls(existing)
         : parseImageUrls(req.body.image_urls);
+    const category =
+      req.body.category_id === undefined
+        ? { valid: true, value: existing.category_id ?? null }
+        : parseCategoryId(req.body.category_id);
 
     const nameError = validateText(name, "Name", 200);
     const descriptionError = validateText(description, "Description");
@@ -212,7 +238,8 @@ export const updateProduct = async (req, res) => {
       skinType === undefined ||
       (typeof skinType === "string" && skinType.length > 100) ||
       isActive === null ||
-      retainedImageUrls === null
+      retainedImageUrls === null ||
+      !category.valid
     ) {
       return res.status(400).json({
         message:
@@ -226,8 +253,14 @@ export const updateProduct = async (req, res) => {
                 ? "Skin type must be 100 characters or fewer."
                 : isActive === null
                   ? "Active status must be true or false."
-                  : "Image URLs must be an array of permanent URLs."),
+                  : !category.valid
+                    ? "Category must be a valid category ID or empty."
+                    : "Image URLs must be an array of permanent URLs."),
       });
+    }
+
+    if (category.value !== null && !(await CategoryItems.getById(category.value))) {
+      return res.status(400).json({ message: "Category not found." });
     }
 
     const uploadedImageUrls = (req.files || []).map((file) => file.path);
@@ -239,9 +272,14 @@ export const updateProduct = async (req, res) => {
       skin_type: skinType,
       image_urls: [...retainedImageUrls, ...uploadedImageUrls],
       is_active: isActive,
+      category_id: category.value,
     });
 
-    return res.json(updated);
+    if (!updated) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    return res.json(await Products.getById(updated.id));
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

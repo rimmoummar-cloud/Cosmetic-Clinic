@@ -103,6 +103,13 @@ export async function sendBookingEmail({
 This is a confirmation that we have received your booking request at Shiny Skin Clinic.
 Our team will review it and notify you once it is confirmed.
 </p>
+<div lang="fr" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+  <p>
+    Nous vous confirmons que nous avons bien reçu votre demande de rendez-vous
+    auprès de Shiny Skin Clinic.
+    Notre équipe l’examinera et vous informera dès que votre rendez-vous sera confirmé.
+  </p>
+</div>
 
           <div style="background:#f8f8f8;padding:16px;border-radius:12px;margin:20px 0;">
             <p><b>Services:</b> ${serviceName}</p>
@@ -182,6 +189,12 @@ export async function sendBookingApprovedEmail({
 We are pleased to inform you that your booking has been approved.
 Please find your appointment details below.
 </p>
+<div lang="fr" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+  <p>
+    Nous avons le plaisir de vous informer que votre rendez-vous a été confirmé.
+    Vous trouverez les détails de votre rendez-vous ci-dessous.
+  </p>
+</div>
           <div style="
             background:#f8f8f8;
             padding:16px;
@@ -207,11 +220,15 @@ Please find your appointment details below.
           <p>
             We are looking forward to seeing you ✨
           </p>
-
+<p lang="fr">
+  Nous avons hâte de vous accueillir à la clinique. ✨
+</p>
           <p>
           You may receive one or more reminders before your appointment.
           </p>
-
+<p lang="fr">
+  Vous pourrez recevoir un ou plusieurs rappels avant votre rendez-vous.
+</p>
           <p style="
             margin-top:30px;
             color:#777;
@@ -290,7 +307,12 @@ export async function sendBookingCancelledEmail({
 We would like to inform you that your booking has been cancelled.
 Please review the details below.
 </p>
-
+<div lang="fr" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+  <p>
+    Nous vous informons que votre rendez-vous a été annulé.
+    Veuillez consulter les détails ci-dessous.
+  </p>
+</div>
           <div style="
             background:#f8f8f8;
             padding:16px;
@@ -348,7 +370,8 @@ Please review the details below.
 
 const REMINDER_CANCELLATION_POLICY =
   "Cancellation policy: Cancellations made less than 24 hours before your scheduled appointment are subject to a $40 cancellation fee.";
-
+const REMINDER_CANCELLATION_POLICY_FR =
+  "Politique d’annulation : toute annulation effectuée moins de 24 heures avant l’heure prévue du rendez-vous peut entraîner des frais d’annulation de 40 $.";
 export function buildReminderEmail({
   customerName,
   bookingDate,
@@ -367,9 +390,16 @@ export function buildReminderEmail({
     "24_hours_before",
     "48_hours_before",
   ].includes(reminderType);
-  const policyHtml = includesCancellationPolicy
-    ? `<p style="margin-top:20px;"><strong>${REMINDER_CANCELLATION_POLICY}</strong></p>`
-    : "";
+ const policyHtml = includesCancellationPolicy
+  ? `
+    <p style="margin-top:20px;">
+      <strong>${REMINDER_CANCELLATION_POLICY}</strong>
+    </p>
+    <p lang="fr">
+      <strong>${REMINDER_CANCELLATION_POLICY_FR}</strong>
+    </p>
+  `
+  : "";
   const policyText = includesCancellationPolicy
     ? `\n\n${REMINDER_CANCELLATION_POLICY}`
     : "";
@@ -393,10 +423,17 @@ export function buildReminderEmail({
         </div>
         <h2>Appointment Reminder</h2>
         <p>Dear ${customerName},</p>
+      
         <p>
           This is a reminder of your upcoming appointment at Shiny Skin Clinic.
           Please find your appointment details below.
         </p>
+        <div lang="fr" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+  <p>
+    Ceci est un rappel de votre prochain rendez-vous chez Shiny Skin Clinic.
+    Veuillez consulter les détails de votre rendez-vous ci-dessous.
+  </p>
+</div>
         <p><b>Services:</b> ${serviceName}</p>
         <p><b>Date:</b> ${formattedDate}</p>
         <p><b>Time:</b> ${formattedTime}</p>
@@ -500,11 +537,16 @@ export async function sendWaitingListApprovedEmail({
 <p>
 A time slot matching your waiting list request has become available at Shiny Skin Clinic.
 </p>
-
+<p lang="fr">
+  Un créneau correspondant à votre demande sur la liste d’attente
+  est désormais disponible chez Shiny Skin Clinic.
+</p>
 <p>
 You may proceed with your booking using the link below.
 </p>
-
+<p lang="fr">
+  Vous pouvez effectuer votre réservation en utilisant le lien ci-dessous.
+</p>
           <p>
             Click below to complete your booking.
           </p>
@@ -758,7 +800,12 @@ export async function sendWaitingListConfirmationEmail({
             Thank you for choosing Shiny Skin Clinic.
             We have successfully received your waiting list request.
           </p>
-
+<div lang="fr" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
+  <p>
+    Merci d’avoir choisi Shiny Skin Clinic.
+    Nous avons bien reçu votre demande d’inscription sur la liste d’attente.
+  </p>
+</div>
           <p>
             Please note that this request does not confirm an appointment.
             We will monitor availability based on your request and,
@@ -766,7 +813,13 @@ export async function sendWaitingListConfirmationEmail({
             you by email with the details and next steps to complete
             your appointment.
           </p>
-
+<p lang="fr">
+  Veuillez noter que cette demande ne constitue pas une confirmation de rendez-vous.
+  Nous suivrons les disponibilités en fonction de votre demande.
+  Si un créneau adapté se libère, nous vous contacterons par e-mail
+  pour vous communiquer les détails et les prochaines étapes nécessaires
+  à la finalisation de votre réservation.
+</p>
           <p>
             We appreciate your patience and look forward to welcoming
             you to Shiny Skin Clinic.
