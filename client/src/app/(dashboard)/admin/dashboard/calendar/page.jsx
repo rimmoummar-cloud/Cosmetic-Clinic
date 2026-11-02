@@ -7,6 +7,12 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import api from "../../../../../lib/api";
+import {
+  createCalendarDayNote,
+  deleteCalendarDayNote,
+  fetchCalendarDayNotes as fetchCalendarDayNotesApi,
+  updateCalendarDayNote,
+} from "../../../../../lib/calendarDayNotes";
 import CustomerFormsManager from "../../forms/CustomerFormsManager.jsx";
 import { BookingForm } from "../../../../feutures/booking/BookingForm.jsx";
 
@@ -27,6 +33,24 @@ const formatDateTime = (date) => {
   const seconds = String(date.getSeconds()).padStart(2, "0");
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
+
+const normalizeCalendarNoteDate = (noteDate) => {
+  if (typeof noteDate === "string") {
+    return noteDate.slice(0, 10);
+  }
+  return noteDate instanceof Date ? formatDateForApi(noteDate) : "";
+};
+
+const mapCalendarDayNoteToEvent = (note) => ({
+  id: `calendar-day-note-${note.id}`,
+  title: note.title,
+  start: normalizeCalendarNoteDate(note.note_date),
+  allDay: true,
+  extendedProps: {
+    type: "calendar-day-note",
+    calendarDayNote: note,
+  },
+});
 
 const normalizeStatus = (value) => {
   if (typeof value !== "string") {
@@ -200,11 +224,29 @@ export default function AdminCalendarPage() {
   const isInitialCalendarLoadRef = useRef(true);
   const lastRequestedKeyRef = useRef("");
   const activeRequestIdRef = useRef(0);
+  const calendarDayNotesRangeRef = useRef(null);
+  const lastCalendarDayNotesRangeRef = useRef("");
+  const calendarDayNotesRequestIdRef = useRef(0);
   const [view, setView] = useState("month");
   const [calendarMode, setCalendarMode] = useState("bookings");
   const [visibleDate, setVisibleDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
+  const [calendarDayNotes, setCalendarDayNotes] = useState([]);
+  const [calendarDayNotesLoading, setCalendarDayNotesLoading] = useState(false);
+  const [calendarDayNotesError, setCalendarDayNotesError] = useState("");
+  const [calendarDayNoteDialogMode, setCalendarDayNoteDialogMode] = useState(null);
+  const [selectedCalendarDayNote, setSelectedCalendarDayNote] = useState(null);
+  const [calendarDayNoteForm, setCalendarDayNoteForm] = useState({
+    note_date: "",
+    title: "",
+    description: "",
+  });
+  const [calendarDayNoteSaving, setCalendarDayNoteSaving] = useState(false);
+  const [calendarDayNoteDeleting, setCalendarDayNoteDeleting] = useState(false);
+  const [daysOff, setDaysOff] = useState(null);
+  const [workingHoursLoading, setWorkingHoursLoading] = useState(true);
+  const [workingHoursError, setWorkingHoursError] = useState("");
   const [waitingListEvents, setWaitingListEvents] = useState([]);
   const [allBookingsData, setAllBookingsData] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -228,6 +270,11 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
 
   const statusOptions = calendarMode === "waiting-list" ? WAITING_LIST_STATUS_FILTERS : BOOKING_STATUS_FILTERS;
 
+  const isConfiguredDayOff = (date) =>
+    daysOff instanceof Set && daysOff.has(date.getDay());
+  const isBookingDateUnavailable = (date) =>
+    workingHoursLoading || isConfiguredDayOff(date);
+
   const currentEvents = calendarMode === "waiting-list" ? waitingListEvents : events;
   const getEventStatus = (event) =>
     normalizeStatus(
@@ -241,6 +288,14 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     statusFilter === "all"
       ? currentEvents
       : currentEvents.filter((event) => getEventStatus(event) === normalizeStatus(statusFilter));
+
+  const calendarEvents =
+    calendarMode === "bookings"
+      ? [
+          ...filteredEvents,
+          ...calendarDayNotes.map(mapCalendarDayNoteToEvent),
+        ]
+      : filteredEvents;
 
   const formatDateForComparison = (value) => {
     if (!value) {
@@ -323,6 +378,114 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     }
   };
 
+  const loadCalendarDayNotes = async (startDate, endDate, force = false) => {
+    const rangeKey = `${startDate}:${endDate}`;
+    if (!force && lastCalendarDayNotesRangeRef.current === rangeKey) {
+      return;
+    }
+
+    lastCalendarDayNotesRangeRef.current = rangeKey;
+    calendarDayNotesRangeRef.current = { startDate, endDate };
+    const requestId = calendarDayNotesRequestIdRef.current + 1;
+    calendarDayNotesRequestIdRef.current = requestId;
+
+    setCalendarDayNotesLoading(true);
+    setCalendarDayNotesError("");
+    setCalendarDayNotes((currentNotes) =>
+      currentNotes.filter((note) => {
+        const noteDate = normalizeCalendarNoteDate(note.note_date);
+        return noteDate >= startDate && noteDate <= endDate;
+      })
+    );
+
+    try {
+      const notes = await fetchCalendarDayNotesApi(startDate, endDate);
+      if (requestId !== calendarDayNotesRequestIdRef.current) {
+        return;
+      }
+      if (!Array.isArray(notes)) {
+        throw new Error("Calendar day notes response must be an array.");
+      }
+      setCalendarDayNotes(notes);
+    } catch (error) {
+      console.error("Failed to fetch calendar day notes", error);
+      if (requestId === calendarDayNotesRequestIdRef.current) {
+        setCalendarDayNotesError(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Unable to load calendar day notes."
+        );
+      }
+    } finally {
+      if (requestId === calendarDayNotesRequestIdRef.current) {
+        setCalendarDayNotesLoading(false);
+      }
+    }
+  };
+
+  const refreshCalendarDayNotes = async () => {
+    const range = calendarDayNotesRangeRef.current;
+    if (range) {
+      await loadCalendarDayNotes(range.startDate, range.endDate, true);
+    }
+  };
+
+  const fetchWorkingHours = async () => {
+    setWorkingHoursLoading(true);
+    setWorkingHoursError("");
+
+    try {
+      const response = await api.get("/workingHours");
+      const rows = response.data;
+
+      if (
+        !Array.isArray(rows) ||
+        rows.length !== 7 ||
+        rows.some((row) => {
+          const dayOfWeek = Number(row?.day_of_week);
+          return (
+            !row ||
+            row.day_of_week == null ||
+            !Number.isInteger(dayOfWeek) ||
+            dayOfWeek < 0 ||
+            dayOfWeek > 6 ||
+            typeof row.is_day_off !== "boolean"
+          );
+        }) ||
+        new Set(rows.map((row) => Number(row.day_of_week))).size !== 7
+      ) {
+        throw new Error("The general working-hours response is incomplete or invalid.");
+      }
+
+      const nextDaysOff = new Set(
+        rows
+          .filter((row) => row.is_day_off)
+          .map((row) => Number(row.day_of_week))
+      );
+      setDaysOff(nextDaysOff);
+
+      if (
+        calendarMode === "bookings" &&
+        view === "day" &&
+        nextDaysOff.has(selectedDate.getDay())
+      ) {
+        setView("month");
+        const calendarApi = calendarRef.current?.getApi();
+        calendarApi?.changeView("dayGridMonth");
+        calendarApi?.gotoDate(selectedDate);
+      }
+    } catch (error) {
+      console.error("Failed to fetch general working hours", error);
+      setWorkingHoursError(
+        daysOff === null
+          ? "General working hours could not be loaded. The calendar remains available using its existing behavior."
+          : "General working hours could not be refreshed. The last loaded availability is still applied."
+      );
+    } finally {
+      setWorkingHoursLoading(false);
+    }
+  };
+
   const fetchWaitingList = async (showLoading = false) => {
     if (showLoading) {
       setWaitingListLoading(true);
@@ -357,6 +520,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
 
   useEffect(() => {
     fetchBookings("month", new Date(), true);
+    fetchWorkingHours();
     fetchWaitingList(true);
     fetchAllBookingDetails();
   }, []);
@@ -383,6 +547,14 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
 
   const handleDatesSet = (info) => {
     const nextView = info.view.type === "timeGridDay" ? "day" : "month";
+    const startDate = formatDateForApi(info.start);
+    const lastVisibleDate = new Date(
+      info.end.getFullYear(),
+      info.end.getMonth(),
+      info.end.getDate() - 1,
+      12
+    );
+    loadCalendarDayNotes(startDate, formatDateForApi(lastVisibleDate));
 
     if (isInitialCalendarLoadRef.current) {
       isInitialCalendarLoadRef.current = false;
@@ -395,6 +567,10 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
 
   const handleDayPickerChange = (event) => {
     const nextDate = new Date(`${event.target.value}T12:00:00`);
+    if (calendarMode === "bookings" && isBookingDateUnavailable(nextDate)) {
+      return;
+    }
+
     setSelectedDate(nextDate);
     setVisibleDate(nextDate);
     setView("day");
@@ -413,6 +589,18 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
   const handleModeChange = (nextMode) => {
     setCalendarMode(nextMode);
     setStatusFilter("all");
+
+    if (
+      nextMode === "bookings" &&
+      view === "day" &&
+      isBookingDateUnavailable(selectedDate)
+    ) {
+      setView("month");
+      const calendarApi = calendarRef.current?.getApi();
+      calendarApi?.changeView("dayGridMonth");
+      calendarApi?.gotoDate(selectedDate);
+      fetchBookings("month", selectedDate);
+    }
 
     if (nextMode === "waiting-list" && waitingListEvents.length === 0) {
       fetchWaitingList(true);
@@ -544,6 +732,10 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     if (nextView === "day") {
       const nextDate = selectedDate || visibleDate || new Date();
 
+      if (calendarMode === "bookings" && isBookingDateUnavailable(nextDate)) {
+        return;
+      }
+
       setView("day");
       setSelectedDate(nextDate);
       setVisibleDate(nextDate);
@@ -576,12 +768,42 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
       return;
     }
 
+    if (
+      calendarMode === "bookings" &&
+      view === "day" &&
+      isBookingDateUnavailable(
+        new Date(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth(),
+          selectedDate.getDate() - 1,
+          12
+        )
+      )
+    ) {
+      return;
+    }
+
     const calendarApi = calendarRef.current.getApi();
     calendarApi.prev();
   };
 
   const handleCalendarNext = () => {
     if (!calendarRef.current) {
+      return;
+    }
+
+    if (
+      calendarMode === "bookings" &&
+      view === "day" &&
+      isBookingDateUnavailable(
+        new Date(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth(),
+          selectedDate.getDate() + 1,
+          12
+        )
+      )
+    ) {
       return;
     }
 
@@ -594,15 +816,128 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
       return;
     }
 
+    const today = new Date();
+
+    if (view === "day" && calendarMode === "bookings" && isBookingDateUnavailable(today)) {
+      return;
+    }
+
     const calendarApi = calendarRef.current.getApi();
     calendarApi.today();
-
-    const today = new Date();
 
     setVisibleDate(today);
 
     if (view === "day") {
       setSelectedDate(today);
+    }
+  };
+
+  const openAddCalendarDayNote = () => {
+    setSelectedCalendarDayNote(null);
+    setCalendarDayNoteForm({
+      note_date: formatDateForApi(selectedDate),
+      title: "",
+      description: "",
+    });
+    setCalendarDayNotesError("");
+    setCalendarDayNoteDialogMode("create");
+  };
+
+  const openCalendarDayNote = (note) => {
+    setSelectedCalendarDayNote(note);
+    setCalendarDayNotesError("");
+    setCalendarDayNoteDialogMode("details");
+  };
+
+  const editCalendarDayNote = () => {
+    if (!selectedCalendarDayNote) return;
+    setCalendarDayNoteForm({
+      note_date: normalizeCalendarNoteDate(selectedCalendarDayNote.note_date),
+      title: selectedCalendarDayNote.title,
+      description: selectedCalendarDayNote.description,
+    });
+    setCalendarDayNotesError("");
+    setCalendarDayNoteDialogMode("edit");
+  };
+
+  const closeCalendarDayNoteDialog = () => {
+    if (calendarDayNoteSaving || calendarDayNoteDeleting) return;
+    setCalendarDayNoteDialogMode(null);
+    setSelectedCalendarDayNote(null);
+    setCalendarDayNotesError("");
+  };
+
+  const saveCalendarDayNote = async (event) => {
+    event.preventDefault();
+    const note = {
+      note_date: calendarDayNoteForm.note_date,
+      title: calendarDayNoteForm.title.trim(),
+      description: calendarDayNoteForm.description.trim(),
+    };
+
+    if (!note.note_date || !note.title || !note.description) {
+      setCalendarDayNotesError("Date, title, and description are required.");
+      return;
+    }
+
+    try {
+      setCalendarDayNoteSaving(true);
+      setCalendarDayNotesError("");
+
+      if (calendarDayNoteDialogMode === "edit" && selectedCalendarDayNote) {
+        const updatedNote = await updateCalendarDayNote(
+          selectedCalendarDayNote.id,
+          note
+        );
+        setSelectedCalendarDayNote(updatedNote);
+        setCalendarDayNoteDialogMode("details");
+      } else {
+        await createCalendarDayNote(note);
+        setCalendarDayNoteDialogMode(null);
+      }
+
+      await refreshCalendarDayNotes();
+    } catch (error) {
+      console.error("Failed to save calendar day note", error);
+      setCalendarDayNotesError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to save calendar day note."
+      );
+    } finally {
+      setCalendarDayNoteSaving(false);
+    }
+  };
+
+  const removeCalendarDayNote = async () => {
+    if (
+      !selectedCalendarDayNote ||
+      !window.confirm("Are you sure you want to delete this calendar day note?")
+    ) {
+      return;
+    }
+
+    try {
+      setCalendarDayNoteDeleting(true);
+      setCalendarDayNotesError("");
+      await deleteCalendarDayNote(selectedCalendarDayNote.id);
+      setCalendarDayNotes((currentNotes) =>
+        currentNotes.filter(
+          (note) => String(note.id) !== String(selectedCalendarDayNote.id)
+        )
+      );
+      setCalendarDayNoteDialogMode(null);
+      setSelectedCalendarDayNote(null);
+      await refreshCalendarDayNotes();
+    } catch (error) {
+      console.error("Failed to delete calendar day note", error);
+      setCalendarDayNotesError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to delete calendar day note."
+      );
+    } finally {
+      setCalendarDayNoteDeleting(false);
     }
   };
 
@@ -765,7 +1100,10 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
           year: "numeric",
         });
 
-  const isCalendarLoading = calendarMode === "waiting-list" ? waitingListLoading : loading;
+  const isCalendarLoading =
+    calendarMode === "waiting-list"
+      ? waitingListLoading
+      : loading || (workingHoursLoading && daysOff === null);
 
   return (
     <div className="calendar-page flex h-full min-h-0 w-full flex-col">
@@ -814,6 +1152,27 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
 > 
   New Booking 
 </button>
+
+{calendarMode === "bookings" && (
+  <button
+    type="button"
+    onClick={fetchWorkingHours}
+    disabled={workingHoursLoading}
+    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    {workingHoursLoading ? "Refreshing availability..." : "Refresh availability"}
+  </button>
+)}
+
+{calendarMode === "bookings" && view === "day" && (
+  <button
+    type="button"
+    onClick={openAddCalendarDayNote}
+    className="rounded-xl bg-orange-500 px-3 py-2 text-sm font-medium text-black transition hover:bg-orange-600"
+  >
+    Add note for day
+  </button>
+)}
             
             <select
               value={view}
@@ -880,8 +1239,42 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
         </div>
       </div>
 
+      {calendarMode === "bookings" && workingHoursError && (
+        <div
+          role="alert"
+          className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+        >
+          <span>{workingHoursError}</span>
+          <button
+            type="button"
+            onClick={fetchWorkingHours}
+            disabled={workingHoursLoading}
+            className="font-semibold underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {calendarMode === "bookings" && calendarDayNotesError && !calendarDayNoteDialogMode && (
+        <div
+          role="alert"
+          className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
+          <span>{calendarDayNotesError}</span>
+          <button
+            type="button"
+            onClick={refreshCalendarDayNotes}
+            disabled={calendarDayNotesLoading}
+            className="font-semibold underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       <div
-        className={`calendar-container min-h-0 w-full flex-1 rounded-2xl border border-gray-200 bg-white shadow-sm ${
+        className={`calendar-container relative min-h-0 w-full flex-1 rounded-2xl border border-gray-200 bg-white shadow-sm ${
           calendarMode === "waiting-list" ? "overflow-visible" : "overflow-hidden"
         }`}
       >
@@ -1023,18 +1416,37 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
               headerToolbar={false}
               editable={false}
               selectable={false}
-              events={filteredEvents}
+              events={calendarEvents}
+              eventOrder={(firstEvent, secondEvent) => {
+                const firstIsNote =
+                  firstEvent.extendedProps?.type === "calendar-day-note";
+                const secondIsNote =
+                  secondEvent.extendedProps?.type === "calendar-day-note";
+                if (firstIsNote !== secondIsNote) {
+                  return firstIsNote ? -1 : 1;
+                }
+                return 0;
+              }}
               eventTimeFormat={{
                 hour: "numeric",
                 minute: "2-digit",
                 meridiem: "short",
               }}
               eventDisplay="block"
-              dayMaxEventRows={4}
+              dayMaxEventRows={false}
               moreLinkText="View More"
               height="100%"
+              dayCellClassNames={(info) =>
+                calendarMode === "bookings" && isConfiguredDayOff(info.date)
+                  ? ["general-day-off"]
+                  : []
+              }
               dateClick={(info) => {
   const nextDate = new Date(`${info.dateStr}T12:00:00`);
+
+  if (calendarMode === "bookings" && isBookingDateUnavailable(nextDate)) {
+    return;
+  }
 
   setSelectedDate(nextDate);
   setVisibleDate(nextDate);
@@ -1053,8 +1465,24 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
 }}
               datesSet={handleDatesSet}
               eventClick={(info) => {
+                if (
+                  info.event.extendedProps?.type === "calendar-day-note"
+                ) {
+                  openCalendarDayNote(
+                    info.event.extendedProps.calendarDayNote
+                  );
+                  return;
+                }
+
                 if (calendarMode === "waiting-list") {
                   setSelectedWaitingList(info.event.extendedProps.record || null);
+                  return;
+                }
+
+                if (
+                  info.event.start &&
+                  isBookingDateUnavailable(info.event.start)
+                ) {
                   return;
                 }
 
@@ -1062,13 +1490,40 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
                 setSelectedBooking(bookingFromEvent || info.event.extendedProps?.bookingData || null);
               }}
               eventDidMount={(eventInfo) => {
+                if (
+                  eventInfo.event.extendedProps?.type === "calendar-day-note"
+                ) {
+                  eventInfo.el.style.backgroundColor = "#ffedd5";
+                  eventInfo.el.style.borderColor = "#fb923c";
+                  eventInfo.el.style.color = "#000000";
+                  return;
+                }
+
                 const palette = getStatusPalette(eventInfo.event.extendedProps?.status);
 
                 eventInfo.el.style.backgroundColor = palette.background;
                 eventInfo.el.style.borderColor = palette.border;
                 eventInfo.el.style.color = palette.text;
               }}
+              eventClassNames={(eventInfo) =>
+                eventInfo.event.extendedProps?.type === "calendar-day-note"
+                  ? ["calendar-day-note-event"]
+                  : []
+              }
               eventContent={(eventInfo) => {
+                if (
+                  eventInfo.event.extendedProps?.type === "calendar-day-note"
+                ) {
+                  return (
+                    <div
+                      className="calendar-day-note-title truncate px-1 py-0.5 text-[11px] font-semibold leading-tight"
+                      style={{ color: "#000000" }}
+                    >
+                      {eventInfo.event.title}
+                    </div>
+                  );
+                }
+
                 const record = eventInfo.event.extendedProps?.record ?? {};
                 const waitingListPeriod = formatPeriodLabel(
                   eventInfo.event.extendedProps?.period ?? record?.period ?? eventInfo.event.extendedProps?.record?.period
@@ -1095,7 +1550,171 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
             />
           </div>
         )}
+        {calendarMode === "bookings" && workingHoursLoading && daysOff !== null && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/90 text-sm font-medium text-gray-500">
+            Refreshing availability...
+          </div>
+        )}
       </div>
+
+      {calendarDayNoteDialogMode && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 px-4 py-8">
+          <div className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">
+                  Calendar day note
+                </p>
+                <h2 className="mt-1 text-2xl font-bold text-gray-900">
+                  {calendarDayNoteDialogMode === "create"
+                    ? "Add note for day"
+                    : calendarDayNoteDialogMode === "edit"
+                      ? "Edit note"
+                      : selectedCalendarDayNote?.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeCalendarDayNoteDialog}
+                disabled={calendarDayNoteSaving || calendarDayNoteDeleting}
+                className="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Close
+              </button>
+            </div>
+
+            {calendarDayNoteDialogMode === "details" && selectedCalendarDayNote ? (
+              <>
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-orange-100 bg-orange-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-orange-800">
+                      Date
+                    </p>
+                    <p className="mt-1 text-sm text-orange-950">
+                      {normalizeCalendarNoteDate(selectedCalendarDayNote.note_date)}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {selectedCalendarDayNote.title}
+                    </h3>
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-gray-700">
+                      {selectedCalendarDayNote.description}
+                    </p>
+                  </div>
+                </div>
+
+                {calendarDayNotesError && (
+                  <p role="alert" className="mt-4 text-sm text-red-600">
+                    {calendarDayNotesError}
+                  </p>
+                )}
+
+                <div className="mt-6 flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={removeCalendarDayNote}
+                    disabled={calendarDayNoteDeleting}
+                    className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {calendarDayNoteDeleting ? "Deleting..." : "Delete"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={editCalendarDayNote}
+                    disabled={calendarDayNoteDeleting}
+                    className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </>
+            ) : (
+              <form onSubmit={saveCalendarDayNote} className="space-y-4">
+                {calendarDayNoteDialogMode === "create" ? (
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Note date
+                    </span>
+                    <p className="mt-1 text-sm font-medium text-gray-800">
+                      {calendarDayNoteForm.note_date}
+                    </p>
+                  </div>
+                ) : (
+                  <label className="block text-sm font-medium text-gray-700">
+                    Date
+                    <input
+                      type="date"
+                      required
+                      value={calendarDayNoteForm.note_date}
+                      onChange={(event) =>
+                        setCalendarDayNoteForm((currentForm) => ({
+                          ...currentForm,
+                          note_date: event.target.value,
+                        }))
+                      }
+                      className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    />
+                  </label>
+                )}
+                <label className="block text-sm font-medium text-gray-700">
+                  Title
+                  <input
+                    type="text"
+                    required
+                    maxLength={200}
+                    value={calendarDayNoteForm.title}
+                    onChange={(event) =>
+                      setCalendarDayNoteForm((currentForm) => ({
+                        ...currentForm,
+                        title: event.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Description
+                  <textarea
+                    required
+                    rows={5}
+                    value={calendarDayNoteForm.description}
+                    onChange={(event) =>
+                      setCalendarDayNoteForm((currentForm) => ({
+                        ...currentForm,
+                        description: event.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full resize-y rounded-xl border border-gray-200 px-3 py-2 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  />
+                </label>
+                {calendarDayNotesError && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {calendarDayNotesError}
+                  </p>
+                )}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeCalendarDayNoteDialog}
+                    disabled={calendarDayNoteSaving}
+                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={calendarDayNoteSaving}
+                    className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {calendarDayNoteSaving ? "Saving..." : "Save"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {selectedBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
@@ -1596,6 +2215,39 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
       )}
 
       <style jsx global>{`
+        .calendar-full-view .calendar-day-note-event {
+          max-width: 100%;
+          overflow: hidden;
+          cursor: pointer;
+        }
+
+        .calendar-full-view .calendar-day-note-event .fc-event-main {
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        .calendar-full-view .calendar-day-note-title {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: #000000 !important;
+        }
+
+        .calendar-full-view .fc-daygrid-day.general-day-off {
+          background-color: #f3f4f6;
+          cursor: not-allowed;
+          pointer-events: none;
+        }
+
+        .calendar-full-view .fc-daygrid-day.general-day-off .fc-daygrid-day-frame {
+          background-color: #f3f4f6;
+        }
+
+        .calendar-full-view .fc-daygrid-day.general-day-off .fc-daygrid-day-number {
+          color: #9ca3af;
+        }
+
         .calendar-page {
           width: 100%;
           max-width: 100%;

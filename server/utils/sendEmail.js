@@ -372,6 +372,36 @@ const REMINDER_CANCELLATION_POLICY =
   "Cancellation policy: Cancellations made less than 24 hours before your scheduled appointment are subject to a $40 cancellation fee.";
 const REMINDER_CANCELLATION_POLICY_FR =
   "Politique d’annulation : toute annulation effectuée moins de 24 heures avant l’heure prévue du rendez-vous peut entraîner des frais d’annulation de 40 $.";
+
+function parseReminderBookingDate(bookingDate) {
+  let dateTime;
+
+  if (bookingDate instanceof Date) {
+    dateTime = DateTime.fromJSDate(bookingDate, { zone: "utc" });
+  } else if (typeof bookingDate === "string" && bookingDate.trim()) {
+    dateTime = DateTime.fromISO(bookingDate, { zone: "utc" });
+  } else {
+    throw new TypeError("Reminder bookingDate must be a valid Date or ISO string.");
+  }
+
+  if (!dateTime.isValid) {
+    throw new RangeError(
+      `Invalid reminder bookingDate: ${dateTime.invalidReason || "unparsable value"}`
+    );
+  }
+
+  const businessDateTime = dateTime.setZone(BUSINESS_TIME_ZONE);
+  if (!businessDateTime.isValid) {
+    throw new RangeError(
+      `Invalid reminder bookingDate in ${BUSINESS_TIME_ZONE}: ${
+        businessDateTime.invalidReason || "invalid timezone conversion"
+      }`
+    );
+  }
+
+  return businessDateTime;
+}
+
 export function buildReminderEmail({
   customerName,
   bookingDate,
@@ -380,10 +410,7 @@ export function buildReminderEmail({
   cancelUrl,
   reminderType,
 }) {
-  const dt = DateTime
-    .fromISO(bookingDate, { zone: "utc" })
-    .setZone(BUSINESS_TIME_ZONE);
-
+  const dt = parseReminderBookingDate(bookingDate);
   const formattedDate = dt.toFormat("yyyy-LL-dd");
   const formattedTime = dt.toFormat("HH:mm");
   const includesCancellationPolicy = [
@@ -463,18 +490,6 @@ export async function sendReminderEmail({
   reminderType,
 }) {
   try {
-    console.log("RAW bookingDate 👉", bookingDate);
-    console.log("TYPE 👉", typeof bookingDate);
-    console.log("IS DATE? 👉", bookingDate instanceof Date);
-
-    const dt = DateTime
-      .fromISO(bookingDate, { zone: "utc" })
-      .setZone(BUSINESS_TIME_ZONE);
-    console.log("Luxon parse:", dt.toString());
-    console.log("Valid?", dt.isValid);
-    console.log("Date:", dt.toFormat("yyyy-LL-dd"));
-    console.log("Time:", dt.toFormat("HH:mm"));
-
     const email = buildReminderEmail({
       customerName,
       bookingDate,
@@ -498,7 +513,7 @@ export async function sendReminderEmail({
     console.log("Reminder email sent ✔️");
     return result;
   } catch (error) {
-    console.log("Reminder email error ❌", error.message);
+    console.error("Reminder email error ❌", error.message);
     return null;
   }
 }
