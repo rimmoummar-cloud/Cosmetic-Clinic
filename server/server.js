@@ -82,11 +82,17 @@ app.use(
 //   },
 //   credentials: true
 // }));
+// const allowedOrigins = [
+//   "http://localhost:3000",
+//   "https://shiny-skin-clinic.vercel.app"
+// ];
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://shiny-skin-clinic.vercel.app"
+  "http://localhost:3001",
+  "https://shiny-skin-clinic.vercel.app",
+  "https://shinyskinclinic.com",
+  "https://www.shinyskinclinic.com"
 ];
-
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
