@@ -52,13 +52,14 @@ export const getAnswerWithQuestion = async (req, res) => {
 
 export const createAnswer = async (req, res) => {
   try {
-    const { completed_form_id, completed_form_question_id, answer_text, selected_option_id, boolean_value } = req.body;
+    const { completed_form_id, completed_form_question_id, answer_text, selected_option_id, selected_option_ids, boolean_value } = req.body;
 
     const answer = await FormAnswer.createAnswer(null, {
       completed_form_id,
       completed_form_question_id,
       answer_text,
       selected_option_id,
+      selected_option_ids,
       boolean_value
     });
 
@@ -74,14 +75,14 @@ export const createAnswer = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.status(500).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 };
 
 export const updateAnswer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { answer_text, selected_option_id, boolean_value } = req.body;
+    const { answer_text, selected_option_id, selected_option_ids, boolean_value } = req.body;
 
     const existing = await FormAnswer.getAnswerById(null, id);
     if (!existing) {
@@ -91,6 +92,7 @@ export const updateAnswer = async (req, res) => {
     const answer = await FormAnswer.updateAnswer(null, id, {
       answer_text,
       selected_option_id,
+      selected_option_ids,
       boolean_value
     });
 
@@ -104,7 +106,7 @@ export const updateAnswer = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.status(500).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 };
 
@@ -132,7 +134,7 @@ export const deleteAnswer = async (req, res) => {
 export const upsertAnswer = async (req, res) => {
   try {
     const { completedFormId } = req.params;
-    const { completed_form_question_id, answer_text, selected_option_id, boolean_value } = req.body;
+    const { completed_form_question_id, answer_text, selected_option_id, selected_option_ids, boolean_value } = req.body;
 
     if (!completed_form_question_id) {
       return res.status(400).json({ error: 'completed_form_question_id is required' });
@@ -146,6 +148,7 @@ export const upsertAnswer = async (req, res) => {
     const answer = await FormAnswer.upsertAnswer(null, completedFormId, completed_form_question_id, {
       answer_text,
       selected_option_id,
+      selected_option_ids,
       boolean_value
     });
 
@@ -160,6 +163,6 @@ export const upsertAnswer = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    res.status(500).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 };

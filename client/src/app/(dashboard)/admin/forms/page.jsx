@@ -1602,6 +1602,7 @@ const questionTypes = [
   { value: "text", label: "Text" },
   { value: "yes_no", label: "Yes / No" },
   { value: "multiple_choice", label: "Multiple Choice" },
+  { value: "multi_select", label: "Multiple Choice / Multi-select" },
   { value: "agreement", label: "Agreement" },
   { value: "confirmation", label: "Confirmation" },
 ];
@@ -1814,7 +1815,7 @@ function TemplatePreview({ template, details, loading, onClose }) {
                                   className="flex cursor-default items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700"
                                 >
                                   <input
-                                    type="radio"
+                                    type={type === "multi_select" ? "checkbox" : "radio"}
                                     disabled
                                     name={`preview-question-${question.id}`}
                                     className="h-4 w-4"
@@ -1854,6 +1855,7 @@ export default function AdminFormsPage() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState("templates");
+  const [updatingTemplateId, setUpdatingTemplateId] = useState(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderMode, setBuilderMode] = useState("create");
@@ -2010,7 +2012,7 @@ export default function AdminFormsPage() {
 
         if (
           field === "question_type" &&
-          value !== "multiple_choice"
+          !["multiple_choice", "multi_select"].includes(value)
         ) {
           return {
             ...question,
@@ -2383,8 +2385,7 @@ export default function AdminFormsPage() {
             createdQuestion.data?.id;
 
           if (
-            question.question_type ===
-            "multiple_choice"
+            ["multiple_choice", "multi_select"].includes(question.question_type)
           ) {
             for (const option of question.options) {
               if (!option.option_label) continue;
@@ -2626,16 +2627,21 @@ export default function AdminFormsPage() {
   };
 
   const toggleTemplateActive = async (template) => {
-    if (!template?.id) return;
+    if (!template?.id || updatingTemplateId !== null) return;
 
+    setUpdatingTemplateId(template.id);
     try {
-      await api.patch(
-        `/forms/templates/${template.id}/deactivate`
-      );
+      if (template.is_active) {
+        await api.patch(`/forms/templates/${template.id}/deactivate`);
+      } else {
+        await api.put(`/forms/templates/${template.id}`, { is_active: true });
+      }
 
-      await queryClient.invalidateQueries({
-        queryKey: ["forms-templates"],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["forms-templates"] }),
+        queryClient.invalidateQueries({ queryKey: ["form-template-details", template.id] }),
+        queryClient.invalidateQueries({ queryKey: ["form-template-preview", template.id] }),
+      ]);
     } catch (error) {
       console.error(
         "Failed to update template state",
@@ -2644,8 +2650,11 @@ export default function AdminFormsPage() {
 
       alert(
         error?.response?.data?.error ||
+          error?.response?.data?.message ||
           "Failed to update template state"
       );
+    } finally {
+      setUpdatingTemplateId(null);
     }
   };
 
@@ -2771,9 +2780,11 @@ export default function AdminFormsPage() {
                       onClick={() =>
                         toggleTemplateActive(template)
                       }
-                      className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100"
+                      disabled={updatingTemplateId !== null}
+                      aria-busy={updatingTemplateId === template.id}
+                      className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {template.is_active
+                      {updatingTemplateId === template.id ? "Updating..." : template.is_active
                         ? "Deactivate"
                         : "Activate"}
                     </button>
@@ -3134,8 +3145,7 @@ export default function AdminFormsPage() {
                               </button>
                             </div>
 
-                            {question.question_type ===
-                              "multiple_choice" && (
+                            {["multiple_choice", "multi_select"].includes(question.question_type) && (
                               <div className="mt-4 rounded-xl bg-gray-50 p-3">
                                 <div className="mb-3 flex items-center justify-between">
                                   <h4 className="text-sm font-semibold text-gray-800">

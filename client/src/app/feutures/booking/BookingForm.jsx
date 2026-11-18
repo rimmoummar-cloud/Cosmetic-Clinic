@@ -780,7 +780,7 @@ const generateDates = (workingHourEnd = 18) => {
  
  
  
-export function BookingForm({ isOpen, onClose, isAdmin = false }) { 
+export function BookingForm({ isOpen, onClose, isAdmin = false, onBookingCreated }) {
   const [errors, setErrors] = useState({ 
   name: "", 
   email: "", 
@@ -805,6 +805,8 @@ export function BookingForm({ isOpen, onClose, isAdmin = false }) {
   const [categories, setCategories] = useState([]); 
   const [categoryServices, setCategoryServices] = useState({}); 
   const [availableSlots, setAvailableSlots] = useState([]); 
+  const [outsideHoursSlots, setOutsideHoursSlots] = useState([]);
+  const selectedOutsideHours = isAdmin && outsideHoursSlots.includes(selectedTime);
    
   // Loading & Error State 
   const [loadingCategories, setLoadingCategories] = useState(true); 
@@ -980,20 +982,27 @@ const endDt = DateTime.fromISO(
  
   // Fetch available slots when date or services change 
   useEffect(() => { 
+    let cancelled = false;
+    setAvailableSlots([]);
+    setOutsideHoursSlots([]);
+    setSelectedTime("");
     const fetchSlots = async () => { 
       if (!selectedDate || selectedServices.length === 0) { 
-        setAvailableSlots([]); 
+        setLoadingSlots(false);
         return; 
       } 
  
       try { 
         setLoadingSlots(true); 
         const serviceIds = selectedServices.map(s => s.id); 
-        const slots = await getAvailableSlots(
+        const availability = await getAvailableSlots(
           serviceIds,
           selectedDate,
           { isAdmin }
         );
+        if (cancelled) return;
+        const slots = isAdmin ? availability.availableSlots : availability;
+        setOutsideHoursSlots(isAdmin ? availability.outsideHoursSlots : []);
          
         // Track slots per date (filterPastSlots is already applied inside getAvailableSlots) 
         setSlotsByDate(prev => ({ ...prev, [selectedDate]: slots })); 
@@ -1002,16 +1011,18 @@ const endDt = DateTime.fromISO(
         // Clear previously selected time as slots changed 
         setSelectedTime(""); 
       } catch (error) { 
+        if (cancelled) return;
         console.error("Failed to load available slots:", error); 
         toast.error("Failed to load available time slots"); 
         setAvailableSlots([]); 
       } finally { 
-        setLoadingSlots(false); 
+        if (!cancelled) setLoadingSlots(false);
       } 
     }; 
  
     fetchSlots(); 
-  }, [selectedDate, selectedServices]); 
+    return () => { cancelled = true; };
+  }, [selectedDate, selectedServices, isAdmin]);
  
  
   const toggleService = (service) => { 
@@ -1139,6 +1150,7 @@ const booking_datetime = DateTime.fromISO(
  
     setTimeout(() => { 
       onClose(); 
+      onBookingCreated?.();
     }, 1000); 
   } catch (error) { 
     console.error("Booking error:", error); 
@@ -1341,9 +1353,16 @@ const formatCurrency = (value) =>
                             </div> 
                           ) : ( 
                             <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto"> 
-                              {availableSlots.map((slot)=>( 
-                                <button key={slot} type="button" onClick={()=>setSelectedTime(slot)} className={`p-3 rounded-xl border text-sm transition ${selectedTime===slot?"border-black bg-gray-100":"border-gray-200 bg-white hover:border-black"}`}>{formatTimeForDisplay(slot)}</button> 
-                              ))} 
+                              {availableSlots.map((slot) => {
+                                const outsideHours = isAdmin && outsideHoursSlots.includes(slot);
+                                return (
+                                  <button key={slot} type="button" onClick={() => setSelectedTime(slot)} aria-pressed={selectedTime === slot} className={`p-3 rounded-xl border text-sm transition ${outsideHours
+                                    ? selectedTime === slot
+                                      ? "border-black bg-gray-300 text-gray-900 ring-2 ring-black/20"
+                                      : "border-gray-300 bg-gray-200 text-gray-600 hover:border-black"
+                                    : selectedTime === slot ? "border-black bg-gray-100" : "border-gray-200 bg-white hover:border-black"}`}>{formatTimeForDisplay(slot)}</button>
+                                );
+                              })}
                             </div> 
                           )} 
                         </> 
@@ -1355,6 +1374,12 @@ const formatCurrency = (value) =>
                     </div> 
                   </div> 
  
+                  {selectedOutsideHours && (
+                    <p role="status" className="rounded-xl border border-gray-300 bg-gray-100 p-4 text-sm text-gray-700">
+                      This appointment is outside the working hours configured for this date. You can continue with this Admin booking.
+                    </p>
+                  )}
+
                   {/* Duration Warning */} 
                   {durationWarning && ( 
                     <motion.div 
@@ -1551,4 +1576,4 @@ const formatCurrency = (value) =>
       /> 
     </> 
   ); 
-} 
+}

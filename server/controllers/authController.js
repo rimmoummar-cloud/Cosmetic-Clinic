@@ -12,6 +12,12 @@ import {
 } from "../models/refreshTokenModel.js";
 import { blacklistToken } from "../models/tokenBlacklist.js";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+import db from "../config/db.js";
+
+const ACCESS_TOKEN_SECONDS = 15 * 60;
+const SESSION_SECONDS = 72 * 60 * 60;
+
 export async function login(req, res) {
 
     try {
@@ -62,18 +68,22 @@ if (!admin) {
 }
 
      
+const issuedAt = Math.floor(Date.now() / 1000);
+const sessionExpiresAt = issuedAt + SESSION_SECONDS;
 const accessToken =
     jwt.sign(
 
         {
             id: admin.id,
-            email: admin.email
+            email: admin.email,
+            iat: issuedAt
         },
 
         process.env.JWT_SECRET,
 
         {
-            expiresIn: "15m"
+            expiresIn: ACCESS_TOKEN_SECONDS,
+            jwtid: crypto.randomUUID()
         }
 
     );
@@ -82,26 +92,36 @@ const refreshToken =
     jwt.sign(
 
         {
-            id: admin.id
+            id: admin.id,
+            session_expires_at: sessionExpiresAt,
+            iat: issuedAt
         },
 
         process.env.REFRESH_TOKEN_SECRET,
 
         {
-            expiresIn: "7d"
+            expiresIn: SESSION_SECONDS,
+            jwtid: crypto.randomUUID()
         }
 
     );
 
 
-    await deleteAdminRefreshTokens(admin.id);
-
-await saveRefreshToken(
-  refreshToken,
-  admin.id,
-  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  req.headers["user-agent"]
-);
+const client = await db.connect();
+try {
+  await client.query("BEGIN");
+  await deleteAdminRefreshTokens(admin.id, client);
+  await saveRefreshToken(
+    refreshToken, admin.id, new Date(sessionExpiresAt * 1000),
+    req.headers["user-agent"], client
+  );
+  await client.query("COMMIT");
+} catch (error) {
+  await client.query("ROLLBACK");
+  throw error;
+} finally {
+  client.release();
+}
       
 res.cookie(
 
@@ -153,7 +173,7 @@ res.cookie(
 sameSite: "none",
 secure: true,
         maxAge:
-            7 * 24 * 60 * 60 * 1000,
+            SESSION_SECONDS * 1000,
             path: "/",
 priority: "high"
 
@@ -166,7 +186,7 @@ priority: "high"
 
     } catch (error) {
 
-        console.error("LOGIN ERROR:", error);
+        console.error("Admin login failed");
 
         res.status(500).json({
             message: "Server error"
@@ -179,6 +199,7 @@ priority: "high"
 
 export async function me(req, res) {
     const admin = await findAdminById(req.admin.id);
+    if (!admin) return res.status(401).json({ message: "Admin not found" });
 
    return res.json({
   admin: {
@@ -194,15 +215,11 @@ export async function logout(req, res) {
 
   try {
 
-    const refreshToken = req.cookies.refreshToken;
     const accessToken = req.cookies.accessToken;
 
-    // حذف refresh token من DB
-    if (refreshToken) {
-
-      await deleteRefreshToken(refreshToken);
-
-    }
+    // The existing policy allows one login per Admin. Revoke its rotated
+    // tokens too, under the same lock used by refresh and password changes.
+    await deleteAdminRefreshTokens(req.admin.id);
 
     // حرق access token
     if (accessToken) {
@@ -260,7 +277,7 @@ secure: true,
 
   } catch (err) {
 
-    console.log(err);
+    console.error("Admin logout failed");
 
     return res.status(500).json({
       message: "Logout failed"
@@ -270,185 +287,88 @@ secure: true,
 
 }
 export async function refresh(req, res) {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return res.status(401).json({ message: "No refresh token" });
 
-    try {
+  let client;
+  try {
+    client = await db.connect();
+    await client.query("BEGIN");
+    // Lock the token until rotation commits, so it cannot be consumed twice.
+    const savedToken = await findRefreshToken(refreshToken, client);
+    const reject = async (message) => {
+      await client.query("COMMIT");
+      return res.status(401).json({ message });
+    };
 
-        const refreshToken =
-            req.cookies.refreshToken;
-
-        if (!refreshToken) {
-
-            return res.status(401).json({
-                message: "No refresh token"
-            });
-
-        }
-
-        const savedToken =
-    await findRefreshToken(refreshToken);
-
-if (!savedToken) {
-    return res.status(401).json({
-        message: "Invalid refresh token"
-    });
-}
+    if (!savedToken) return await reject("Invalid refresh token");
     if (savedToken.used) {
-  await deleteAdminRefreshTokens(savedToken.admin_id);
-  
-
-  return res.status(401).json({
-    message: "Refresh token reuse detected - session revoked"
-  });
-}
-
-
-if (savedToken.expires_at < new Date()) {
-    await deleteRefreshToken(refreshToken);
-
-    return res.status(401).json({
-        message: "Refresh token expired"
-    });
-}
-if (savedToken.user_agent !== req.headers["user-agent"]) {
-  // لا تحذفي كل السيشن مباشرة
-  await deleteRefreshToken(refreshToken);
-
-  return res.status(401).json({
-    message: "Suspicious device change detected"
-  });
-}
-
-
-let decoded;
-
-try {
-  decoded = jwt.verify(
-    refreshToken,
-    process.env.REFRESH_TOKEN_SECRET
-  );
-  await markRefreshTokenAsUsed(refreshToken);
-
-} catch (err) {
-  // token أصلاً invalid أو tampered
-  await deleteRefreshToken(refreshToken);
-  return res.status(401).json({
-    message: "Invalid refresh token"
-  });
-}
-
-
-        // إنشاء access token جديد
-        const newAccessToken =
-            jwt.sign(
-
-                {
-                    id: decoded.id
-                },
-
-                process.env.JWT_SECRET,
-
-                {
-                    expiresIn: "15m"
-                }
-
-            );
-
-        // إنشاء refresh token جديد
-        const newRefreshToken =
-            jwt.sign(
-
-                {
-                    id: decoded.id
-                },
-
-                process.env.REFRESH_TOKEN_SECRET,
-
-                {
-                    expiresIn: "7d"
-                }
-
-            );
-
-      
-await saveRefreshToken(
-  newRefreshToken,
-  decoded.id,
-  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  req.headers["user-agent"]
-);
-        // access token cookie
-        res.cookie(
-
-            "accessToken",
-
-            newAccessToken,
-
-            {
-
-                httpOnly: true,
-
-                // secure:
-                //     process.env.NODE_ENV === "production",
-
-                // sameSite:
-                //     process.env.NODE_ENV === "production"
-                //         ? "none"
-                //         : "lax",
-sameSite: "none",
-secure: true,
-                maxAge:
-                    15 * 60 * 1000,
-                    path: "/",
-priority: "high"
-
-            }
-
-        );
-
-        // refresh token cookie
-        res.cookie(
-
-            "refreshToken",
-
-            newRefreshToken,
-
-            {
-
-                httpOnly: true,
-
-                // secure:
-                //     process.env.NODE_ENV === "production",
-
-                // sameSite:
-                //     process.env.NODE_ENV === "production"
-                //         ? "none"
-                //         : "lax",
-sameSite: "none",
-secure: true,
-                maxAge:
-                    7 * 24 * 60 * 60 * 1000,
-                    path: "/",
-priority: "high"
-
-            }
-
-        );
-
-        res.json({
-            message: "Token refreshed"
-        });
-
-    } catch (error) {
-
-        return res.status(401).json({
-            message: "Refresh failed"
-        });
-
+      await deleteAdminRefreshTokens(savedToken.admin_id, client);
+      return await reject("Refresh token reuse detected - session revoked");
+    }
+    if (new Date(savedToken.expires_at).getTime() <= Date.now()) {
+      await deleteRefreshToken(refreshToken, client);
+      return await reject("Refresh token expired");
+    }
+    if (savedToken.user_agent !== req.headers["user-agent"]) {
+      await deleteRefreshToken(refreshToken, client);
+      return await reject("Suspicious device change detected");
     }
 
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    } catch {
+      await deleteRefreshToken(refreshToken, client);
+      return await reject("Invalid refresh token");
+    }
+    if (String(decoded.id) !== String(savedToken.admin_id) || !await findAdminById(decoded.id, client)) {
+      await deleteRefreshToken(refreshToken, client);
+      return await reject("Invalid refresh session");
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    // Legacy tokens are bounded from their issue time on their next rotation.
+    const sessionExpiresAt = Math.min(
+      Math.floor(new Date(savedToken.expires_at).getTime() / 1000),
+      decoded.exp,
+      decoded.session_expires_at ?? (decoded.iat + SESSION_SECONDS)
+    );
+    const remainingSeconds = sessionExpiresAt - now;
+    if (!Number.isFinite(remainingSeconds) || remainingSeconds <= 0) {
+      await deleteRefreshToken(refreshToken, client);
+      return await reject("Refresh session expired");
+    }
+    const accessSeconds = Math.min(ACCESS_TOKEN_SECONDS, remainingSeconds);
+    const newAccessToken = jwt.sign(
+      { id: decoded.id, iat: now }, process.env.JWT_SECRET,
+      { expiresIn: accessSeconds, jwtid: crypto.randomUUID() }
+    );
+    const newRefreshToken = jwt.sign(
+      { id: decoded.id, session_expires_at: sessionExpiresAt, iat: now },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: remainingSeconds, jwtid: crypto.randomUUID() }
+    );
+
+    await markRefreshTokenAsUsed(refreshToken, client);
+    await saveRefreshToken(
+      newRefreshToken, decoded.id, new Date(sessionExpiresAt * 1000),
+      req.headers["user-agent"], client
+    );
+    await client.query("COMMIT");
+
+    const cookieOptions = { httpOnly: true, secure: true, sameSite: "none", path: "/", priority: "high" };
+    res.cookie("accessToken", newAccessToken, { ...cookieOptions, maxAge: accessSeconds * 1000 });
+    res.cookie("refreshToken", newRefreshToken, { ...cookieOptions, maxAge: remainingSeconds * 1000 });
+    return res.json({ message: "Token refreshed" });
+  } catch {
+    if (client) await client.query("ROLLBACK").catch(() => {});
+    // An unavailable database is recoverable; do not report a revoked session.
+    return res.status(503).json({ message: "Session renewal temporarily unavailable" });
+  } finally {
+    client?.release();
+  }
 }
-
-
 
 export async function updateProfile(req, res) {
   try {

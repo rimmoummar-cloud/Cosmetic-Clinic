@@ -98,7 +98,7 @@ export async function getAvailableSlots(
     // SAFETY — no services
     // =========================
     if (!serviceIds || serviceIds.length === 0) {
-      return [];
+      return isAdmin ? { availableSlots: [], outsideHoursSlots: [] } : [];
     }
 
     // Convert array to comma-separated string
@@ -164,6 +164,15 @@ const booking_datetime = bookingDateTime
 
     // Filter out past slots if the selected date is today
     const filteredSlots = filterPastSlots(data.availableSlots || [], bookingDate);
+
+    if (isAdmin) {
+      return {
+        availableSlots: filteredSlots,
+        outsideHoursSlots: (data.outsideHoursSlots || []).filter((slot) =>
+          filteredSlots.includes(slot)
+        ),
+      };
+    }
 
     return filteredSlots;
 

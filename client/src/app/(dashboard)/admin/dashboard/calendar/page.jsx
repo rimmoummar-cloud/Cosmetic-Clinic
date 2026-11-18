@@ -224,6 +224,10 @@ export default function AdminCalendarPage() {
   const isInitialCalendarLoadRef = useRef(true);
   const lastRequestedKeyRef = useRef("");
   const activeRequestIdRef = useRef(0);
+  const bookingDetailsRequestIdRef = useRef(0);
+  const workingHoursOverrideRequestsRef = useRef(new Map());
+  const workingHoursGenerationRef = useRef(0);
+  const workingHoursRangeRef = useRef(null);
   const calendarDayNotesRangeRef = useRef(null);
   const lastCalendarDayNotesRangeRef = useRef("");
   const calendarDayNotesRequestIdRef = useRef(0);
@@ -245,6 +249,7 @@ export default function AdminCalendarPage() {
   const [calendarDayNoteSaving, setCalendarDayNoteSaving] = useState(false);
   const [calendarDayNoteDeleting, setCalendarDayNoteDeleting] = useState(false);
   const [daysOff, setDaysOff] = useState(null);
+  const [workingHoursOverrides, setWorkingHoursOverrides] = useState(new Map());
   const [workingHoursLoading, setWorkingHoursLoading] = useState(true);
   const [workingHoursError, setWorkingHoursError] = useState("");
   const [waitingListEvents, setWaitingListEvents] = useState([]);
@@ -270,10 +275,64 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
 
   const statusOptions = calendarMode === "waiting-list" ? WAITING_LIST_STATUS_FILTERS : BOOKING_STATUS_FILTERS;
 
-  const isConfiguredDayOff = (date) =>
-    daysOff instanceof Set && daysOff.has(date.getDay());
-  const isBookingDateUnavailable = (date) =>
-    workingHoursLoading || isConfiguredDayOff(date);
+  const isConfiguredDayOff = (date, override = workingHoursOverrides.get(formatDateForApi(date))) => {
+    return typeof override === "boolean"
+      ? override
+      : daysOff instanceof Set && daysOff.has(date.getDay());
+  };
+
+  const fetchWorkingHoursOverride = (dateKey) => {
+    const requests = workingHoursOverrideRequestsRef.current;
+    if (!requests.has(dateKey)) {
+      const request = api.get(`/workingHoursByDate/date/${dateKey}`).then(({ data }) => {
+        if (data !== null && (typeof data !== "object" || typeof data.is_day_off !== "boolean")) {
+          throw new Error("The date-specific working-hours response is invalid.");
+        }
+        return data === null ? null : data.is_day_off;
+      }).catch((error) => {
+        if (requests.get(dateKey) === request) requests.delete(dateKey);
+        throw error;
+      });
+      requests.set(dateKey, request);
+    }
+    return requests.get(dateKey);
+  };
+
+  const loadWorkingHoursOverrides = async (range) => {
+    const generation = workingHoursGenerationRef.current;
+    const dates = [];
+    // FullCalendar's end is exclusive. Use local date arithmetic, as the calendar does.
+    for (const date = new Date(range.start); date < range.end; date.setDate(date.getDate() + 1)) {
+      dates.push(formatDateForApi(date));
+    }
+    const entries = await Promise.all(dates.map(async (dateKey) =>
+      [dateKey, await fetchWorkingHoursOverride(dateKey)]
+    )).catch((error) => {
+      if (generation !== workingHoursGenerationRef.current) return null;
+      throw error;
+    });
+    if (!entries || generation !== workingHoursGenerationRef.current) return;
+    setWorkingHoursOverrides((current) => new Map([
+      ...current,
+      ...entries,
+    ]));
+  };
+
+  const isBookingDateUnavailable = async (date) => {
+    if (workingHoursLoading) return true;
+    const generation = workingHoursGenerationRef.current;
+    try {
+      const dateKey = formatDateForApi(date);
+      const override = await fetchWorkingHoursOverride(dateKey);
+      if (generation !== workingHoursGenerationRef.current) return true;
+      setWorkingHoursOverrides((current) => new Map(current).set(dateKey, override));
+      return isConfiguredDayOff(date, override);
+    } catch (error) {
+      if (generation !== workingHoursGenerationRef.current) return true;
+      setWorkingHoursError("Date-specific working hours could not be loaded. Refresh availability to retry.");
+      return true;
+    }
+  };
 
   const currentEvents = calendarMode === "waiting-list" ? waitingListEvents : events;
   const getEventStatus = (event) =>
@@ -333,10 +392,10 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     return period === "evening";
   });
 
-  const fetchBookings = async (nextView, requestDate, showLoading = false) => {
+  const fetchBookings = async (nextView, requestDate, showLoading = false, force = false) => {
     const requestKey = `${nextView}-${formatDateForApi(requestDate)}`;
 
-    if (lastRequestedKeyRef.current === requestKey) {
+    if (!force && lastRequestedKeyRef.current === requestKey) {
       return;
     }
 
@@ -372,7 +431,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
         setEvents([]);
       }
     } finally {
-      if (requestId === activeRequestIdRef.current && showLoading) {
+      if (requestId === activeRequestIdRef.current && (showLoading || force)) {
         setLoading(false);
       }
     }
@@ -431,6 +490,8 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
   };
 
   const fetchWorkingHours = async () => {
+    const generation = ++workingHoursGenerationRef.current;
+    workingHoursOverrideRequestsRef.current = new Map();
     setWorkingHoursLoading(true);
     setWorkingHoursError("");
 
@@ -462,27 +523,21 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
           .filter((row) => row.is_day_off)
           .map((row) => Number(row.day_of_week))
       );
-      setDaysOff(nextDaysOff);
-
-      if (
-        calendarMode === "bookings" &&
-        view === "day" &&
-        nextDaysOff.has(selectedDate.getDay())
-      ) {
-        setView("month");
-        const calendarApi = calendarRef.current?.getApi();
-        calendarApi?.changeView("dayGridMonth");
-        calendarApi?.gotoDate(selectedDate);
+      if (workingHoursRangeRef.current) {
+        await loadWorkingHoursOverrides(workingHoursRangeRef.current);
       }
+      if (generation !== workingHoursGenerationRef.current) return;
+      setDaysOff(nextDaysOff);
     } catch (error) {
-      console.error("Failed to fetch general working hours", error);
+      if (generation !== workingHoursGenerationRef.current) return;
+      console.error("Failed to fetch working hours", error);
       setWorkingHoursError(
         daysOff === null
-          ? "General working hours could not be loaded. The calendar remains available using its existing behavior."
-          : "General working hours could not be refreshed. The last loaded availability is still applied."
+          ? "Working hours could not be loaded. Refresh availability to retry."
+          : "Working hours could not be refreshed. The last loaded availability is still applied."
       );
     } finally {
-      setWorkingHoursLoading(false);
+      if (generation === workingHoursGenerationRef.current) setWorkingHoursLoading(false);
     }
   };
 
@@ -509,13 +564,29 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
   };
 
   const fetchAllBookingDetails = async () => {
+    const requestId = ++bookingDetailsRequestIdRef.current;
     try {
       const response = await api.get("/bookings/all/full-details");
+      if (requestId !== bookingDetailsRequestIdRef.current) return;
       setAllBookingsData(response.data || []);
     } catch (error) {
       console.error("Failed to fetch full booking details", error);
-      setAllBookingsData([]);
+      if (requestId === bookingDetailsRequestIdRef.current) setAllBookingsData([]);
     }
+  };
+
+  const handleBookingCreated = async () => {
+    const calendarApi = calendarRef.current?.getApi();
+    const currentView = calendarApi?.view;
+    await Promise.all([
+      fetchBookings(
+        currentView ? (currentView.type === "timeGridDay" ? "day" : "month") : view,
+        currentView?.currentStart || visibleDate,
+        false,
+        true
+      ),
+      fetchAllBookingDetails(),
+    ]);
   };
 
   useEffect(() => {
@@ -546,6 +617,11 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
   };
 
   const handleDatesSet = (info) => {
+    const range = { start: info.start, end: info.end };
+    workingHoursRangeRef.current = range;
+    loadWorkingHoursOverrides(range).catch(() => {
+      setWorkingHoursError("Date-specific working hours could not be loaded. Refresh availability to retry.");
+    });
     const nextView = info.view.type === "timeGridDay" ? "day" : "month";
     const startDate = formatDateForApi(info.start);
     const lastVisibleDate = new Date(
@@ -565,9 +641,9 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     syncCalendarToDate(nextView, nextDate);
   };
 
-  const handleDayPickerChange = (event) => {
+  const handleDayPickerChange = async (event) => {
     const nextDate = new Date(`${event.target.value}T12:00:00`);
-    if (calendarMode === "bookings" && isBookingDateUnavailable(nextDate)) {
+    if (calendarMode === "bookings" && await isBookingDateUnavailable(nextDate)) {
       return;
     }
 
@@ -586,14 +662,14 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     }
   };
 
-  const handleModeChange = (nextMode) => {
+  const handleModeChange = async (nextMode) => {
     setCalendarMode(nextMode);
     setStatusFilter("all");
 
     if (
       nextMode === "bookings" &&
       view === "day" &&
-      isBookingDateUnavailable(selectedDate)
+      await isBookingDateUnavailable(selectedDate)
     ) {
       setView("month");
       const calendarApi = calendarRef.current?.getApi();
@@ -722,7 +798,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     }
   };
 
-  const handleCalendarViewChange = (nextView) => {
+  const handleCalendarViewChange = async (nextView) => {
     if (!calendarRef.current) {
       return;
     }
@@ -732,7 +808,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     if (nextView === "day") {
       const nextDate = selectedDate || visibleDate || new Date();
 
-      if (calendarMode === "bookings" && isBookingDateUnavailable(nextDate)) {
+      if (calendarMode === "bookings" && await isBookingDateUnavailable(nextDate)) {
         return;
       }
 
@@ -763,7 +839,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     }
   };
 
-  const handleCalendarPrevious = () => {
+  const handleCalendarPrevious = async () => {
     if (!calendarRef.current) {
       return;
     }
@@ -771,7 +847,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     if (
       calendarMode === "bookings" &&
       view === "day" &&
-      isBookingDateUnavailable(
+      await isBookingDateUnavailable(
         new Date(
           selectedDate.getFullYear(),
           selectedDate.getMonth(),
@@ -787,7 +863,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     calendarApi.prev();
   };
 
-  const handleCalendarNext = () => {
+  const handleCalendarNext = async () => {
     if (!calendarRef.current) {
       return;
     }
@@ -795,7 +871,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     if (
       calendarMode === "bookings" &&
       view === "day" &&
-      isBookingDateUnavailable(
+      await isBookingDateUnavailable(
         new Date(
           selectedDate.getFullYear(),
           selectedDate.getMonth(),
@@ -811,14 +887,14 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
     calendarApi.next();
   };
 
-  const handleCalendarToday = () => {
+  const handleCalendarToday = async () => {
     if (!calendarRef.current) {
       return;
     }
 
     const today = new Date();
 
-    if (view === "day" && calendarMode === "bookings" && isBookingDateUnavailable(today)) {
+    if (view === "day" && calendarMode === "bookings" && await isBookingDateUnavailable(today)) {
       return;
     }
 
@@ -1441,10 +1517,10 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
                   ? ["general-day-off"]
                   : []
               }
-              dateClick={(info) => {
+              dateClick={async (info) => {
   const nextDate = new Date(`${info.dateStr}T12:00:00`);
 
-  if (calendarMode === "bookings" && isBookingDateUnavailable(nextDate)) {
+  if (calendarMode === "bookings" && await isBookingDateUnavailable(nextDate)) {
     return;
   }
 
@@ -1464,7 +1540,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
   }
 }}
               datesSet={handleDatesSet}
-              eventClick={(info) => {
+              eventClick={async (info) => {
                 if (
                   info.event.extendedProps?.type === "calendar-day-note"
                 ) {
@@ -1481,7 +1557,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
 
                 if (
                   info.event.start &&
-                  isBookingDateUnavailable(info.event.start)
+                  await isBookingDateUnavailable(info.event.start)
                 ) {
                   return;
                 }
@@ -2234,13 +2310,15 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
           color: #000000 !important;
         }
 
-        .calendar-full-view .fc-daygrid-day.general-day-off {
+        .calendar-full-view .fc-daygrid-day.general-day-off,
+        .calendar-full-view .fc-timegrid-col.general-day-off {
           background-color: #f3f4f6;
           cursor: not-allowed;
           pointer-events: none;
         }
 
-        .calendar-full-view .fc-daygrid-day.general-day-off .fc-daygrid-day-frame {
+        .calendar-full-view .fc-daygrid-day.general-day-off .fc-daygrid-day-frame,
+        .calendar-full-view .fc-timegrid-col.general-day-off .fc-timegrid-col-frame {
           background-color: #f3f4f6;
         }
 
@@ -2622,6 +2700,7 @@ const [bookingFormOpen, setBookingFormOpen] = useState(false);
       <BookingForm
   isOpen={bookingFormOpen}
   onClose={() => setBookingFormOpen(false)}
+  onBookingCreated={handleBookingCreated}
   isAdmin={true}
 />
     </div>

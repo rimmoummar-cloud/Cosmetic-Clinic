@@ -424,6 +424,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../../lib/api.js";
+import { getSelectedOptionLabels } from "../../../../lib/formSelections";
 import { useMemo } from "react";
 
 function isValidId(value) {
@@ -801,7 +802,9 @@ export default function CompletedFormViewer({
 
               <div className="rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
                 {question.question_type ===
-                "multiple_choice" ? (
+                "multi_select" ? (
+                  getSelectedOptionLabels(question).join(", ") || "No options selected"
+                ) : question.question_type === "multiple_choice" ? (
                   question.options?.find(
                     (option) =>
                       String(option.id) ===

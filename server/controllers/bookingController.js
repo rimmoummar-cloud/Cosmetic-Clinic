@@ -814,7 +814,15 @@ if (!["pending", "approved"].includes(b.status)) {
 const minimumBookingTime = now.plus({ hours: 24 });
 const enforceLeadTime = !req.admin;
 
-    for (let m = startMinutes; m + totalMinutes <= endMinutes; m += slotDuration) {
+// Extend only authenticated Admin requests, keeping the effective opening grid.
+// Availability remains scoped to this date; do not generate adjacent-day slots.
+const candidateStart = req.admin ? Math.max(0, startMinutes - 120) : startMinutes;
+const candidateEnd = req.admin ? Math.min(1440, endMinutes + 180) : endMinutes;
+const firstCandidate = req.admin
+  ? startMinutes + Math.ceil((candidateStart - startMinutes) / slotDuration) * slotDuration
+  : startMinutes;
+
+    for (let m = firstCandidate; m + totalMinutes <= candidateEnd; m += slotDuration) {
   const slot = minutesToTime(m);
 
   const slotDateTime = DateTime.fromISO(
@@ -862,7 +870,15 @@ const enforceLeadTime = !req.admin;
   return dt.toFormat("HH:mm");
 });
 
-res.json({ availableSlots: convertedSlots });
+res.json({
+  availableSlots: convertedSlots,
+  ...(req.admin ? {
+    outsideHoursSlots: convertedSlots.filter((slot) => {
+      const start = timeToMinutes(slot);
+      return start < startMinutes || start + totalMinutes > endMinutes;
+    }),
+  } : {}),
+});
   } catch (error) {
    console.error("Available slots error FULL:", error);
     res.status(500).json({ message: "Server error" });

@@ -11,17 +11,50 @@ const api = axios.create({
 // ==============================
 
 let csrfTokenCache = null;
+let csrfTokenPromise = null;
+let refreshPromise = null;
+let authGeneration = 0;
 
 async function getCsrfToken() {
-  if (csrfTokenCache) {
-    return csrfTokenCache;
+  if (csrfTokenCache) return csrfTokenCache;
+  if (!csrfTokenPromise) {
+    csrfTokenPromise = api.get("/csrf-token", { _skipAuthRefresh: true })
+      .then(({ data }) => {
+        csrfTokenCache = data.csrfToken;
+        return csrfTokenCache;
+      }).finally(() => { csrfTokenPromise = null; });
   }
+  return csrfTokenPromise;
+}
 
-  const { data } = await api.get("/csrf-token");
+function refreshSession() {
+  if (!refreshPromise) {
+    const renew = async () => {
+      // Another tab may have renewed the shared cookies while this tab waited.
+      try {
+        await api.get("/me", { _skipAuthRefresh: true });
+        return;
+      } catch (error) {
+        if (error.response?.status !== 401) throw error;
+      }
+      csrfTokenCache = null;
+      await api.post("/refresh", {}, { _skipAuthRefresh: true });
+    };
+    // Web Locks serialize rotation across tabs without exposing HTTP-only tokens.
+    const locks = typeof window !== "undefined" ? window.navigator?.locks : null;
+    refreshPromise = (locks
+      ? locks.request("clinic-admin-session-refresh", renew)
+      : renew())
+      .then(() => { authGeneration += 1; })
+      .finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
 
-  csrfTokenCache = data.csrfToken;
-
-  return csrfTokenCache;
+function redirectToLogin() {
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
 }
 
 // ==============================
@@ -29,6 +62,7 @@ async function getCsrfToken() {
 // ==============================
 api.interceptors.request.use(async (config) => {
   const method = config.method?.toLowerCase();
+  config._authGeneration = authGeneration;
 
 const methodsRequiringCSRF = [
   "post",
@@ -58,36 +92,34 @@ const methodsRequiringCSRF = [
 
 api.interceptors.response.use(
   (response) => response,
-
   async (error) => {
-    if (!error.response) {
+    const originalRequest = error.config;
+    const status = error.response?.status;
+    const data = error.response?.data;
+    const message = String(data?.message || data?.error || (typeof data === "string" ? data : "")).toLowerCase();
+    if (status === 403 && message.includes("csrf")) csrfTokenCache = null;
+
+    const endpoint = originalRequest?.url?.split("?")[0];
+    const isAuthenticationEndpoint = ["/login", "/refresh", "/csrf-token"].includes(endpoint);
+    // A wrong password is a business response, not an expired session.
+    const wrongPassword = endpoint === "/verify-password" && error.response?.data?.message === "Incorrect password";
+    if (status !== 401 || !originalRequest || originalRequest._skipAuthRefresh || isAuthenticationEndpoint || wrongPassword) {
       return Promise.reject(error);
     }
-
-    if (
-      error.response?.data?.message?.includes("csrf")
-    ) {
-      csrfTokenCache = null;
+    if (originalRequest._retry) {
+      redirectToLogin();
+      return Promise.reject(error);
     }
-
-    const originalRequest = error.config;
-
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes("refresh")
-    ) {
-      originalRequest._retry = true;
-
-      try {
-        await api.post("/refresh");
-        return api(originalRequest);
-      } catch (err) {
-        window.location.href = "/login";
-      }
+    originalRequest._retry = true;
+    try {
+      // A late 401 from a request sent before renewal can use the new cookies.
+      if (originalRequest._authGeneration === authGeneration) await refreshSession();
+    } catch (refreshError) {
+      if (refreshError.response?.status === 401) redirectToLogin();
+      // Keep transient network, CSRF and server failures recoverable.
+      return Promise.reject(refreshError);
     }
-
-    return Promise.reject(error);
+    return api(originalRequest);
   }
 );
 

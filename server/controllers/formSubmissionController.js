@@ -337,6 +337,7 @@
 import * as CompletedForm from '../models/completedForm.js';
 import * as CompletedFormQuestion from '../models/completedFormQuestion.js';
 import db from '../config/db.js';
+import { saveMultiSelectAnswer } from '../models/multiSelectAnswer.js';
 
 const resolveSnapshotQuestionId = (answers, questions, answer) => {
   if (answer.completed_form_question_id) {
@@ -437,6 +438,11 @@ export const submitForm = async (req, res) => {
         completedForm.id
       );
 
+    if (questions.some((question) => question.question_type === 'multi_select')) {
+      // All multi-select writes take the form lock before any answer-row locks.
+      await client.query('SELECT id FROM completed_forms WHERE id = $1 FOR UPDATE', [completedForm.id]);
+    }
+
     const questionLookup = new Map(
       questions.map((question) => [
         question.id,
@@ -472,6 +478,11 @@ export const submitForm = async (req, res) => {
         return res.status(400).json({
           error: `Question ${completedFormQuestionId} does not belong to completed form ${completedForm.id}`
         });
+      }
+
+      if (snapshotQuestion.question_type === 'multi_select') {
+        await saveMultiSelectAnswer(client, completedForm.id, completedFormQuestionId, answer);
+        continue;
       }
 
       validateAnswerForQuestionType(
@@ -610,7 +621,7 @@ export const submitForm = async (req, res) => {
       error
     );
 
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       message:
         'Server error while submitting form',
       error: error.message
@@ -686,6 +697,11 @@ export const saveDraft = async (req, res) => {
         completedForm.id
       );
 
+    if (questions.some((question) => question.question_type === 'multi_select')) {
+      // All multi-select writes take the form lock before any answer-row locks.
+      await client.query('SELECT id FROM completed_forms WHERE id = $1 FOR UPDATE', [completedForm.id]);
+    }
+
     const questionLookup = new Map(
       questions.map((question) => [
         question.id,
@@ -721,6 +737,11 @@ export const saveDraft = async (req, res) => {
         return res.status(400).json({
           error: `Question ${completedFormQuestionId} does not belong to completed form ${completedForm.id}`
         });
+      }
+
+      if (snapshotQuestion.question_type === 'multi_select') {
+        await saveMultiSelectAnswer(client, completedForm.id, completedFormQuestionId, answer);
+        continue;
       }
 
       validateAnswerForQuestionType(
@@ -840,7 +861,7 @@ export const saveDraft = async (req, res) => {
       error
     );
 
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       message:
         'Server error while saving form draft',
       error: error.message

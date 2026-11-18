@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import { attachSelectedOptionIds } from './multiSelectAnswer.js';
 
 const ALLOWED_STATUSES = ['draft', 'completed'];
 
@@ -84,10 +85,13 @@ export const getCompletedFormWithDetails = async (client = null, id) => {
         [id, question.id]
       );
 
+      const answers = question.question_type === 'multi_select'
+        ? await attachSelectedOptionIds(client, answerRes.rows)
+        : answerRes.rows;
       return {
         ...question,
         options: optionsRes.rows,
-        answer: answerRes.rows[0] || null
+        answer: answers[0] || null
       };
     })
   );

@@ -17,8 +17,8 @@ WHERE email = $1
 
 }
 
-export async function findAdminById(id) {
-    const result = await db.query(
+export async function findAdminById(id, client = null) {
+    const result = await (client || db).query(
         `
        SELECT id, name, email
         FROM admins

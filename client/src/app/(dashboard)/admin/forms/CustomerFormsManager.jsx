@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import api from "../../../../lib/api.js";
+import { getSelectedOptionIds, getSelectedOptionLabels } from "../../../../lib/formSelections";
 import {
   getSignatureFromRef,
   clearSignatureRef,
@@ -52,7 +53,15 @@ function getCustomerFromCompletedForm(form, fallbackCustomer, booking) {
 }
 
 function getAppointmentFromCompletedForm(form, booking) {
-  return form?.appointment || booking || null;
+  if (form?.appointment) return form.appointment;
+  if (
+    isValidId(form?.appointment_id) &&
+    isValidId(booking?.id) &&
+    String(form.appointment_id) === String(booking.id)
+  ) {
+    return booking;
+  }
+  return null;
 }
 
 function getSignatureValue(form) {
@@ -194,6 +203,7 @@ export default function CustomerFormsManager({
         answer_text: question.answer?.answer_text ?? null,
         selected_option_id:
           question.answer?.selected_option_id ?? null,
+        ...(question.question_type === "multi_select" ? { selected_option_ids: getSelectedOptionIds(question) } : {}),
         boolean_value: normalizeBoolean(
           question.answer?.boolean_value
         ),
@@ -251,7 +261,9 @@ const buildDuplicatedAnswerMap = (originalQuestions, newQuestions) => {
   const map = {};
 
   (newQuestions || []).forEach((newQuestion, index) => {
-    const originalQuestion = originalQuestions?.[index];
+    const originalQuestion = newQuestion.question_type === "multi_select" && newQuestion.original_question_id != null
+      ? (originalQuestions || []).find((question) => String(question.original_question_id) === String(newQuestion.original_question_id))
+      : originalQuestions?.[index];
 
     if (!originalQuestion) {
       map[newQuestion.id] = {
@@ -274,6 +286,17 @@ const buildDuplicatedAnswerMap = (originalQuestions, newQuestions) => {
     }
 
     let selectedOptionId = null;
+
+    let selectedOptionIds = [];
+    if (newQuestion.question_type === "multi_select") {
+      const oldIds = new Set(getSelectedOptionIds(originalQuestion).map(String));
+      const originalIds = new Set((originalQuestion.options || [])
+        .filter((option) => oldIds.has(String(option.id)) && option.original_option_id != null)
+        .map((option) => String(option.original_option_id)));
+      selectedOptionIds = (newQuestion.options || [])
+        .filter((option) => option.original_option_id != null && originalIds.has(String(option.original_option_id)))
+        .map((option) => option.id);
+    }
 
     if (newQuestion.question_type === "multiple_choice") {
       const oldSelectedOptionId =
@@ -306,6 +329,7 @@ const buildDuplicatedAnswerMap = (originalQuestions, newQuestions) => {
         originalQuestion.answer?.answer_text ?? null,
 
       selected_option_id: selectedOptionId,
+      ...(newQuestion.question_type === "multi_select" ? { selected_option_ids: selectedOptionIds } : {}),
 
       boolean_value: normalizeBoolean(
         originalQuestion.answer?.boolean_value
@@ -429,6 +453,19 @@ const buildDuplicatedAnswerMap = (originalQuestions, newQuestions) => {
     }
   };
 
+  const resumeDraft = () => {
+    if (selectedCompletedForm?.status !== "draft") return;
+    setDraftFormId(selectedCompletedForm.id);
+    setSelectedTemplate({
+      id: selectedCompletedForm.form_template_id,
+      name: selectedCompletedForm.form_name || "Form",
+      questions: selectedCompletedForm.questions || [],
+    });
+    setAnswers(buildQuestionAnswerMap(selectedCompletedForm.questions));
+    clearSignature();
+    setTab("create");
+  };
+
   const duplicateCompletedForm = async () => {
     if (!selectedCompletedForm) return;
 
@@ -543,6 +580,11 @@ const buildDuplicatedAnswerMap = (originalQuestions, newQuestions) => {
         answer_text: type === "text" ? value : null,
         selected_option_id:
           type === "multiple_choice" ? value : null,
+        ...(type === "multi_select" ? {
+          selected_option_ids: (current[questionId]?.selected_option_ids || []).some((id) => String(id) === String(value))
+            ? current[questionId].selected_option_ids.filter((id) => String(id) !== String(value))
+            : [...(current[questionId]?.selected_option_ids || []), value],
+        } : {}),
         boolean_value:
           type === "boolean" ? value : null,
       },
@@ -586,6 +628,12 @@ const payload = selectedTemplate?.questions || [];
                 answer.selected_option_id ?? null,
             };
 
+          case "multi_select":
+            return {
+              completed_form_question_id: question.id,
+              selected_option_ids: answer.selected_option_ids || [],
+            };
+
           default:
             return {
               completed_form_question_id: question.id,
@@ -594,6 +642,7 @@ const payload = selectedTemplate?.questions || [];
         }
       })
       .filter((answer) => {
+        if (Array.isArray(answer.selected_option_ids)) return true;
         if (
           answer.answer_text !== undefined &&
           answer.answer_text !== null &&
@@ -620,6 +669,12 @@ const payload = selectedTemplate?.questions || [];
       });
 
     const signaturePayload = getSignatureData();
+
+    const missingSelection = payload.find((question) => question.question_type === "multi_select" && question.required && !(answers[question.id]?.selected_option_ids || []).length);
+    if (missingSelection) {
+      alert(`Please select at least one option for: ${missingSelection.question_text}`);
+      return;
+    }
 
     if (!saveAsDraft && !signaturePayload) {
       alert(
@@ -777,22 +832,26 @@ const payload = selectedTemplate?.questions || [];
           <label
             key={option.id}
             className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm ${
-              questionAnswer.selected_option_id === option.id
+              (type === "multi_select"
+                ? (questionAnswer.selected_option_ids || []).some((id) => String(id) === String(option.id))
+                : questionAnswer.selected_option_id === option.id)
                 ? "border-primary bg-primary/5 text-primary"
                 : "border-gray-200 bg-gray-50 text-gray-700"
             }`}
           >
             <input
-              type="radio"
+              type={type === "multi_select" ? "checkbox" : "radio"}
               name={`question-${question.id}`}
               checked={
-                questionAnswer.selected_option_id === option.id
+                type === "multi_select"
+                  ? (questionAnswer.selected_option_ids || []).some((id) => String(id) === String(option.id))
+                  : questionAnswer.selected_option_id === option.id
               }
               onChange={() =>
                 updateAnswer(
                   question.id,
                   option.id,
-                  "multiple_choice"
+                  type
                 )
               }
               className="h-4 w-4 text-primary"
@@ -1060,6 +1119,16 @@ const payload = selectedTemplate?.questions || [];
                       Form details
                     </h3>
 
+                    {selectedCompletedForm?.status === "draft" && (
+                      <button
+                        type="button"
+                        onClick={resumeDraft}
+                        disabled={saving || duplicating || completedFormLoading}
+                        className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-60 sm:px-4 sm:text-sm"
+                      >
+                        Continue draft
+                      </button>
+                    )}
                     {selectedCompletedForm && (
                       <button
                         type="button"
@@ -1293,7 +1362,9 @@ const payload = selectedTemplate?.questions || [];
 
                             <div className="mt-3 break-words rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
                               {question.question_type ===
-                              "multiple_choice" ? (
+                              "multi_select" ? (
+                                getSelectedOptionLabels(question).join(", ") || "No options selected"
+                              ) : question.question_type === "multiple_choice" ? (
                                 question.options?.find(
                                   (option) =>
                                     String(option.id) ===

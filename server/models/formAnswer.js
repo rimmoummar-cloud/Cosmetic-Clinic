@@ -304,6 +304,7 @@
 //   return result.rows[0];
 // };
 import db from '../config/db.js';
+import { attachSelectedOptionIds, saveMultiSelectAnswer } from './multiSelectAnswer.js';
 
 const normalizeAnswerForQuestionType = (
   questionType,
@@ -364,7 +365,7 @@ export const getAnswersByCompletedForm = async (
     [completedFormId]
   );
 
-  return result.rows;
+  return attachSelectedOptionIds(client, result.rows);
 };
 
 export const getAnswerById = async (client = null, id) => {
@@ -375,7 +376,7 @@ export const getAnswerById = async (client = null, id) => {
     [id]
   );
 
-  return result.rows[0];
+  return (await attachSelectedOptionIds(client, result.rows))[0];
 };
 
 export const getAnswerWithQuestion = async (client = null, id) => {
@@ -393,7 +394,7 @@ export const getAnswerWithQuestion = async (client = null, id) => {
     [id]
   );
 
-  return result.rows[0];
+  return (await attachSelectedOptionIds(client, result.rows))[0];
 };
 
 export const createAnswer = async (client = null, data) => {
@@ -438,6 +439,10 @@ export const createAnswer = async (client = null, data) => {
   }
 
   const questionType = questionRes.rows[0].question_type;
+
+  if (questionType === 'multi_select') {
+    return saveMultiSelectAnswer(client, completed_form_id, completed_form_question_id, data, { mode: 'create' });
+  }
 
   const normalizedAnswer = normalizeAnswerForQuestionType(
     questionType,
@@ -530,6 +535,10 @@ export const updateAnswer = async (client = null, id, data) => {
     question_type,
     completed_form_id
   } = answerRes.rows[0];
+
+  if (question_type === 'multi_select') {
+    return saveMultiSelectAnswer(client, completed_form_id, completed_form_question_id, data, { mode: 'update', answerId: id });
+  }
 
   const normalizedAnswer = normalizeAnswerForQuestionType(
     question_type,
@@ -630,6 +639,10 @@ export const upsertAnswer = async (
   }
 
   const questionType = questionRes.rows[0].question_type;
+
+  if (questionType === 'multi_select') {
+    return saveMultiSelectAnswer(client, completedFormId, completedFormQuestionId, data);
+  }
 
   const normalizedAnswer = normalizeAnswerForQuestionType(
     questionType,

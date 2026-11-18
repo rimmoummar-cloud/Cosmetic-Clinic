@@ -4,10 +4,12 @@ import { useMemo, useState } from "react";
 import api from "../../../../lib/api.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import CustomerDetails from "./components/CustomerDetails";
+import CustomerFormsManager from "../forms/CustomerFormsManager";
 
 export default function AdminCustomersPage() {
   const [search, setSearch] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [formCustomer, setFormCustomer] = useState(null);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [name, setName] = useState("");
@@ -347,6 +349,9 @@ export default function AdminCustomersPage() {
                 <th className="text-right py-3 px-4 font-semibold text-gray-600">
                   Action
                 </th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-600">
+                  Add Form
+                </th>
               </tr>
             </thead>
 
@@ -354,7 +359,7 @@ export default function AdminCustomersPage() {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="py-10 text-center text-gray-500"
                   >
                     Loading customers...
@@ -363,7 +368,7 @@ export default function AdminCustomersPage() {
               ) : filteredCustomers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="py-10 text-center text-gray-500"
                   >
                     No customers found.
@@ -426,6 +431,15 @@ export default function AdminCustomersPage() {
                         </button>
                       </div>
                     </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setFormCustomer(customer)}
+                        className="inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium text-primary hover:bg-accent transition-colors"
+                      >
+                        Add Form
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -439,6 +453,15 @@ export default function AdminCustomersPage() {
           </p>
         )}
       </div>
+      {formCustomer && (
+        <CustomerFormsManager
+          key={formCustomer.id}
+          customer={formCustomer}
+          booking={null}
+          defaultTab="create"
+          onClose={() => setFormCustomer(null)}
+        />
+      )}
     </div>
   );
 }

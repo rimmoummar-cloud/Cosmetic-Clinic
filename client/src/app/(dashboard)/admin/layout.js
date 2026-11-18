@@ -43,6 +43,8 @@ async function handleLogout() {
 export default function AdminLayout({ children }) {
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authError, setAuthError] = useState("");
+  const [authCheckAttempt, setAuthCheckAttempt] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
@@ -99,15 +101,22 @@ console.log("unread count:", unread);
 //   return null;
 // }
 useEffect(() => {
+  let cancelled = false;
   const checkAuth = async () => {
+    setAuthError("");
     try {
       await api.get("/me");
-
+      if (cancelled) return;
       setCheckingAuth(false);
 
       await fetchUnreadCount();
-    } catch {
-      window.location.href = "/login";
+    } catch (error) {
+      if (cancelled) return;
+      if (error.response?.status === 401) {
+        window.location.href = "/login";
+      } else {
+        setAuthError("Unable to verify your session. Check your connection and try again.");
+      }
     }
   };
 
@@ -117,11 +126,24 @@ useEffect(() => {
     fetchUnreadCount();
   }, 5000);
 
-  return () => clearInterval(interval);
-}, []);
+  return () => {
+    cancelled = true;
+    clearInterval(interval);
+  };
+}, [authCheckAttempt]);
 
 
 if (checkingAuth) {
+  if (authError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
+        <p role="alert" className="text-sm text-gray-700">{authError}</p>
+        <button type="button" onClick={() => setAuthCheckAttempt((attempt) => attempt + 1)} className="rounded-lg bg-primary px-4 py-2 text-white">
+          Retry
+        </button>
+      </div>
+    );
+  }
   return null;
 }
 

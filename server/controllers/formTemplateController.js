@@ -1,6 +1,8 @@
 import * as FormTemplate from '../models/formTemplate.js';
 import db from '../config/db.js';
 
+const isValidTemplateId = (id) => /^\d+$/.test(String(id)) && Number(id) > 0 && Number(id) <= 2147483647;
+
 // ============================
 // Form Templates CRUD
 // ============================
@@ -80,7 +82,11 @@ export const createFormTemplate = async (req, res) => {
 export const updateFormTemplate = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, is_active } = req.body;
+    if (!isValidTemplateId(id)) return res.status(400).json({ error: 'Invalid template ID' });
+    const { name, description, is_active } = req.body || {};
+    if (is_active !== undefined && typeof is_active !== 'boolean') {
+      return res.status(400).json({ error: 'is_active must be a boolean' });
+    }
     
     // Check if template exists
     const existing = await FormTemplate.getFormTemplateById(null, id);
@@ -104,6 +110,7 @@ export const updateFormTemplate = async (req, res) => {
 export const deactivateFormTemplate = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isValidTemplateId(id)) return res.status(400).json({ error: 'Invalid template ID' });
     
     // Check if template exists
     const existing = await FormTemplate.getFormTemplateById(null, id);

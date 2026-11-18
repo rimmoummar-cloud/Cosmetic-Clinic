@@ -49,6 +49,10 @@ const token =
 
     } catch (error) {
 
+        if (!["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"].includes(error.name)) {
+            return res.status(503).json({ message: "Authentication temporarily unavailable" });
+        }
+
         return res.status(401).json({
             message: "Invalid token"
         });
