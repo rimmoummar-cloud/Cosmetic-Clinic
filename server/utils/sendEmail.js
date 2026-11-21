@@ -61,6 +61,33 @@ async function safeSendMail({ to, subject, html, text }) {
 const BUSINESS_TIME_ZONE =
   process.env.BUSINESS_TIME_ZONE || "America/Montreal";
 
+function formatBookingDateTime(bookingDate) {
+  let dateTime;
+
+  if (bookingDate instanceof Date) {
+    dateTime = DateTime.fromJSDate(bookingDate, { zone: "utc" });
+  } else if (typeof bookingDate === "string" && /t/i.test(bookingDate)) {
+    dateTime = DateTime.fromISO(bookingDate, { zone: "utc" });
+  } else {
+    throw new TypeError("Appointment timestamp must be a Date or an ISO date and time.");
+  }
+
+  if (!dateTime.isValid) {
+    throw new RangeError("Invalid appointment timestamp.");
+  }
+
+  const clinicDateTime = dateTime.setZone(BUSINESS_TIME_ZONE);
+  if (!clinicDateTime.isValid) {
+    throw new RangeError("Invalid clinic timezone for appointment email.");
+  }
+
+  return {
+    clinicDateTime,
+    formattedDate: clinicDateTime.toFormat("yyyy-LL-dd"),
+    formattedTime: clinicDateTime.toFormat("HH:mm"),
+  };
+}
+
 export async function sendBookingEmail({
   to,
   customerName,
@@ -70,12 +97,7 @@ export async function sendBookingEmail({
 }) {
   try {
     console.log("🚀 sendBookingEmail CALLED");
-    const dt = DateTime
-      .fromISO(bookingDate, { zone: "utc" })
-      .setZone(BUSINESS_TIME_ZONE);
-
-    const formattedDate = dt.toFormat("yyyy-LL-dd");
-    const formattedTime = dt.toFormat("HH:mm");
+    const { formattedDate, formattedTime } = formatBookingDateTime(bookingDate);
 
     const reviewLink = `${process.env.FRONTEND_URL}/AcceptForm?token=${acceptanceToken}`;
 
@@ -144,7 +166,7 @@ Our team will review it and notify you once it is confirmed.
     console.log("Booking email sent ✔️");
 
   } catch (error) {
-    console.log("EMAIL ERROR ❌", error.message);
+    console.error("EMAIL ERROR ❌", error.message);
   }
 }
 
@@ -157,16 +179,7 @@ export async function sendBookingApprovedEmail({
 }) {
   try {
 
- const dt = DateTime
-  .fromJSDate(new Date(bookingDate))
-  .setZone(BUSINESS_TIME_ZONE);
-
-  
-    const formattedDate =
-      dt.toFormat("yyyy-LL-dd");
-
-    const formattedTime =
-      dt.toFormat("HH:mm");
+    const { formattedDate, formattedTime } = formatBookingDateTime(bookingDate);
 
    await safeSendMail({
       // from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
@@ -246,7 +259,7 @@ Please find your appointment details below.
 
   } catch (error) {
 
-    console.log(
+    console.error(
       "APPROVED EMAIL ERROR ❌",
       error.message
     );
@@ -266,17 +279,7 @@ export async function sendBookingCancelledEmail({
 
   try {
 
-    const dt = DateTime
-      .fromISO(bookingDate, {
-        zone: "utc"
-      })
-      .setZone(BUSINESS_TIME_ZONE);
-
-    const formattedDate =
-      dt.toFormat("yyyy-LL-dd");
-
-    const formattedTime =
-      dt.toFormat("HH:mm");
+    const { formattedDate, formattedTime } = formatBookingDateTime(bookingDate);
 
     await safeSendMail({
 
@@ -359,7 +362,7 @@ Please review the details below.
 
   } catch (error) {
 
-    console.log(
+    console.error(
       "CANCEL EMAIL ERROR ❌",
       error.message
     );
@@ -373,36 +376,24 @@ const REMINDER_CANCELLATION_POLICY =
 const REMINDER_CANCELLATION_POLICY_FR =
   "Politique d’annulation : toute annulation effectuée moins de 24 heures avant l’heure prévue du rendez-vous peut entraîner des frais d’annulation de 40 $.";
 
-function parseReminderBookingDate(bookingDate) {
-  let dateTime;
+function buildReminderWhatsAppUrl(bookingId, serviceName, clinicDateTime) {
+  const date = clinicDateTime.toLocaleString(
+    { month: "long", day: "numeric", year: "numeric" },
+    { locale: "en-US" }
+  );
+  const time = clinicDateTime.toLocaleString(
+    { hour: "numeric", minute: "2-digit", hour12: true },
+    { locale: "en-US" }
+  );
+  const message =
+    "Hello, I would like to cancel my booking.\n\n" +
+    `Booking ID: #${bookingId}\nService: ${serviceName}\nDate: ${date}\nTime: ${time}`;
 
-  if (bookingDate instanceof Date) {
-    dateTime = DateTime.fromJSDate(bookingDate, { zone: "utc" });
-  } else if (typeof bookingDate === "string" && bookingDate.trim()) {
-    dateTime = DateTime.fromISO(bookingDate, { zone: "utc" });
-  } else {
-    throw new TypeError("Reminder bookingDate must be a valid Date or ISO string.");
-  }
-
-  if (!dateTime.isValid) {
-    throw new RangeError(
-      `Invalid reminder bookingDate: ${dateTime.invalidReason || "unparsable value"}`
-    );
-  }
-
-  const businessDateTime = dateTime.setZone(BUSINESS_TIME_ZONE);
-  if (!businessDateTime.isValid) {
-    throw new RangeError(
-      `Invalid reminder bookingDate in ${BUSINESS_TIME_ZONE}: ${
-        businessDateTime.invalidReason || "invalid timezone conversion"
-      }`
-    );
-  }
-
-  return businessDateTime;
+  return `https://wa.me/15149990827?text=${encodeURIComponent(message)}`;
 }
 
 export function buildReminderEmail({
+  bookingId,
   customerName,
   bookingDate,
   serviceName,
@@ -410,9 +401,10 @@ export function buildReminderEmail({
   cancelUrl,
   reminderType,
 }) {
-  const dt = parseReminderBookingDate(bookingDate);
-  const formattedDate = dt.toFormat("yyyy-LL-dd");
-  const formattedTime = dt.toFormat("HH:mm");
+  const { clinicDateTime, formattedDate, formattedTime } = formatBookingDateTime(bookingDate);
+  const cancellationUrl = bookingId == null
+    ? cancelUrl
+    : cancelUrl ?? buildReminderWhatsAppUrl(bookingId, serviceName, clinicDateTime);
   const includesCancellationPolicy = [
     "24_hours_before",
     "48_hours_before",
@@ -441,7 +433,7 @@ export function buildReminderEmail({
       `Date: ${formattedDate}\n` +
       `Time: ${formattedTime}` +
       policyText +
-      `\n\nConfirm: ${confirmUrl}\nCancel: ${cancelUrl}`,
+      `\n\nConfirm: ${confirmUrl}\nCancel: ${cancellationUrl}`,
     html: `
       <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
         <div style="text-align:center;margin-bottom:20px;">
@@ -470,7 +462,7 @@ export function buildReminderEmail({
             style="padding:12px 20px;background:#7aa35a;color:white;text-decoration:none;border-radius:10px;margin-right:10px;">
             Confirm
           </a>
-          <a href="${cancelUrl}"
+          <a href="${cancellationUrl}"
             style="padding:12px 20px;background:#d9534f;color:white;text-decoration:none;border-radius:10px;">
             Cancel
           </a>
@@ -482,6 +474,7 @@ export function buildReminderEmail({
 
 export async function sendReminderEmail({
   to,
+  bookingId,
   customerName,
   bookingDate,
   serviceName,
@@ -491,6 +484,7 @@ export async function sendReminderEmail({
 }) {
   try {
     const email = buildReminderEmail({
+      bookingId,
       customerName,
       bookingDate,
       serviceName,
@@ -667,12 +661,7 @@ export async function sendNewBookingNotificationEmail({
   bookingDate,
 }) {
   try {
-    const dt = DateTime
-      .fromISO(bookingDate, { zone: "utc" })
-      .setZone(BUSINESS_TIME_ZONE);
-
-    const formattedDate = dt.toFormat("yyyy-LL-dd");
-    const formattedTime = dt.toFormat("HH:mm");
+    const { formattedDate, formattedTime } = formatBookingDateTime(bookingDate);
 
     const notificationEmail =
       process.env.BOOKING_NOTIFICATION_EMAIL;
@@ -782,7 +771,7 @@ export async function sendNewBookingNotificationEmail({
     );
 
   } catch (error) {
-    console.log(
+    console.error(
       "NEW BOOKING NOTIFICATION EMAIL ERROR ❌",
       error.message
     );

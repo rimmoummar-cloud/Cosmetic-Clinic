@@ -177,7 +177,7 @@ export async function processReminderEmails() {
       // ======================================
 
       const bookingDate =
-        new Date(reminder.booking_datetime);
+        new Date(reminder.booking_datetime ?? NaN);
 
       const now = new Date();
 
@@ -229,42 +229,9 @@ export async function processReminderEmails() {
           frontendBaseUrl
         ).toString();
 
-      // ======================================
-      // WhatsApp cancellation URL
-      // ======================================
-
-      const cancellationMessage =
-        `Hello, I would like to cancel my booking.\n\n` +
-        `Booking ID: #${reminder.booking_id}\n` +
-        `Service: ${serviceName}\n` +
-        `Date: ${new Date(
-          reminder.booking_datetime
-        ).toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        })}\n` +
-        `Time: ${new Date(
-          reminder.booking_datetime
-        ).toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        })}`;
-
-      const cancelUrl =
-        `https://wa.me/15149990827?text=${encodeURIComponent(
-          cancellationMessage
-        )}`;
-
       console.log(
         "CONFIRM URL:",
         confirmUrl
-      );
-
-      console.log(
-        "CANCEL URL:",
-        cancelUrl
       );
 
       // ======================================
@@ -274,11 +241,11 @@ export async function processReminderEmails() {
       const emailResult =
         await sendReminderEmail({
           to: reminder.customer_email,
+          bookingId: reminder.booking_id,
           customerName: reminder.customer_name,
           bookingDate: reminder.booking_datetime,
           serviceName,
           confirmUrl,
-          cancelUrl,
           reminderType: reminder.reminder_type,
         });
 

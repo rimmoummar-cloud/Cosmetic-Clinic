@@ -37,18 +37,18 @@ router.get(
   confirmBookingFromReminder
 );
 
-router.get(
-  "/cancel/:bookingId/:reminderId",
-  (req, res, next) => {
-    console.log(
-      "🔥 CANCEL ROUTE HIT:",
-      req.params
-    );
+// router.get(
+//   "/cancel/:bookingId/:reminderId",
+//   (req, res, next) => {
+//     console.log(
+//       "🔥 CANCEL ROUTE HIT:",
+//       req.params
+//     );
 
-    next();
-  },
-  cancelBookingFromReminder
-);
+//     next();
+//   },
+//   cancelBookingFromReminder
+// );
 
 router.get("/:bookingId", getBookingReminders);
 
