@@ -14,7 +14,7 @@ const FALLBACK_IMAGES = [
 
 function formatPrice(value) {
   if (!value && value !== 0) return null;
-  return `$${Number(value).toFixed(2)}`;
+  return `$${Number(value).toFixed(2)} plus tax`;
 }
 
 export default function ServiceCard({
@@ -25,6 +25,7 @@ export default function ServiceCard({
   onLanguageChange = () => {},
 }) {
   const currentLanguage = language === "fr" ? "fr" : "en";
+  const price = formatPrice(service?.price);
   const image =
     service?.image_url ||
     FALLBACK_IMAGES[index % FALLBACK_IMAGES.length] ||
@@ -57,15 +58,15 @@ export default function ServiceCard({
             transition={{ duration: 3, repeat: Infinity, ease: "linear", delay: index * 0.2 }}
           />
 
-          {(service?.duration_minutes || service?.price) && (
+          {(service?.duration_minutes || price) && (
             <div className="absolute bottom-4 left-4 flex items-center gap-2 text-sm text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
               {service?.duration_minutes && (
                 <span>{service.duration_minutes} min</span>
               )}
-              {service?.duration_minutes && service?.price && (
+              {service?.duration_minutes && price && (
                 <span className="text-white/60">•</span>
               )}
-              {service?.price && <span>{formatPrice(service.price)}</span>}
+              {price && <span>{price}</span>}
             </div>
           )}
         </div>

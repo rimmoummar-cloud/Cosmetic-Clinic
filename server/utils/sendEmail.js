@@ -171,10 +171,31 @@ Our team will review it and notify you once it is confirmed.
 }
 
 
+function bookingPriceLines(services) {
+  if (!Array.isArray(services)) return [];
+
+  return services.flatMap(({ name, price }) => {
+    if (price == null || String(price).trim() === "" || !Number.isFinite(Number(price))) {
+      return [];
+    }
+
+    const amount = `$${Number(price).toFixed(2)} plus tax`;
+    return services.length > 1 && name ? [`${name} — ${amount}`] : [amount];
+  });
+}
+
+function bookingPriceHtml(lines) {
+  return lines.map((line) => {
+    const escapedLine = line.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    return `<p><b>Price:</b> ${escapedLine}</p>`;
+  }).join("");
+}
+
 export async function sendBookingApprovedEmail({
   to,
   customerName,
   serviceName,
+  services,
   bookingDate,
 }) {
   try {
@@ -218,6 +239,8 @@ Please find your appointment details below.
               <b>Services:</b>
               ${serviceName}
             </p>
+
+            ${bookingPriceHtml(bookingPriceLines(services))}
 
             <p>
               <b>Date:</b>
@@ -397,11 +420,13 @@ export function buildReminderEmail({
   customerName,
   bookingDate,
   serviceName,
+  services,
   confirmUrl,
   cancelUrl,
   reminderType,
 }) {
   const { clinicDateTime, formattedDate, formattedTime } = formatBookingDateTime(bookingDate);
+  const priceLines = bookingPriceLines(services);
   const cancellationUrl = bookingId == null
     ? cancelUrl
     : cancelUrl ?? buildReminderWhatsAppUrl(bookingId, serviceName, clinicDateTime);
@@ -430,6 +455,7 @@ export function buildReminderEmail({
       "This is a reminder of your upcoming appointment at Shiny Skin Clinic.\n" +
       "Please find your appointment details below.\n\n" +
       `Services: ${serviceName}\n` +
+      priceLines.map((line) => `Price: ${line}\n`).join("") +
       `Date: ${formattedDate}\n` +
       `Time: ${formattedTime}` +
       policyText +
@@ -454,6 +480,7 @@ export function buildReminderEmail({
   </p>
 </div>
         <p><b>Services:</b> ${serviceName}</p>
+        ${bookingPriceHtml(priceLines)}
         <p><b>Date:</b> ${formattedDate}</p>
         <p><b>Time:</b> ${formattedTime}</p>
         ${policyHtml}
@@ -478,6 +505,7 @@ export async function sendReminderEmail({
   customerName,
   bookingDate,
   serviceName,
+  services,
   confirmUrl,
   cancelUrl,
   reminderType,
@@ -488,6 +516,7 @@ export async function sendReminderEmail({
       customerName,
       bookingDate,
       serviceName,
+      services,
       confirmUrl,
       cancelUrl,
       reminderType,

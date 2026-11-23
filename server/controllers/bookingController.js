@@ -1035,6 +1035,7 @@ console.log("AFTER scheduleReminders");
       ) {
 
        sendBookingApprovedEmail({
+          services: bookingDetails.services,
 
           to:
             bookingDetails.customer_email,

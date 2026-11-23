@@ -120,6 +120,28 @@ test("reminder WhatsApp text and displayed appointment share the same Montreal d
   assert.ok(messages[1].textContent.includes(suppliedUrl));
 });
 
+test("approval and reminder show each booked price plus tax, including zero", async (t) => {
+  const messages = mockBrevo(t);
+  const bookingDate = new Date("2030-02-16T02:30:00Z");
+  const services = [
+    { name: "Facial", price: "125.50" },
+    { name: "Free Consultation", price: 0 },
+    { name: "Service without a price", price: null },
+  ];
+
+  await sendBookingApprovedEmail({ ...booking, bookingDate, services });
+  await sendReminderEmail({ ...booking, bookingDate, services });
+
+  assert.equal(messages.length, 2);
+  for (const message of messages) {
+    assert.match(message.htmlContent, /<b>Price:<\/b> Facial — \$125\.50 plus tax/);
+    assert.match(message.htmlContent, /<b>Price:<\/b> Free Consultation — \$0\.00 plus tax/);
+    assert.doesNotMatch(message.htmlContent, /Price:<\/b> Service without a price/);
+  }
+  assert.match(messages[1].textContent, /Price: Facial — \$125\.50 plus tax/);
+  assert.match(messages[1].textContent, /Price: Free Consultation — \$0\.00 plus tax/);
+});
+
 test("the reminder worker leaves invalid email dates scheduled and processes the next reminder", async (t) => {
   const messages = mockBrevo(t);
   t.mock.method(console, "error", () => {});
@@ -129,7 +151,7 @@ test("the reminder worker leaves invalid email dates scheduled and processes the
     booking_id: booking.bookingId,
     customer_email: booking.to,
     customer_name: booking.customerName,
-    services: [{ name: booking.serviceName }],
+    services: [{ name: booking.serviceName, price: 0 }],
     reminder_type: booking.reminderType,
   };
   const reminders = [
@@ -155,5 +177,6 @@ test("the reminder worker leaves invalid email dates scheduled and processes the
 
   assert.equal(messages.length, 1);
   assert.match(messages[0].textContent, /Date: 2099-02-15\nTime: 21:30/);
+  assert.match(messages[0].textContent, /Price: \$0\.00 plus tax/);
   assert.deepEqual(markedSent, [2]);
 });

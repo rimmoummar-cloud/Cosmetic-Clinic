@@ -560,7 +560,8 @@ async (id) => {
       COALESCE(
         json_agg(
           json_build_object(
-            'name', s.name
+            'name', s.name,
+            'price', bs.price
           )
         ) FILTER (
           WHERE s.id IS NOT NULL

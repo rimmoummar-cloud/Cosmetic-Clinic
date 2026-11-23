@@ -32,7 +32,8 @@ export async function restoreReminderJobs() {
       COALESCE(
         json_agg(
           json_build_object(
-            'name', s.name
+            'name', s.name,
+            'price', bs.price
           )
         ) FILTER (
           WHERE s.id IS NOT NULL
@@ -113,6 +114,7 @@ const cancelUrl = new URL(
     reminder.customer_name,
   bookingDate:
     reminder.booking_datetime,
+  services: reminder.services,
   serviceName:
     reminder.services
       .map(s => s.name)

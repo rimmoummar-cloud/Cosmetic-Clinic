@@ -68,7 +68,8 @@ export async function processReminderEmails() {
         COALESCE(
           json_agg(
             json_build_object(
-              'name', s.name
+              'name', s.name,
+              'price', bs.price
             )
           ) FILTER (
             WHERE s.id IS NOT NULL
@@ -244,6 +245,7 @@ export async function processReminderEmails() {
           bookingId: reminder.booking_id,
           customerName: reminder.customer_name,
           bookingDate: reminder.booking_datetime,
+          services: reminder.services,
           serviceName,
           confirmUrl,
           reminderType: reminder.reminder_type,

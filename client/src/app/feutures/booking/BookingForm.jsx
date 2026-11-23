@@ -1170,7 +1170,7 @@ const formatCurrency = (value) =>
     currency: "USD", 
     minimumFractionDigits: 0, 
     maximumFractionDigits: 0, 
-  }).format(value); 
+  }).format(value) + " plus tax";
   // Get current category services 
   const currentCategoryServices = selectedCategoryId ? categoryServices[selectedCategoryId] || [] : []; 
  
