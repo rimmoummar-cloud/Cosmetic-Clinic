@@ -179,16 +179,32 @@ function bookingPriceLines(services) {
       return [];
     }
 
-    const amount = `$${Number(price).toFixed(2)} plus tax`;
+    const amount = `$${Number(price).toFixed(2)} + taxes`;
     return services.length > 1 && name ? [`${name} — ${amount}`] : [amount];
   });
 }
 
-function bookingPriceHtml(lines) {
-  return lines.map((line) => {
-    const escapedLine = line.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-    return `<p><b>Price:</b> ${escapedLine}</p>`;
-  }).join("");
+function escapeEmailText(value) {
+  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+function appointmentDetailsHtml({ serviceName, priceLines, formattedDate, formattedTime }) {
+  const rows = [
+    ["Services", serviceName],
+    ...priceLines.map((line) => ["Price / Prix", line]),
+    ["Date", formattedDate],
+    ["Time / Heure", formattedTime],
+  ];
+
+  return `
+    <div style="background:#f3f3f3;border-radius:16px;padding:16px 20px;margin:24px 0;color:#171717;">
+      ${rows.map(([label, value], index) => `
+        <p style="margin:${index === 0 ? "0" : "12px 0 0"};line-height:1.5;">
+          <b>${label}:</b> ${escapeEmailText(value)}
+        </p>
+      `).join("")}
+    </div>
+  `;
 }
 
 export async function sendBookingApprovedEmail({
@@ -206,72 +222,29 @@ export async function sendBookingApprovedEmail({
       // from: `"Shiny Skin Clinic" <shinyskinlms@gmail.com>`,
       to,
 
-      subject:
-        "Your Booking Has Been Approved ✨",
+      subject: "Appointment Confirmed | Rendez-vous confirmé",
 
       html: `
-        <div style="font-family:Arial;max-width:600px;margin:auto;padding:20px;">
-<div style="text-align:center;margin-bottom:20px;">
-  <h1 style="margin:0;">Shiny Skin Clinic</h1>
-  <p style="color:#777;font-size:12px;">Official Appointment System</p>
-</div>
-         <h2>Booking Approved</h2>
-
-<p>Dear ${customerName},</p>
-
-<p>
-We are pleased to inform you that your booking has been approved.
-Please find your appointment details below.
-</p>
-<div lang="fr" style="margin-top:16px;padding-top:16px;border-top:1px solid #eee;">
-  <p>
-    Nous avons le plaisir de vous informer que votre rendez-vous a été confirmé.
-    Vous trouverez les détails de votre rendez-vous ci-dessous.
-  </p>
-</div>
-          <div style="
-            background:#f8f8f8;
-            padding:16px;
-            border-radius:12px;
-            margin:20px 0;
-          ">
-            <p>
-              <b>Services:</b>
-              ${serviceName}
-            </p>
-
-            ${bookingPriceHtml(bookingPriceLines(services))}
-
-            <p>
-              <b>Date:</b>
-              ${formattedDate}
-            </p>
-
-            <p>
-              <b>Time:</b>
-              ${formattedTime}
-            </p>
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:16px auto;padding:24px;border:1px solid #e4e4e4;border-radius:20px;background:#fff;color:#171717;line-height:1.55;">
+          <h1 style="margin:0;font-size:28px;line-height:1.2;">Appointment Confirmed</h1>
+          <p lang="fr" style="margin:8px 0 20px;color:#555;font-size:18px;">Rendez-vous confirmé</p>
+          <div style="border-top:1px solid #e4e4e4;padding-top:16px;">
+            <p style="margin:0;">Dear ${escapeEmailText(customerName)},</p>
           </div>
-
-          <p>
-            We are looking forward to seeing you ✨
-          </p>
-<p lang="fr">
-  Nous avons hâte de vous accueillir à la clinique. ✨
-</p>
-          <p>
-          You may receive one or more reminders before your appointment.
-          </p>
-<p lang="fr">
-  Vous pourrez recevoir un ou plusieurs rappels avant votre rendez-vous.
-</p>
-          <p style="
-            margin-top:30px;
-            color:#777;
-          ">
-            Shiny Skin Clinic ✨
-          </p>
-
+          ${appointmentDetailsHtml({
+            serviceName,
+            priceLines: bookingPriceLines(services),
+            formattedDate,
+            formattedTime,
+          })}
+          <p>We look forward to welcoming you! ✨</p>
+          <p lang="fr">Au plaisir de vous accueillir à la clinique ! ✨</p>
+          <p style="font-size:14px;color:#555;">You may receive one or more reminders before your appointment.</p>
+          <p lang="fr" style="font-size:14px;color:#555;">Vous pourrez recevoir un ou plusieurs rappels avant votre rendez-vous.</p>
+          <div style="border-top:1px solid #e4e4e4;padding-top:20px;margin-top:24px;text-align:center;">
+            <p style="margin:0;font-size:20px;font-weight:bold;">Shiny Skin Clinic</p>
+            <p style="margin:4px 0 0;color:#555;">Advanced Aesthetic</p>
+          </div>
         </div>
       `,
     });
@@ -455,9 +428,9 @@ export function buildReminderEmail({
       "This is a reminder of your upcoming appointment at Shiny Skin Clinic.\n" +
       "Please find your appointment details below.\n\n" +
       `Services: ${serviceName}\n` +
-      priceLines.map((line) => `Price: ${line}\n`).join("") +
+      priceLines.map((line) => `Price / Prix: ${line}\n`).join("") +
       `Date: ${formattedDate}\n` +
-      `Time: ${formattedTime}` +
+      `Time / Heure: ${formattedTime}` +
       policyText +
       `\n\nConfirm: ${confirmUrl}\nCancel: ${cancellationUrl}`,
     html: `
@@ -479,10 +452,7 @@ export function buildReminderEmail({
     Veuillez consulter les détails de votre rendez-vous ci-dessous.
   </p>
 </div>
-        <p><b>Services:</b> ${serviceName}</p>
-        ${bookingPriceHtml(priceLines)}
-        <p><b>Date:</b> ${formattedDate}</p>
-        <p><b>Time:</b> ${formattedTime}</p>
+        ${appointmentDetailsHtml({ serviceName, priceLines, formattedDate, formattedTime })}
         ${policyHtml}
         <div style="margin-top:30px;">
           <a href="${confirmUrl}"

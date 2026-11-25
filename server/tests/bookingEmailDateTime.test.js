@@ -41,7 +41,7 @@ const dateCases = [
 const emailFlows = [
   ["Booking Request Received ✨", sendBookingEmail, {}, true],
   ["Complete Your Booking Review ✨", sendBookingEmail, { acceptanceToken: "test-token" }, true],
-  ["Your Booking Has Been Approved ✨", sendBookingApprovedEmail, {}, true],
+  ["Appointment Confirmed | Rendez-vous confirmé", sendBookingApprovedEmail, {}, true],
   ["Booking Cancelled", sendBookingCancelledEmail, {}, true],
   ["New Booking Received ✨", sendNewBookingNotificationEmail, {}, false],
   ["Booking Reminder ✨", sendReminderEmail, {}, true],
@@ -67,11 +67,11 @@ for (const [subject, send, options, bilingual] of emailFlows) {
       const message = messages.at(-1);
       assert.equal(message.subject, subject);
       assert.match(message.htmlContent, new RegExp(`<b>Date:</b>\\s*${expectedDate}\\s*</p>`));
-      assert.match(message.htmlContent, new RegExp(`<b>Time:</b>\\s*${expectedTime}\\s*</p>`));
+      assert.match(message.htmlContent, new RegExp(`<b>Time(?: / Heure)?:</b>\\s*${expectedTime}\\s*</p>`));
       assert.doesNotMatch(message.htmlContent, /Invalid DateTime/);
       if (bilingual) assert.match(message.htmlContent, /lang="fr"/);
       if (message.textContent) {
-        assert.ok(message.textContent.includes(`Date: ${expectedDate}\nTime: ${expectedTime}`));
+        assert.ok(message.textContent.includes(`Date: ${expectedDate}\nTime / Heure: ${expectedTime}`));
       }
     }
 
@@ -120,7 +120,7 @@ test("reminder WhatsApp text and displayed appointment share the same Montreal d
   assert.ok(messages[1].textContent.includes(suppliedUrl));
 });
 
-test("approval and reminder show each booked price plus tax, including zero", async (t) => {
+test("confirmation and reminder show booked prices with bilingual labels, including zero", async (t) => {
   const messages = mockBrevo(t);
   const bookingDate = new Date("2030-02-16T02:30:00Z");
   const services = [
@@ -133,13 +133,16 @@ test("approval and reminder show each booked price plus tax, including zero", as
   await sendReminderEmail({ ...booking, bookingDate, services });
 
   assert.equal(messages.length, 2);
+  assert.match(messages[0].htmlContent, /<h1[^>]*>Appointment Confirmed<\/h1>/);
+  assert.match(messages[0].htmlContent, /lang="fr"[^>]*>Rendez-vous confirmé<\/p>/);
   for (const message of messages) {
-    assert.match(message.htmlContent, /<b>Price:<\/b> Facial — \$125\.50 plus tax/);
-    assert.match(message.htmlContent, /<b>Price:<\/b> Free Consultation — \$0\.00 plus tax/);
-    assert.doesNotMatch(message.htmlContent, /Price:<\/b> Service without a price/);
+    assert.match(message.htmlContent, /<b>Price \/ Prix:<\/b> Facial — \$125\.50 \+ taxes/);
+    assert.match(message.htmlContent, /<b>Price \/ Prix:<\/b> Free Consultation — \$0\.00 \+ taxes/);
+    assert.doesNotMatch(message.htmlContent, /Prix:<\/b> Service without a price/);
+    assert.match(message.htmlContent, /<b>Services:<\/b>[\s\S]*<b>Price \/ Prix:<\/b>[\s\S]*<b>Date:<\/b>[\s\S]*<b>Time \/ Heure:<\/b>/);
   }
-  assert.match(messages[1].textContent, /Price: Facial — \$125\.50 plus tax/);
-  assert.match(messages[1].textContent, /Price: Free Consultation — \$0\.00 plus tax/);
+  assert.match(messages[1].textContent, /Price \/ Prix: Facial — \$125\.50 \+ taxes/);
+  assert.match(messages[1].textContent, /Price \/ Prix: Free Consultation — \$0\.00 \+ taxes/);
 });
 
 test("the reminder worker leaves invalid email dates scheduled and processes the next reminder", async (t) => {
@@ -176,7 +179,7 @@ test("the reminder worker leaves invalid email dates scheduled and processes the
   await processReminderEmails();
 
   assert.equal(messages.length, 1);
-  assert.match(messages[0].textContent, /Date: 2099-02-15\nTime: 21:30/);
-  assert.match(messages[0].textContent, /Price: \$0\.00 plus tax/);
+  assert.match(messages[0].textContent, /Date: 2099-02-15\nTime \/ Heure: 21:30/);
+  assert.match(messages[0].textContent, /Price \/ Prix: \$0\.00 \+ taxes/);
   assert.deepEqual(markedSent, [2]);
 });

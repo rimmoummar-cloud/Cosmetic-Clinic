@@ -1168,9 +1168,7 @@ const formatCurrency = (value) =>
   new Intl.NumberFormat("en-US", { 
     style: "currency", 
     currency: "USD", 
-    minimumFractionDigits: 0, 
-    maximumFractionDigits: 0, 
-  }).format(value) + " plus tax";
+  }).format(value) + " + taxes";
   // Get current category services 
   const currentCategoryServices = selectedCategoryId ? categoryServices[selectedCategoryId] || [] : []; 
  

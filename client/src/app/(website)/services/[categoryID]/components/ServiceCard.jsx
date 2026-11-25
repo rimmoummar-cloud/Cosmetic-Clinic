@@ -14,7 +14,7 @@ const FALLBACK_IMAGES = [
 
 function formatPrice(value) {
   if (!value && value !== 0) return null;
-  return `$${Number(value).toFixed(2)} plus tax`;
+  return `$${Number(value).toFixed(2)} + taxes`;
 }
 
 export default function ServiceCard({
@@ -66,7 +66,7 @@ export default function ServiceCard({
               {service?.duration_minutes && price && (
                 <span className="text-white/60">•</span>
               )}
-              {price && <span>{price}</span>}
+              {price && <span className="whitespace-nowrap font-medium">{price}</span>}
             </div>
           )}
         </div>
